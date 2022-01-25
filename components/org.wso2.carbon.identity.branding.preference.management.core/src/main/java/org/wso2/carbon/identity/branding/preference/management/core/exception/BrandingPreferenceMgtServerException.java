@@ -43,4 +43,3 @@ public class BrandingPreferenceMgtServerException extends BrandingPreferenceMgtE
         super(cause);
     }
 }
-

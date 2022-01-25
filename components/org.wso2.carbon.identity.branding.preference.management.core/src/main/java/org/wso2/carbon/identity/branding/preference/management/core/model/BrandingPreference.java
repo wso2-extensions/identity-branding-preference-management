@@ -68,4 +68,3 @@ public class BrandingPreference {
         this.preference = preference;
     }
 }
-

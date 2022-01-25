@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -82,7 +83,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
 
         try {
-            InputStream inputStream = BrandingPreferenceMgtUtils.generatePreferenceInputStream(preferencesJSON);
+            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
             Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
             getConfigurationManager().addResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
         } catch (ConfigurationManagementException e) {
@@ -158,7 +159,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
 
         try {
-            InputStream inputStream = BrandingPreferenceMgtUtils.generatePreferenceInputStream(preferencesJSON);
+            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
             Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
             getConfigurationManager().replaceResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
         } catch (ConfigurationManagementException e) {

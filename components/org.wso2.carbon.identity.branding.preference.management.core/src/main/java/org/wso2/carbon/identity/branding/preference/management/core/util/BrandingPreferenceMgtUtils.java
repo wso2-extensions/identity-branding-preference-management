@@ -27,30 +27,12 @@ import org.wso2.carbon.identity.branding.preference.management.core.constant.Bra
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-
 /**
  * Util class for branding preference management.
  */
 public class BrandingPreferenceMgtUtils {
 
     private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
-
-    /**
-     * Generate Branding Preference input stream.
-     *
-     * @param preferencesJSON JSON string of preferences.
-     * @return Input stream of the preferences JSON string.
-     * @throws UnsupportedEncodingException Unsupported Encoding Exception.
-     */
-    public static InputStream generatePreferenceInputStream(String preferencesJSON) throws
-            UnsupportedEncodingException {
-
-        return new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
-    }
 
     /**
      * Check whether the given string is a valid JSON or not.
@@ -145,4 +127,3 @@ public class BrandingPreferenceMgtUtils {
         return error.getMessage();
     }
 }
-
