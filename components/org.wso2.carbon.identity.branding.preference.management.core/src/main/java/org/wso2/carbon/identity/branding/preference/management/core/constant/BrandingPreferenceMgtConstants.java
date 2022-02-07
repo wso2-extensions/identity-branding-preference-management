@@ -29,9 +29,13 @@ public class BrandingPreferenceMgtConstants {
     public static final String CUSTOM_TYPE = "CUSTOM";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
+    public static final String VALIDATE_BRANDING_PREFERENCE_EVENT_NAME = "VALIDATE_BRANDING_PREFERENCE";
+    public static final String BRANDING_PREFERENCE = "branding-preference";
+    public static final String TENANT_DOMAIN = "tenant-domain";
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
+    public static final String NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE = "BSH_00001";
 
     /**
      * Enums for error messages.
@@ -57,7 +61,11 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_CHECKING_BRANDING_PREFERENCE_EXISTS("BRANDINGM_00009",
                 "Error while checking branding preference configurations existence."),
         ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION("BRANDINGM_00010",
-                "Unsupported Encoding in the branding preference configurations of the tenant: %s.");
+                "Unsupported Encoding in the branding preference configurations of the tenant: %s."),
+        ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
+                "Requested branding preference configurations are not allowed for the organization: %s."),
+        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00011",
+                "Error while validating branding preference configurations for the organization: %s.");
 
         private final String code;
         private final String message;

@@ -33,6 +33,9 @@ import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.event.IdentityEventException;
+import org.wso2.carbon.identity.event.event.Event;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,8 +43,11 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
@@ -51,11 +57,16 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.TENANT_DOMAIN;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.VALIDATE_BRANDING_PREFERENCE_EVENT_NAME;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
 
@@ -81,6 +92,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+
+        triggerBrandingPreferenceValidation(brandingPreference, tenantDomain);
+        preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
             InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
@@ -157,6 +171,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+
+        triggerBrandingPreferenceValidation(brandingPreference, tenantDomain);
+        preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
             InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
@@ -307,6 +324,29 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return resourceName;
     }
 
+    /**
+     * Trigger branding preference validation.
+     *
+     * @param brandingPreference Branding Preference.
+     * @param tenantDomain       Tenant domain.
+     */
+    private void triggerBrandingPreferenceValidation(BrandingPreference brandingPreference, String tenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(BRANDING_PREFERENCE, brandingPreference);
+        eventProperties.put(TENANT_DOMAIN, tenantDomain);
+        Event brandingPreferenceEvent = new Event(VALIDATE_BRANDING_PREFERENCE_EVENT_NAME, eventProperties);
+        try {
+            getIdentityEventService().handleEvent(brandingPreferenceEvent);
+        } catch (IdentityEventException e) {
+            if (NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE.equals(e.getErrorCode())) {
+                throw handleClientException(ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE, tenantDomain);
+            }
+            throw handleServerException(ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE, tenantDomain, e);
+        }
+    }
+
     private int getTenantId() {
 
         return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
@@ -321,5 +361,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         return BrandingPreferenceManagerComponentDataHolder.getInstance().getConfigurationManager();
     }
-}
 
+    private IdentityEventService getIdentityEventService() {
+
+        return BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
+    }
+}
