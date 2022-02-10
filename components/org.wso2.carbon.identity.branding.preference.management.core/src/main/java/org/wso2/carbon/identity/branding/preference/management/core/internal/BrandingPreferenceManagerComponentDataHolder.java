@@ -54,7 +54,7 @@ public class BrandingPreferenceManagerComponentDataHolder {
     /**
      * Return identity event service.
      *
-     * @return Identity Event Service.
+     * @return {@link IdentityEventService}.
      */
     public IdentityEventService getIdentityEventService() {
 

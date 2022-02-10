@@ -93,7 +93,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
 
-        triggerBrandingPreferenceValidation(brandingPreference, tenantDomain);
+        triggerBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
@@ -172,7 +172,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
 
-        triggerBrandingPreferenceValidation(brandingPreference, tenantDomain);
+        triggerBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
@@ -330,7 +330,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
      * @param brandingPreference Branding Preference.
      * @param tenantDomain       Tenant domain.
      */
-    private void triggerBrandingPreferenceValidation(BrandingPreference brandingPreference, String tenantDomain)
+    private void triggerBrandingPreferenceEvents(BrandingPreference brandingPreference, String tenantDomain)
             throws BrandingPreferenceMgtException {
 
         Map<String, Object> eventProperties = new HashMap<>();
@@ -338,7 +338,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         eventProperties.put(TENANT_DOMAIN, tenantDomain);
         Event brandingPreferenceEvent = new Event(VALIDATE_BRANDING_PREFERENCE_EVENT_NAME, eventProperties);
         try {
-            getIdentityEventService().handleEvent(brandingPreferenceEvent);
+            IdentityEventService eventService =
+                    BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
+            eventService.handleEvent(brandingPreferenceEvent);
         } catch (IdentityEventException e) {
             if (NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE.equals(e.getErrorCode())) {
                 throw handleClientException(ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE, tenantDomain);
@@ -360,10 +362,5 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     private ConfigurationManager getConfigurationManager() {
 
         return BrandingPreferenceManagerComponentDataHolder.getInstance().getConfigurationManager();
-    }
-
-    private IdentityEventService getIdentityEventService() {
-
-        return BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
     }
 }
