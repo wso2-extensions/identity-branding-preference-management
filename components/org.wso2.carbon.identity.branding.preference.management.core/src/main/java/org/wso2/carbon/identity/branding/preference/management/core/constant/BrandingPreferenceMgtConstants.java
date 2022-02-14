@@ -29,8 +29,11 @@ public class BrandingPreferenceMgtConstants {
     public static final String CUSTOM_TYPE = "CUSTOM";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
-    public static final String VALIDATE_BRANDING_PREFERENCE_EVENT_NAME = "VALIDATE_BRANDING_PREFERENCE";
+    public static final String PRE_ADD_BRANDING_PREFERENCE = "PRE_ADD_BRANDING_PREFERENCE";
+    public static final String PRE_UPDATE_BRANDING_PREFERENCE = "PRE_UPDATE_BRANDING_PREFERENCE";
     public static final String BRANDING_PREFERENCE = "branding-preference";
+    public static final String OLD_BRANDING_PREFERENCE = "old-branding-preference";
+    public static final String NEW_BRANDING_PREFERENCE = "new-branding-preference";
     public static final String TENANT_DOMAIN = "tenant-domain";
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";

@@ -61,12 +61,15 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.TENANT_DOMAIN;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.VALIDATE_BRANDING_PREFERENCE_EVENT_NAME;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
 
@@ -93,7 +96,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
 
-        triggerBrandingPreferenceEvents(brandingPreference, tenantDomain);
+        triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
@@ -171,8 +174,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+        BrandingPreference oldBrandingPreference = getBrandingPreference(brandingPreference.getType(),
+                brandingPreference.getName(), brandingPreference.getLocale());
 
-        triggerBrandingPreferenceEvents(brandingPreference, tenantDomain);
+        triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
@@ -325,18 +330,46 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     /**
-     * Trigger branding preference validation.
+     * Trigger pre add branding preference events.
      *
      * @param brandingPreference Branding Preference.
      * @param tenantDomain       Tenant domain.
      */
-    private void triggerBrandingPreferenceEvents(BrandingPreference brandingPreference, String tenantDomain)
+    private void triggerPreAddBrandingPreferenceEvents(BrandingPreference brandingPreference, String tenantDomain)
             throws BrandingPreferenceMgtException {
 
         Map<String, Object> eventProperties = new HashMap<>();
         eventProperties.put(BRANDING_PREFERENCE, brandingPreference);
         eventProperties.put(TENANT_DOMAIN, tenantDomain);
-        Event brandingPreferenceEvent = new Event(VALIDATE_BRANDING_PREFERENCE_EVENT_NAME, eventProperties);
+        Event brandingPreferenceEvent = new Event(PRE_ADD_BRANDING_PREFERENCE, eventProperties);
+        try {
+            IdentityEventService eventService =
+                    BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
+            eventService.handleEvent(brandingPreferenceEvent);
+        } catch (IdentityEventException e) {
+            if (NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE.equals(e.getErrorCode())) {
+                throw handleClientException(ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE, tenantDomain);
+            }
+            throw handleServerException(ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE, tenantDomain, e);
+        }
+    }
+
+    /**
+     * Trigger pre update branding preference events.
+     *
+     * @param oldBrandingPreference Old Branding Preference.
+     * @param newBrandingPreference New Branding Preference.
+     * @param tenantDomain          Tenant domain.
+     */
+    private void triggerPreUpdateBrandingPreferenceEvents(BrandingPreference oldBrandingPreference,
+                                                          BrandingPreference newBrandingPreference, String tenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        Map<String, Object> eventProperties = new HashMap<>();
+        eventProperties.put(OLD_BRANDING_PREFERENCE, oldBrandingPreference);
+        eventProperties.put(NEW_BRANDING_PREFERENCE, newBrandingPreference);
+        eventProperties.put(TENANT_DOMAIN, tenantDomain);
+        Event brandingPreferenceEvent = new Event(PRE_UPDATE_BRANDING_PREFERENCE, eventProperties);
         try {
             IdentityEventService eventService =
                     BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
