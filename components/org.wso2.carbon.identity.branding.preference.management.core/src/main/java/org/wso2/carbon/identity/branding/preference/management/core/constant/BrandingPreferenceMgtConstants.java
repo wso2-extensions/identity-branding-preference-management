@@ -54,7 +54,7 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE("BRANDINGM_00004",
                 "Error while getting branding preference configurations for tenant: %s."),
         ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE("BRANDINGM_00005",
-                "Unable to add branding preference configurations tenant: %s."),
+                "Unable to add branding preference configurations for tenant: %s."),
         ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE("BRANDINGM_00006",
                 "Unable to delete branding preference configurations for tenant: %s."),
         ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE("BRANDINGM_00007",
@@ -67,7 +67,7 @@ public class BrandingPreferenceMgtConstants {
                 "Unsupported Encoding in the branding preference configurations of the tenant: %s."),
         ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
                 "Requested branding preference configurations are not allowed for the organization: %s."),
-        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00011",
+        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00012",
                 "Error while validating branding preference configurations for the organization: %s.");
 
         private final String code;
