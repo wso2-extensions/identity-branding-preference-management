@@ -38,7 +38,6 @@ public class BrandingPreferenceMgtConstants {
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
-    public static final String NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE = "BSH_00001";
 
     /**
      * Enums for error messages.
@@ -66,7 +65,7 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION("BRANDINGM_00010",
                 "Unsupported Encoding in the branding preference configurations of the tenant: %s."),
         ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
-                "Requested branding preference configurations are not allowed for the organization: %s."),
+                "Requested branding preference configuration: %s is not allowed for the organization."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00012",
                 "Error while validating branding preference configurations for the organization: %s.");
 

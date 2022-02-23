@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
@@ -62,7 +63,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
@@ -347,8 +347,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                     BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
             eventService.handleEvent(brandingPreferenceEvent);
         } catch (IdentityEventException e) {
-            if (NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE.equals(e.getErrorCode())) {
-                throw handleClientException(ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE, tenantDomain);
+            if (ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE.getCode().equals(e.getErrorCode())) {
+                throw new BrandingPreferenceMgtClientException(e.getMessage(), e.getErrorCode());
             }
             throw handleServerException(ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
@@ -375,8 +375,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                     BrandingPreferenceManagerComponentDataHolder.getInstance().getIdentityEventService();
             eventService.handleEvent(brandingPreferenceEvent);
         } catch (IdentityEventException e) {
-            if (NOT_ALLOWED_BRANDING_CUSTOMIZATIONS_ERROR_CODE.equals(e.getErrorCode())) {
-                throw handleClientException(ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE, tenantDomain);
+            if (ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE.getCode().equals(e.getErrorCode())) {
+                throw new BrandingPreferenceMgtClientException(e.getMessage(), e.getErrorCode());
             }
             throw handleServerException(ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
