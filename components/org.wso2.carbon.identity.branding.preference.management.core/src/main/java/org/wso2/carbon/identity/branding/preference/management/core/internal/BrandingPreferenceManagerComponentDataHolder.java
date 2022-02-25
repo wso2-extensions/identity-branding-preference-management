@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.management.core.internal;
 
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 
 /**
  * A class to keep the data of the branding preference management component.
@@ -29,6 +30,7 @@ public class BrandingPreferenceManagerComponentDataHolder {
             new BrandingPreferenceManagerComponentDataHolder();
 
     private ConfigurationManager configurationManager;
+    private IdentityEventService identityEventService;
 
     private BrandingPreferenceManagerComponentDataHolder() {
 
@@ -47,5 +49,25 @@ public class BrandingPreferenceManagerComponentDataHolder {
     public void setConfigurationManager(ConfigurationManager configurationManager) {
 
         this.configurationManager = configurationManager;
+    }
+
+    /**
+     * Get identity event service reference.
+     *
+     * @return {@link IdentityEventService}.
+     */
+    public IdentityEventService getIdentityEventService() {
+
+        return identityEventService;
+    }
+
+    /**
+     * Set identity event service.
+     *
+     * @param identityEventService Identity Event Service.
+     */
+    public void setIdentityEventService(IdentityEventService identityEventService) {
+
+        this.identityEventService = identityEventService;
     }
 }

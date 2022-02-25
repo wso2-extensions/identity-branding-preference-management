@@ -29,6 +29,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.event.services.IdentityEventService;
 
 /**
  * OSGi declarative services component which handles registration and un-registration of branding preference management
@@ -74,6 +75,29 @@ public class BrandingPreferenceManagerComponent {
         BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(null);
         if (log.isDebugEnabled()) {
             log.debug("Unsetting the ConfigurationManager.");
+        }
+    }
+
+    @Reference(
+            name = "identity.event.service",
+            service = IdentityEventService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetIdentityEventService"
+    )
+    protected void setIdentityEventService(IdentityEventService identityEventService) {
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(identityEventService);
+        if (log.isDebugEnabled()) {
+            log.debug("IdentityEventService set in Branding Preference Management bundle");
+        }
+    }
+
+    protected void unsetIdentityEventService(IdentityEventService identityEventService) {
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(null);
+        if (log.isDebugEnabled()) {
+            log.debug("IdentityEventService unset in Branding Preference Management bundle");
         }
     }
 }
