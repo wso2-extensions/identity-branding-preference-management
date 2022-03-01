@@ -36,6 +36,13 @@
     <description>WSO2 Carbon - Branding Preference Management</description>
     <url>http://wso2.org</url>
 
+    <scm>
+        <url>https://github.com/wso2-extensions/identity-branding-preference-management.git</url>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/identity-branding-preference-management.git</developerConnection>
+        <connection>scm:git:https://github.com/wso2-extensions/identity-branding-preference-management.git</connection>
+        <tag>HEAD</tag>
+    </scm>
+
     <modules>
         <module>components/org.wso2.carbon.identity.branding.preference.management.core</module>
         <module>features/org.wso2.carbon.identity.branding.preference.management.core.server.feature</module>
