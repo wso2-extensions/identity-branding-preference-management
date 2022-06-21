@@ -1,0 +1,28 @@
+{
+  "organizationDetails": {
+    "displayName": "Bifrost Organization",
+    "copyrightText": "© 2022 Bifrost. All Rights Reserved.",
+    "siteTitle": "Login - Bifrost",
+    "supportEmail": "support@bifrost.com"
+  },
+  "colors": {
+    "primary": "#e73940"
+  },
+  "images": {
+    "favicon": {
+      "imgURL": "https://cdn.statically.io/bifrost/images/favicon.ico"
+    },
+    "logo": {
+      "altText": "Bifrost Logo",
+      "imgURL": "https://cdn.statically.io/bifrost/images/bifrost-mini-logo.png"
+    }
+  },
+  "urls": {
+    "privacyPolicyURL": "https://bifrost.com/privacy-policy",
+    "termsOfUseURL": "https://bifrost.com/terms-of-service/",
+    "cookiePolicyURL": "https://bifrost.com/privacy-policy/#cookie-policy"
+  },
+  "configs": {
+    "isBrandingEnabled": true
+  }
+}
