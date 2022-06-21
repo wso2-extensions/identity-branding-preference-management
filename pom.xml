@@ -142,21 +142,9 @@
                 <version>${jacoco.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng</artifactId>
-                <version>${org.powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito</artifactId>
-                <version>${org.powermock.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-testng-common</artifactId>
-                <version>${org.powermock.version}</version>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${org.mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -373,7 +361,7 @@
         <jacoco.version>0.8.2</jacoco.version>
         <jmockit.version>1.44</jmockit.version>
         <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
-        <org.powermock.version>1.7.4</org.powermock.version>
+        <org.mockito.version>2.1.0</org.mockito.version>
         <h2database.version>1.4.199</h2database.version>
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
     </properties>

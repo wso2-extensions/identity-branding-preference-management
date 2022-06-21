@@ -18,10 +18,9 @@
 
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
-<suite name="BrandingPreferenceManagerTestSuite"
-       object-factory="org.powermock.modules.testng.PowerMockObjectFactory">
+<suite name="BrandingPreferenceManagementTestSuite">
 
-    <test name="ConfigurationManagementServerTests" preserve-order="true" parallel="false">
+    <test name="BrandingPreferenceManagementTests" preserve-order="true" parallel="false">
         <classes>
             <class name="org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImplTest"/>
         </classes>

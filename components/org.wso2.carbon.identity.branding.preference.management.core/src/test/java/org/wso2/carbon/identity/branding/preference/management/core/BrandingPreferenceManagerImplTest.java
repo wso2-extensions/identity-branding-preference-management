@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.branding.preference.management.core;
 
 import org.json.JSONObject;
 import org.mockito.Mock;
-import org.powermock.modules.testng.PowerMockTestCase;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -41,8 +40,9 @@ import org.wso2.carbon.user.core.UserStoreException;
 
 import java.nio.file.Paths;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.MockitoAnnotations.initMocks;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID;
@@ -54,7 +54,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
  * Unit tests for BrandingPreferenceManagerImpl.
  */
 @WithH2Database(jndiName = "jdbc/WSO2IdentityDB", files = {"dbscripts/config/h2.sql"})
-public class BrandingPreferenceManagerImplTest extends PowerMockTestCase {
+public class BrandingPreferenceManagerImplTest {
 
     public static final int SAMPLE_TENANT_ID_ABC = 1;
     public static final String SAMPLE_TENANT_DOMAIN_NAME_ABC = "abc";
@@ -67,6 +67,7 @@ public class BrandingPreferenceManagerImplTest extends PowerMockTestCase {
     @BeforeMethod
     public void setUp() throws Exception {
 
+        initMocks(this);
         setCarbonHome();
         setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
         brandingPreferenceManagerImpl = new BrandingPreferenceManagerImpl();
