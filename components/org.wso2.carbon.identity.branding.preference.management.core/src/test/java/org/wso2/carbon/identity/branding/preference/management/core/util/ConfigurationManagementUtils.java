@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.model.ConfigurationManage
 import java.util.Collections;
 
 /**
- * Utility class for Configuration Management functions.
+ * Utility class for Configuration Management functions of the uni tests.
  */
 public class ConfigurationManagementUtils {
 

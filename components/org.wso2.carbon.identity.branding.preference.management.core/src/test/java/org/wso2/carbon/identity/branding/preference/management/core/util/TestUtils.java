@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -30,14 +29,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 
+/**
+ * Test Utils for the branding preference manager tests.
+ */
 public class TestUtils {
 
     /**
      * Read preferences json in the samples.
      *
-     * @param filename file name to be read
+     * @param filename file name to be read.
      * @return Preferences object.
-     * @throws IOException
+     * @throws IOException If error occurred while reading file.
      */
     public static Object getPreferenceFromFile(String filename) throws IOException {
 
@@ -67,8 +69,8 @@ public class TestUtils {
     /**
      * This is used to convert input stream to a string.
      *
-     * @param inputStream Event Publisher Configuration in as a input stream.
-     * @throws IOException
+     * @param inputStream Event Publisher Configuration in as an input stream.
+     * @throws IOException If error occurred while converting input stream to a string.
      */
     public static String convertInputStreamToString(InputStream inputStream) throws IOException {
 
@@ -84,25 +86,4 @@ public class TestUtils {
         return stringBuilder.toString();
     }
 
-    /**
-     * Read a resource in class path
-     *
-     * @param filename file name to be read
-     * @return content of the file
-     * @throws IOException
-     */
-    public static String readResource(String filename, Class cClass) throws IOException {
-
-        try (InputStream resourceAsStream = cClass.getResourceAsStream(filename);
-             BufferedInputStream bufferedInputStream = new BufferedInputStream(resourceAsStream)) {
-            StringBuilder resourceFile = new StringBuilder();
-
-            int character;
-            while ((character = bufferedInputStream.read()) != -1) {
-                char value = (char) character;
-                resourceFile.append(value);
-            }
-            return resourceFile.toString();
-        }
-    }
 }
