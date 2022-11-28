@@ -41,7 +41,6 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +60,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
@@ -78,7 +76,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
  */
 public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager {
 
-    private static final Log log = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
+    private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
 
     @Override
     public BrandingPreference addBrandingPreference(BrandingPreference brandingPreference)
@@ -100,22 +98,20 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
+            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
             Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
             getConfigurationManager().addResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Branding preferences are already exists for tenant: " + tenantDomain, e);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Branding preferences are already exists for tenant: " + tenantDomain, e);
                 }
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
             }
             throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
-        } catch (UnsupportedEncodingException e) {
-            throw handleClientException(ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION, tenantDomain, e);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Branding preference for tenant: " + tenantDomain + " added successfully");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Branding preference for tenant: " + tenantDomain + " added successfully");
         }
         return brandingPreference;
     }
@@ -141,14 +137,14 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             if (inputStream == null) {
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
             }
-            if (log.isDebugEnabled()) {
-                log.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
             }
             return buildBrandingPreferenceFromResource(inputStream, type, name, locale);
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Can not find a branding preference configurations for tenant: " + tenantDomain, e);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain, e);
                 }
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
             }
@@ -181,16 +177,14 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8.name()));
+            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
             Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
             getConfigurationManager().replaceResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
-        } catch (UnsupportedEncodingException e) {
-            throw handleClientException(ERROR_CODE_UNSUPPORTED_ENCODING_EXCEPTION, tenantDomain, e);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
         }
         return brandingPreference;
     }
@@ -211,8 +205,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
         }
     }
 
@@ -235,10 +229,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             }
             throw handleServerException(ERROR_CODE_ERROR_CHECKING_BRANDING_PREFERENCE_EXISTS, e);
         }
-        if (resource == null) {
-            return false;
-        }
-        return true;
+        return resource != null;
     }
 
     /**
@@ -254,8 +245,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             preferencesJSON = mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Error while generating JSON string from the branding preference request.", e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error while generating JSON string from the branding preference request.", e);
             }
         }
         return preferencesJSON;
@@ -325,8 +316,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
           So always use resource name as default resource name.
           Default resource name is the name used to save organization level branding for 'en-US' language.
          */
-        String resourceName = getTenantId() + RESOURCE_NAME_SEPARATOR + locale;
-        return resourceName;
+        return getTenantId() + RESOURCE_NAME_SEPARATOR + locale;
     }
 
     /**

@@ -41,16 +41,20 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 )
 public class BrandingPreferenceManagerComponent {
 
-    private static final Log log = LogFactory.getLog(BrandingPreferenceManagerComponent.class);
+    private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerComponent.class);
 
     @Activate
     protected void activate(ComponentContext context) {
 
-        context.getBundleContext()
-                .registerService(BrandingPreferenceManager.class, new BrandingPreferenceManagerImpl(), null);
+        try {
+            context.getBundleContext()
+                    .registerService(BrandingPreferenceManager.class, new BrandingPreferenceManagerImpl(), null);
 
-        if (log.isDebugEnabled()) {
-            log.debug("BrandingPreferenceMgt Service Component is activated.");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("BrandingPreferenceMgt Service Component is activated.");
+            }
+        } catch (Exception e) {
+            LOG.error("Error while activating the branding preference manager component.");
         }
     }
 
@@ -61,20 +65,19 @@ public class BrandingPreferenceManagerComponent {
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unsetConfigurationManager"
     )
-
     protected void setConfigurationManager(ConfigurationManager configurationManager) {
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
-        if (log.isDebugEnabled()) {
-            log.debug("Setting the ConfigurationManager.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting the ConfigurationManager.");
         }
     }
 
     protected void unsetConfigurationManager(ConfigurationManager configurationManager) {
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(null);
-        if (log.isDebugEnabled()) {
-            log.debug("Unsetting the ConfigurationManager.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Unsetting the ConfigurationManager.");
         }
     }
 
@@ -88,16 +91,16 @@ public class BrandingPreferenceManagerComponent {
     protected void setIdentityEventService(IdentityEventService identityEventService) {
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(identityEventService);
-        if (log.isDebugEnabled()) {
-            log.debug("IdentityEventService set in Branding Preference Management bundle");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityEventService set in Branding Preference Management bundle");
         }
     }
 
     protected void unsetIdentityEventService(IdentityEventService identityEventService) {
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(null);
-        if (log.isDebugEnabled()) {
-            log.debug("IdentityEventService unset in Branding Preference Management bundle");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("IdentityEventService unset in Branding Preference Management bundle");
         }
     }
 }
