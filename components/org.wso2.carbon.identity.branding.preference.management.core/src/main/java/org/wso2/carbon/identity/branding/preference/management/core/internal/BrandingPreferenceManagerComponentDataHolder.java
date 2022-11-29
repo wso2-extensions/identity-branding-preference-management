@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
  */
 public class BrandingPreferenceManagerComponentDataHolder {
 
-    private static BrandingPreferenceManagerComponentDataHolder brandingPreferenceManagerComponentDataHolder =
+    private static final BrandingPreferenceManagerComponentDataHolder brandingPreferenceManagerComponentDataHolder =
             new BrandingPreferenceManagerComponentDataHolder();
 
     private ConfigurationManager configurationManager;
