@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
         <artifactId>identity-branding-preference-management</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.3</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
