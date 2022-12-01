@@ -47,8 +47,7 @@ public class TestUtils {
         InputStream fileStream = FileUtils.openInputStream(sampleResourceFile);
         String preferencesJSON = convertInputStreamToString(fileStream);
         ObjectMapper mapper = new ObjectMapper();
-        Object preference = mapper.readValue(preferencesJSON, Object.class);
-        return preference;
+        return mapper.readValue(preferencesJSON, Object.class);
     }
 
     /**

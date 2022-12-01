@@ -53,7 +53,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 /**
  * Unit tests for BrandingPreferenceManagerImpl.
  */
-@WithH2Database(jndiName = "jdbc/WSO2IdentityDB", files = {"dbscripts/config/h2.sql"})
+@WithH2Database(files = {"dbscripts/config/h2.sql"})
 public class BrandingPreferenceManagerImplTest {
 
     public static final int SAMPLE_TENANT_ID_ABC = 1;
@@ -61,7 +61,6 @@ public class BrandingPreferenceManagerImplTest {
 
     @Mock
     IdentityEventService identityEventService;
-    private ConfigurationManager configurationManager;
     private BrandingPreferenceManagerImpl brandingPreferenceManagerImpl;
 
     @BeforeMethod
@@ -72,7 +71,7 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
         brandingPreferenceManagerImpl = new BrandingPreferenceManagerImpl();
 
-        configurationManager = ConfigurationManagementUtils.getConfigurationManager();
+        ConfigurationManager configurationManager = ConfigurationManagementUtils.getConfigurationManager();
         BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(identityEventService);
@@ -145,7 +144,7 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @DataProvider(name = "invalidBrandingPreferenceDataProvider")
-    public Object[][] invalidBrandingPreferenceDataProvider() throws Exception {
+    public Object[][] invalidBrandingPreferenceDataProvider() {
 
         BrandingPreference brandingPreference1 = new BrandingPreference();
         brandingPreference1.setType(ORGANIZATION_TYPE);
@@ -173,7 +172,7 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "invalidBrandingPreferenceDataProvider")
-    public void testAddInvalidBrandingPreference(Object brandingPreference) throws Exception {
+    public void testAddInvalidBrandingPreference(Object brandingPreference) {
 
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
 
@@ -206,7 +205,7 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @DataProvider(name = "notExistingBrandingPreferenceDataProvider")
-    public Object[][] notExistingBrandingPreferenceDataProvider() throws Exception {
+    public Object[][] notExistingBrandingPreferenceDataProvider() {
 
         return new Object[][]{
                 {SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
