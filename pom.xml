@@ -43,6 +43,7 @@
 
     <modules>
         <module>components/org.wso2.carbon.identity.branding.preference.management.core</module>
+        <module>components/org.wso2.carbon.identity.branding.preference.resolver</module>
         <module>features/org.wso2.carbon.identity.branding.preference.management.core.server.feature</module>
     </modules>
 
@@ -125,6 +126,11 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
+                <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
+                <version>${identity.organization.management.core.version}</version>
             </dependency>
 
             <!-- Testing related dependencies -->
@@ -327,7 +333,7 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
 
         <!-- Carbon kernel version -->
-        <carbon.kernel.version>4.7.0-m6</carbon.kernel.version>
+        <carbon.kernel.version>4.7.0</carbon.kernel.version>
         <carbon.kernel.feature.version>4.6.0</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.6.0, 5.0.0)</carbon.kernel.package.import.version.range>
 
@@ -337,6 +343,10 @@
         <!-- Carbon identity framework version -->
         <carbon.identity.framework.version>5.20.267</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 6.0.0)</carbon.identity.package.import.version.range>
+
+        <identity.organization.management.core.version>1.0.28</identity.organization.management.core.version>
+        <org.wso2.identity.organization.mgt.core.imp.pkg.version.range>[1.0.0,2.0.0)
+        </org.wso2.identity.organization.mgt.core.imp.pkg.version.range>
 
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>

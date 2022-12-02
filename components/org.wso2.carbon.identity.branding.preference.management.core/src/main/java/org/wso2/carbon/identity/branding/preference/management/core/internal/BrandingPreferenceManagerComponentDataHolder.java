@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core.internal;
 
+import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 
@@ -31,6 +32,7 @@ public class BrandingPreferenceManagerComponentDataHolder {
 
     private ConfigurationManager configurationManager;
     private IdentityEventService identityEventService;
+    private UIBrandingPreferenceResolver uiBrandingPreferenceResolver;
 
     private BrandingPreferenceManagerComponentDataHolder() {
 
@@ -69,5 +71,16 @@ public class BrandingPreferenceManagerComponentDataHolder {
     public void setIdentityEventService(IdentityEventService identityEventService) {
 
         this.identityEventService = identityEventService;
+    }
+
+    public UIBrandingPreferenceResolver getUiBrandingPreferenceResolver() {
+
+        return uiBrandingPreferenceResolver;
+    }
+
+    public void setUiBrandingPreferenceResolver(
+            UIBrandingPreferenceResolver uiBrandingPreferenceResolver) {
+
+        this.uiBrandingPreferenceResolver = uiBrandingPreferenceResolver;
     }
 }

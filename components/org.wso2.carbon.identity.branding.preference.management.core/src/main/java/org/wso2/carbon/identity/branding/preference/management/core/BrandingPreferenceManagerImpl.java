@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
@@ -120,38 +121,57 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     public BrandingPreference getBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
 
-        String resourceName = getResourceName(type, name, locale);
         String tenantDomain = getTenantDomain();
-        try {
-            // Return default branding preference.
-            List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(BRANDING_RESOURCE_TYPE, resourceName);
-            if (resourceFiles.isEmpty()) {
+
+        if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
+            return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                    .resolveBranding(type, name, locale);
+        } else {
+            Optional<BrandingPreference> brandingPreference =
+                    getBrandingPreference(type, name, locale, tenantDomain);
+
+            if (brandingPreference.isPresent()) {
+                return brandingPreference.get();
+            } else {
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
             }
+//            return brandingPreference.orElseThrow(
+//                    () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain));
+        }
+    }
+
+    private Optional<BrandingPreference> getBrandingPreference(String type, String name, String locale,
+                                                               String tenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        try {
+            // Return default branding preference.
+            String resourceName = getResourceName(type, name, locale);
+            List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(BRANDING_RESOURCE_TYPE, resourceName);
+            if (resourceFiles.isEmpty()) {
+                return Optional.empty();
+            }
             if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
+                return Optional.empty();
             }
 
             InputStream inputStream = getConfigurationManager().getFileById
                     (BRANDING_RESOURCE_TYPE, resourceName, resourceFiles.get(0).getId());
             if (inputStream == null) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
+                return Optional.empty();
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
             }
-            return buildBrandingPreferenceFromResource(inputStream, type, name, locale);
+            return Optional.of(buildBrandingPreferenceFromResource(inputStream, type, name, locale));
         } catch (ConfigurationManagementException e) {
-            if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain, e);
-                }
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
+            if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
             }
-            throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
         } catch (IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, tenantDomain);
         }
+        return Optional.empty();
     }
 
     @Override
