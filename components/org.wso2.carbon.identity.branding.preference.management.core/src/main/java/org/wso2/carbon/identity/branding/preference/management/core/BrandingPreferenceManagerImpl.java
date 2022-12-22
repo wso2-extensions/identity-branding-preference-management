@@ -123,20 +123,24 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         String tenantDomain = getTenantDomain();
 
+        Optional<BrandingPreference> brandingPreference = getBrandingPreference(type, name, locale, tenantDomain);
+
+        if (brandingPreference.isPresent()) {
+            return brandingPreference.get();
+        } else {
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
+        }
+    }
+
+    @Override
+    public BrandingPreference resolveBrandingPreference(String type, String name, String locale)
+            throws BrandingPreferenceMgtException {
+
         if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
             return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
                     .resolveBranding(type, name, locale);
         } else {
-            Optional<BrandingPreference> brandingPreference =
-                    getBrandingPreference(type, name, locale, tenantDomain);
-
-            if (brandingPreference.isPresent()) {
-                return brandingPreference.get();
-            } else {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
-            }
-//            return brandingPreference.orElseThrow(
-//                    () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain));
+            return getBrandingPreference(type, name, locale);
         }
     }
 

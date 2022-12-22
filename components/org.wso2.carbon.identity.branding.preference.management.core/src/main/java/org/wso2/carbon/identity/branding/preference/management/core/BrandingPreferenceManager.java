@@ -49,6 +49,18 @@ public interface BrandingPreferenceManager {
             throws BrandingPreferenceMgtException;
 
     /**
+     * This API is used to retrieve a resolved branding preference.
+     *
+     * @param type   Type of the branding preference.
+     * @param name   Name of the tenant/application.
+     * @param locale language preference of the branding.
+     * @return The resolved branding preference. If not exists return the default branding preference.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    BrandingPreference resolveBrandingPreference(String type, String name, String locale)
+            throws BrandingPreferenceMgtException;
+
+    /**
      * This API is used to replace a given branding preference.
      *
      * @param brandingPreference Branding preference to be added.
