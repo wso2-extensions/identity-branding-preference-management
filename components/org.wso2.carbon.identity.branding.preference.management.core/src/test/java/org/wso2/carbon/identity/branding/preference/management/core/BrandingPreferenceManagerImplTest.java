@@ -204,6 +204,30 @@ public class BrandingPreferenceManagerImplTest {
                 (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
     }
 
+    @Test(dataProvider = "brandingPreferenceDataProvider")
+    public void testResolveBrandingPreference(Object brandingPreference, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        // Adding new branding preference.
+        brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+
+        //  Retrieving added branding preference.
+        BrandingPreference retrievedBP =
+                brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
+                        inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+        Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+    }
+
     @DataProvider(name = "notExistingBrandingPreferenceDataProvider")
     public Object[][] notExistingBrandingPreferenceDataProvider() {
 
