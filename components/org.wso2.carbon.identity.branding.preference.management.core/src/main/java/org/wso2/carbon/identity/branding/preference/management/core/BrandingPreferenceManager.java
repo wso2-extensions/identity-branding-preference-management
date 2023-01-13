@@ -41,7 +41,7 @@ public interface BrandingPreferenceManager {
      *
      * @param type   Type of the branding preference.
      * @param name   Name of the tenant/application.
-     * @param locale language preference of the branding.
+     * @param locale Language preference of the branding.
      * @return The requested branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
@@ -53,7 +53,7 @@ public interface BrandingPreferenceManager {
      *
      * @param type   Type of the branding preference.
      * @param name   Name of the tenant/application.
-     * @param locale language preference of the branding.
+     * @param locale Language preference of the branding.
      * @return The resolved branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */

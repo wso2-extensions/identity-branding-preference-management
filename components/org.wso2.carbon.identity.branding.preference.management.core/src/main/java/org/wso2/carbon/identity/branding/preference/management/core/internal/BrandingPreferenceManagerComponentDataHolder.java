@@ -78,8 +78,7 @@ public class BrandingPreferenceManagerComponentDataHolder {
         return uiBrandingPreferenceResolver;
     }
 
-    public void setUiBrandingPreferenceResolver(
-            UIBrandingPreferenceResolver uiBrandingPreferenceResolver) {
+    public void setUiBrandingPreferenceResolver(UIBrandingPreferenceResolver uiBrandingPreferenceResolver) {
 
         this.uiBrandingPreferenceResolver = uiBrandingPreferenceResolver;
     }
