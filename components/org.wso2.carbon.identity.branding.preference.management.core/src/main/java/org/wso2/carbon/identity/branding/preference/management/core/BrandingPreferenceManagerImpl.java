@@ -155,6 +155,17 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     @Override
+    public BrandingPreference resolveBrandingPreference(String type, String name, String locale)
+            throws BrandingPreferenceMgtException {
+
+        if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
+            return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                    .resolveBranding(type, name, locale);
+        }
+        return getBrandingPreference(type, name, locale);
+    }
+
+    @Override
     public BrandingPreference replaceBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
 

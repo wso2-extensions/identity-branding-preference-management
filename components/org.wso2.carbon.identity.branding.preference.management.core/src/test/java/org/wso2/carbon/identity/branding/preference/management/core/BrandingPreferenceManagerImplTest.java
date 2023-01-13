@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.util.ConfigurationManagementUtils;
+import org.wso2.carbon.identity.branding.preference.management.core.util.MockUIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -202,6 +203,52 @@ public class BrandingPreferenceManagerImplTest {
         // Deleting added branding preference.
         brandingPreferenceManagerImpl.deleteBrandingPreference
                 (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+    }
+
+    @Test(dataProvider = "brandingPreferenceDataProvider")
+    public void testResolveBrandingPreference(Object brandingPreference, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        // Adding new branding preference.
+        brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+
+        //  Retrieving added branding preference.
+        BrandingPreference retrievedBP =
+                brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
+                        inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+        Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+    }
+
+    @Test(dataProvider = "brandingPreferenceDataProvider")
+    public void testResolveBrandingPreferenceWithResolver(Object brandingPreference, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
+        resolver.setBranding(inputBP);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+
+        BrandingPreference retrievedBP =
+                brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
+                        inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+        Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
     }
 
     @DataProvider(name = "notExistingBrandingPreferenceDataProvider")

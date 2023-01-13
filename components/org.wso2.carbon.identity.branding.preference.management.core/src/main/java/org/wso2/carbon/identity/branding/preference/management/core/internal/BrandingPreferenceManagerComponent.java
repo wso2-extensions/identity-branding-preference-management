@@ -28,6 +28,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
+import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 
@@ -101,6 +102,30 @@ public class BrandingPreferenceManagerComponent {
         BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(null);
         if (LOG.isDebugEnabled()) {
             LOG.debug("IdentityEventService unset in Branding Preference Management bundle");
+        }
+    }
+
+    @Reference(
+            name = "ui.branding.preference.resolver",
+            service = UIBrandingPreferenceResolver.class,
+            cardinality = ReferenceCardinality.OPTIONAL,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unUIBrandingResolveService"
+    )
+    protected void setUIBrandingResolveService(UIBrandingPreferenceResolver uiBrandingPreferenceResolver) {
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .setUiBrandingPreferenceResolver(uiBrandingPreferenceResolver);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("UIBrandingPreferenceResolver set in Branding Preference Management bundle");
+        }
+    }
+
+    protected void unUIBrandingResolveService(UIBrandingPreferenceResolver identityEventService) {
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setIdentityEventService(null);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("UIBrandingPreferenceResolver unset in Branding Preference Management bundle");
         }
     }
 }
