@@ -336,7 +336,7 @@
 
         <!-- Carbon identity framework version -->
         <carbon.identity.framework.version>5.20.267</carbon.identity.framework.version>
-        <carbon.identity.package.import.version.range>[5.20.0, 6.0.0)</carbon.identity.package.import.version.range>
+        <carbon.identity.package.import.version.range>[5.20.0, 7.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
