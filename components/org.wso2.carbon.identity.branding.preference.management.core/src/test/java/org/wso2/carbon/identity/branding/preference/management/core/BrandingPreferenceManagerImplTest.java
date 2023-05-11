@@ -47,6 +47,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.TestUtils.getPreferenceFromFile;
@@ -59,6 +60,8 @@ public class BrandingPreferenceManagerImplTest {
 
     public static final int SAMPLE_TENANT_ID_ABC = 1;
     public static final String SAMPLE_TENANT_DOMAIN_NAME_ABC = "abc";
+    public static final String SAMPLE_APPLICATION_NAME_1 = "SampleApp1";
+    public static final String SAMPLE_APPLICATION_NAME_2 = "SampleApp2";
 
     @Mock
     IdentityEventService identityEventService;
@@ -91,6 +94,34 @@ public class BrandingPreferenceManagerImplTest {
         BrandingPreference brandingPreference2 = new BrandingPreference();
         brandingPreference2.setType(ORGANIZATION_TYPE);
         brandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        brandingPreference2.setLocale(DEFAULT_LOCALE);
+        brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        BrandingPreference brandingPreference3 = new BrandingPreference();
+        brandingPreference3.setType(APPLICATION_TYPE);
+        brandingPreference3.setName(SAMPLE_APPLICATION_NAME_1);
+        brandingPreference3.setLocale(DEFAULT_LOCALE);
+        brandingPreference3.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        return new Object[][]{
+                {brandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {brandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+                {brandingPreference3, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+        };
+    }
+
+    @DataProvider(name = "applicationBrandingPreferenceDataProvider")
+    public Object[][] applicationBrandingPreferenceDataProvider() throws Exception {
+
+        BrandingPreference brandingPreference1 = new BrandingPreference();
+        brandingPreference1.setType(APPLICATION_TYPE);
+        brandingPreference1.setName(SAMPLE_APPLICATION_NAME_1);
+        brandingPreference1.setLocale(DEFAULT_LOCALE);
+        brandingPreference1.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        BrandingPreference brandingPreference2 = new BrandingPreference();
+        brandingPreference2.setType(APPLICATION_TYPE);
+        brandingPreference2.setName(SAMPLE_APPLICATION_NAME_2);
         brandingPreference2.setLocale(DEFAULT_LOCALE);
         brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
@@ -249,6 +280,30 @@ public class BrandingPreferenceManagerImplTest {
         Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
 
         BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
+    }
+
+    @Test(dataProvider = "applicationBrandingPreferenceDataProvider")
+    public void testResolveApplicationBrandingPreference(Object brandingPreference, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        // Adding new branding preference.
+        brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+
+        //  Retrieving added branding preference.
+        BrandingPreference retrievedBP =
+                brandingPreferenceManagerImpl.resolveApplicationBrandingPreference(inputBP.getType(), inputBP.getName(),
+                        inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+        Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
     }
 
     @DataProvider(name = "notExistingBrandingPreferenceDataProvider")
