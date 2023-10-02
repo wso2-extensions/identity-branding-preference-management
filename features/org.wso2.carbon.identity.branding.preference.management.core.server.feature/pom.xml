@@ -37,6 +37,10 @@
             <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
             <artifactId>org.wso2.carbon.identity.branding.preference.management.core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
+            <artifactId>org.wso2.carbon.identity.branding.preference.resolver</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -62,6 +66,7 @@
                             </adviceFile>
                             <bundles>
                                 <bundleDef>org.wso2.carbon.identity.branding.preference.management:org.wso2.carbon.identity.branding.preference.management.core</bundleDef>
+                                <bundleDef>org.wso2.carbon.identity.branding.preference.management:org.wso2.carbon.identity.branding.preference.resolver</bundleDef>
                             </bundles>
                             <importFeatures>
                                 <importFeatureDef>org.wso2.carbon.core:compatible:${carbon.kernel.feature.version}</importFeatureDef>
