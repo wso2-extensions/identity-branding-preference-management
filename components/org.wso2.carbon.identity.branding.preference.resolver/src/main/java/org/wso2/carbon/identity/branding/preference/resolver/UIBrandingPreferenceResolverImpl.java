@@ -116,12 +116,15 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             try {
-                // Get the details of the parent organization and resolve the branding preferences.
                 Organization organization = organizationManager.getOrganization(organizationId, false, false);
+                // There's no need to resolve branding preferences for super tenant since it is the root organization.
                 if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
+                    // Get the details of the parent organization and resolve the branding preferences.
                     String parentId = organization.getParent().getId();
                     String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
                     int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+
+                    // Get the minimum hierarchy depth that needs to be reached to resolve branding preference
                     int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
 
                     while (parentDepthInHierarchy >= minHierarchyDepth) {
