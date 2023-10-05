@@ -410,9 +410,22 @@ public class BrandingPreferenceManagerImplTest {
         Assert.assertEquals(addedCT.getLocale(), inputCT.getLocale());
         Assert.assertEquals(addedCT.getScreen(), inputCT.getScreen());
 
+        // Retrieving added custom text preference.
+        CustomText retrievedCT = brandingPreferenceManagerImpl.getCustomText
+                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
+        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
+        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
+        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
+        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
+        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
+
         // Deleting added custom text preference.
         brandingPreferenceManagerImpl.deleteCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(),
                 inputCT.getLocale());
+
+        // Retrieving deleted custom text preference.
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale()));
     }
 
     @DataProvider(name = "invalidCustomTextPreferenceDataProvider")
@@ -454,30 +467,6 @@ public class BrandingPreferenceManagerImplTest {
         // Adding new custom text preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .addCustomText(inputCT));
-    }
-
-    @Test(dataProvider = "customTextPreferenceDataProvider")
-    public void testGetCustomTextPreference(Object customText, String tenantDomain, int tenantId)
-            throws Exception {
-
-        setCarbonContextForTenant(tenantDomain, tenantId);
-        CustomText inputCT = (CustomText) customText;
-
-        // Adding new custom text preference.
-        CustomText addedCT = brandingPreferenceManagerImpl.addCustomText(inputCT);
-
-        // Retrieving added custom text preference.
-        CustomText retrievedCT = brandingPreferenceManagerImpl.getCustomText
-                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
-        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
-        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
-        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
-        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
-        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
-
-        // Deleting added custom text preference.
-        brandingPreferenceManagerImpl.deleteCustomText
-                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
     }
 
     @Test(dataProvider = "customTextPreferenceDataProvider")
@@ -619,27 +608,6 @@ public class BrandingPreferenceManagerImplTest {
 
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .replaceCustomText(newCT));
-    }
-
-    @Test(dataProvider = "customTextPreferenceDataProvider")
-    public void testDeleteCustomText(Object customText, String tenantDomain, int tenantId)
-            throws Exception {
-
-        setCarbonContextForTenant(tenantDomain, tenantId);
-        CustomText inputCT = (CustomText) customText;
-
-        // Adding new custom text preference.
-        CustomText addedCT = brandingPreferenceManagerImpl.addCustomText(inputCT);
-        Assert.assertEquals(addedCT.getPreference(), inputCT.getPreference());
-        Assert.assertEquals(addedCT.getName(), inputCT.getName());
-
-        // Deleting added custom text preference.
-        brandingPreferenceManagerImpl.deleteCustomText
-                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
-
-        // Retrieving deleted custom text preference.
-        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
-                .getCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale()));
     }
 
     @Test(dataProvider = "notExistingCustomTextDataProvider")
