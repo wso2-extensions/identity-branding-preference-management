@@ -107,8 +107,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
         } catch (ConfigurationManagementException e) {
@@ -118,6 +117,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 }
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
             }
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
+        } catch (IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -197,11 +198,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
-        } catch (ConfigurationManagementException e) {
+        } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -245,8 +245,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE, tenantDomain);
         }
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource customTextPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextPreferenceResource);
         } catch (ConfigurationManagementException e) {
@@ -256,6 +255,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 }
                 throw handleClientException(ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS, tenantDomain);
             }
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+        } catch (IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -274,11 +275,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             List<ResourceFile> resourceFiles =
                     getConfigurationManager().getFiles(CUSTOM_TEXT_RESOURCE_TYPE, resourceName);
             if (resourceFiles.isEmpty()) {
-                LOG.info("resourceFiles.isEmpty()");
                 throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
             }
             if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
-                LOG.info("StringUtils.isBlank(resourceFiles.get(0).getId())");
                 throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
             }
 
@@ -304,6 +303,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
     }
 
+    @Override
     public CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
@@ -314,12 +314,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return getCustomText(type, name, screen, locale);
     }
 
+    @Override
     public CustomText replaceCustomText(CustomText customText)
             throws BrandingPreferenceMgtException {
 
         String resourceName = getResourceNameForCustomText(customText.getScreen(), customText.getLocale());
         String tenantDomain = getTenantDomain();
-        // Check whether the branding resource exists in the particular tenant.
+        // Check whether the custom text resource exists in the particular tenant.
         if (!isResourceExists(CUSTOM_TEXT_RESOURCE_TYPE, resourceName)) {
             throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
         }
@@ -329,11 +330,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource customTextResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextResource);
-        } catch (ConfigurationManagementException e) {
+        } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -342,6 +342,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return customText;
     }
 
+    @Override
     public void deleteCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
@@ -358,7 +359,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE, tenantDomain);
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Custom text preference for tenant: " + tenantDomain + " replaced successfully.");
+            LOG.debug("Custom text preference for tenant: " + tenantDomain + " deleted successfully.");
         }
     }
 
@@ -505,7 +506,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
      * Generate and return resource name of the custom text resource.
      *
      * @param screen Screen name where the custom texts need to be applied.
-     * @param locale Language preference
+     * @param locale Language preference.
      * @return resource name for the custom text preference.
      */
     private String getResourceNameForCustomText(String screen, String locale) {

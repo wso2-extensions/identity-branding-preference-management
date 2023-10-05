@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.management.core;
 
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.NotImplementedException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 
@@ -86,10 +87,13 @@ public interface BrandingPreferenceManager {
      * This API is used to create a custom text preference.
      *
      * @param customText Custom Text preference.
-     * @return the created custom text preference.
+     * @return The created custom text preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    CustomText addCustomText(CustomText customText) throws BrandingPreferenceMgtException;
+    default CustomText addCustomText(CustomText customText) throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
     /**
      * This API is used to retrieve a custom text preference.
@@ -101,8 +105,11 @@ public interface BrandingPreferenceManager {
      * @return The requested custom text preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    CustomText getCustomText(String type, String name, String screen, String locale)
-            throws BrandingPreferenceMgtException;
+    default CustomText getCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
     /**
      * This API is used to retrieve a resolved custom text preference.
@@ -114,8 +121,11 @@ public interface BrandingPreferenceManager {
      * @return The resolved custom text preference. If not exists return the default custom text preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    CustomText resolveCustomText(String type, String name, String screen, String locale)
-            throws BrandingPreferenceMgtException;
+    default CustomText resolveCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
     /**
      * This API is used to replace a given custom text preference.
@@ -124,8 +134,10 @@ public interface BrandingPreferenceManager {
      * @return Updated custom text preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    CustomText replaceCustomText(CustomText customText)
-            throws BrandingPreferenceMgtException;
+    default CustomText replaceCustomText(CustomText customText) throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
     /**
      * This API is used to delete a custom text preference.
@@ -136,7 +148,10 @@ public interface BrandingPreferenceManager {
      * @param locale Language preference of the custom text.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    void deleteCustomText(String type, String name, String screen, String locale)
-            throws BrandingPreferenceMgtException;
+    default void deleteCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
 }

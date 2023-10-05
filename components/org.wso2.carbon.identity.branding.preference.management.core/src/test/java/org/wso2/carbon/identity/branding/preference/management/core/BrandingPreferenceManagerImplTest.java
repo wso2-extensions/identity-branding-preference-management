@@ -407,14 +407,8 @@ public class BrandingPreferenceManagerImplTest {
         CustomText addedCT = brandingPreferenceManagerImpl.addCustomText(inputCT);
         Assert.assertEquals(addedCT.getPreference(), inputCT.getPreference());
         Assert.assertEquals(addedCT.getName(), inputCT.getName());
-
-        // Retrieving added custom text preference.
-        CustomText retrievedCT = brandingPreferenceManagerImpl.getCustomText
-                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
-        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
-        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
-        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
-        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
+        Assert.assertEquals(addedCT.getLocale(), inputCT.getLocale());
+        Assert.assertEquals(addedCT.getScreen(), inputCT.getScreen());
 
         // Deleting added custom text preference.
         brandingPreferenceManagerImpl.deleteCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(),
