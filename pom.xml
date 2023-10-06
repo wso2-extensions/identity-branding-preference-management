@@ -27,7 +27,7 @@
 
     <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
     <artifactId>identity-branding-preference-management</artifactId>
-    <version>1.0.6-SNAPSHOT</version>
+    <version>1.0.7-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Branding Preference Management</name>
@@ -43,6 +43,7 @@
 
     <modules>
         <module>components/org.wso2.carbon.identity.branding.preference.management.core</module>
+        <module>components/org.wso2.carbon.identity.branding.preference.resolver</module>
         <module>features/org.wso2.carbon.identity.branding.preference.management.core.server.feature</module>
     </modules>
 
@@ -125,6 +126,25 @@
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
+            </dependency>
+
+            <!-- Org Management related dependencies -->
+            <dependency>
+                <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
+                <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
+                <version>${identity.organization.management.core.version}</version>
+            </dependency>
+
+            <!-- Identity Branding related dependencies -->
+            <dependency>
+                <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
+                <artifactId>org.wso2.carbon.identity.branding.preference.management.core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
+                <artifactId>org.wso2.carbon.identity.branding.preference.resolver</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- Testing related dependencies -->
@@ -338,6 +358,11 @@
         <carbon.identity.framework.version>5.20.267</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 7.0.0)</carbon.identity.package.import.version.range>
 
+        <!-- Org management dependency versions-->
+        <identity.organization.management.core.version>1.0.58</identity.organization.management.core.version>
+        <identity.organization.management.core.imp.pkg.version.range>[1.0.0,2.0.0)
+        </identity.organization.management.core.imp.pkg.version.range>
+
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>
         <org.apache.commons.lang.imp.pkg.version.range>[2.6,3)</org.apache.commons.lang.imp.pkg.version.range>
@@ -350,6 +375,10 @@
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
         <com.fasterxml.jackson.version>2.10.5</com.fasterxml.jackson.version>
         <com.fasterxml.jackson.databind.version>2.10.5.1</com.fasterxml.jackson.databind.version>
+
+        <!-- Orbit version -->
+        <commons-lang.wso2.osgi.version.range>[2.6.0,3.0.0)</commons-lang.wso2.osgi.version.range>
+        <commons-logging.osgi.version.range>[1.2.0,2.0.0)</commons-logging.osgi.version.range>
 
         <!-- Maven plugin version -->
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
