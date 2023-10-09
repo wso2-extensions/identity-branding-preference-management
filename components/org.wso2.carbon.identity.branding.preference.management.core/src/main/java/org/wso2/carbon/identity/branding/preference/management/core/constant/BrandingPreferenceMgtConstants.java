@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) 2022-2023, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,7 @@ package org.wso2.carbon.identity.branding.preference.management.core.constant;
 public class BrandingPreferenceMgtConstants {
 
     public static final String BRANDING_RESOURCE_TYPE = "BRANDING_PREFERENCES";
+    public static final String CUSTOM_TEXT_RESOURCE_TYPE = "CUSTOM_TEXT";
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
     public static final String CUSTOM_TYPE = "CUSTOM";
@@ -44,6 +45,7 @@ public class BrandingPreferenceMgtConstants {
      */
     public enum ErrorMessages {
 
+        // Error messages related to branding preference configurations.
         ERROR_CODE_INVALID_BRANDING_PREFERENCE("BRANDINGM_00001",
                 "Invalid Branding Preference configurations for tenant: %s."),
         ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS("BRANDINGM_00002",
@@ -66,8 +68,25 @@ public class BrandingPreferenceMgtConstants {
                 "Unsupported Encoding in the branding preference configurations of the tenant: %s."),
         ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
                 "Requested branding preference configuration: %s is not allowed for the organization."),
-        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00012",
-                "Error while validating branding preference configurations for the organization: %s.");
+        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00021",
+                "Error while validating branding preference configurations for the organization: %s."),
+        // Error messages related to custom text configurations.
+        ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00022",
+                "Invalid custom text configurations for tenant: %s."),
+        ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS("BRANDINGM_00023",
+                "Custom Text preferences are not configured for tenant: %s."),
+        ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS("BRANDINGM_00024",
+                "Custom Text preference already exists for tenant: %s."),
+        ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00025",
+                "Error while getting custom text preference configurations for tenant: %s."),
+        ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00026",
+                "Unable to add custom text preference configurations for tenant: %s."),
+        ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00027",
+                "Unable to delete custom text preference configurations for tenant: %s."),
+        ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00028",
+                "Unable to update custom text preference configurations."),
+        ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00029",
+                "Unable to build custom text preference from custom text configurations for tenant: %s.");
 
         private final String code;
         private final String message;
