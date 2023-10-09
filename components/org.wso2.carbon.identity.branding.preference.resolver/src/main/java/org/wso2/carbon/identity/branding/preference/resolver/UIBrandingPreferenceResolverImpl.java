@@ -27,10 +27,14 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCacheKey;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheEntry;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -48,9 +52,13 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
@@ -65,15 +73,19 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private static final Log LOG = LogFactory.getLog(UIBrandingPreferenceResolverImpl.class);
 
     private final BrandedOrgCache brandedOrgCache;
+    private final TextCustomizedOrgCache textCustomizedOrgCache;
 
     /**
      * UI branding preference resolver implementation constructor.
      *
-     * @param brandedOrgCache Cache instance
+     * @param brandedOrgCache Cache instance.
+     * @param textCustomizedOrgCache Cache instance for custom text.
      */
-    public UIBrandingPreferenceResolverImpl(BrandedOrgCache brandedOrgCache) {
+    public UIBrandingPreferenceResolverImpl(BrandedOrgCache brandedOrgCache,
+                                            TextCustomizedOrgCache textCustomizedOrgCache) {
 
         this.brandedOrgCache = brandedOrgCache;
+        this.textCustomizedOrgCache = textCustomizedOrgCache;
     }
 
     @Override
@@ -164,6 +176,91 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     getBrandingPreference(type, name, locale, currentTenantDomain);
             return brandingPreference.orElseThrow(
                     () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+        }
+    }
+
+    @Override
+    public CustomText resolveCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        String organizationId = getOrganizationId();
+        String currentTenantDomain = getTenantDomain();
+
+        OrganizationManager organizationManager =
+                BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+
+        /* Tenant domain will always be carbon.super for SaaS apps (ex. myaccount). Hence need to resolve
+          tenant domain from the name parameter. */
+        if (ORGANIZATION_TYPE.equals(type) &&
+                MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
+            currentTenantDomain = name;
+            try {
+                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, currentTenantDomain);
+            }
+        }
+
+        if (organizationId != null) {
+            String resourceName = getResourceNameForCustomText(screen, locale);
+            TextCustomizedOrgCacheEntry valueFromCache = textCustomizedOrgCache.getValueFromCache
+                    (new TextCustomizedOrgCacheKey(organizationId, resourceName), currentTenantDomain);
+            if (valueFromCache != null) {
+                Optional<CustomText> customText =
+                        getCustomText(type, name, screen, locale, valueFromCache.getCustomTextResolvedTenant());
+                return customText.orElseThrow(
+                        () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+            }
+
+            // No cache found. Start with current organization.
+            Optional<CustomText> customText = getCustomText(type, name, screen, locale, currentTenantDomain);
+            if (customText.isPresent()) {
+                return customText.get();
+            }
+
+            try {
+                // Get the details of the parent organization and resolve the custom text preferences.
+                Organization organization = organizationManager.getOrganization(organizationId, false, false);
+                String parentId = organization.getParent().getId();
+                String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
+                int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+
+                while (parentDepthInHierarchy > 0) {
+                    customText =
+                            getCustomText(type, name, screen, locale, parentTenantDomain);
+                    if (customText.isPresent()) {
+                        addCustomTextResolvedOrgToCache
+                                (organizationId, resourceName, currentTenantDomain, parentTenantDomain);
+                        return customText.get();
+                    }
+
+                    /*
+                        Get ancestor organization ids (including itself) of a given organization. The list is sorted
+                        from given organization id to the root organization id.
+                     */
+                    List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentId);
+                    if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
+                        // Go to the parent organization again.
+                        parentId = ancestorOrganizationIds.get(1);
+                        parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
+                        parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                    } else {
+                        // Reached to the root of the organization tree.
+                        parentDepthInHierarchy = 0;
+                    }
+                }
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, getTenantDomain());
+            }
+
+            // No custom text found. Adding the same tenant domain to cache to avoid the resolving in the next run.
+            addCustomTextResolvedOrgToCache(organizationId, resourceName, currentTenantDomain, currentTenantDomain);
+            throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain());
+        } else {
+            // No need to resolve the custom text preference. Try to fetch the config from the same org.
+            Optional<CustomText> customText = getCustomText(type, name, screen, locale, currentTenantDomain);
+            return customText.orElseThrow(
+                    () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain()));
         }
     }
 
@@ -259,5 +356,113 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
           Default resource name is the name used to save organization level branding for 'en-US' language.
          */
         return getTenantId() + RESOURCE_NAME_SEPARATOR + locale;
+    }
+
+    /**
+     * Add custom text resolved tenant to cache.
+     *
+     * @param textCustomizedOrgId             Text customized organization id.
+     * @param resourceName                    Resource name of the custom text resource. Unique to the screen & locale.
+     * @param textCustomizedTenantDomain      Text customized tenant domain.
+     * @param customTextInheritedTenantDomain Custom text inherited tenant domain.
+     */
+    private void addCustomTextResolvedOrgToCache(String textCustomizedOrgId, String resourceName,
+                                                 String textCustomizedTenantDomain,
+                                                 String customTextInheritedTenantDomain) {
+
+        TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(textCustomizedOrgId, resourceName);
+        TextCustomizedOrgCacheEntry cacheEntry = new TextCustomizedOrgCacheEntry(customTextInheritedTenantDomain);
+        textCustomizedOrgCache.addToCache(cacheKey, cacheEntry, textCustomizedTenantDomain);
+    }
+
+    /**
+     * Retrieve a custom text preference by calling configuration-mgt service.
+     *
+     * @param type   Type of the custom text preference.
+     * @param name   Name of the tenant/application where custom text belongs.
+     * @param locale Language preference of the custom text.
+     * @param screen Screen where the custom text needs to be applied.
+     * @return The requested custom text preference.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    private Optional<CustomText> getCustomText(String type, String name, String screen, String locale,
+                                               String tenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+
+            String resourceName = getResourceNameForCustomText(screen, locale);
+            List<ResourceFile> resourceFiles = getConfigurationManager().getFiles
+                    (CUSTOM_TEXT_RESOURCE_TYPE, resourceName);
+            if (resourceFiles.isEmpty()) {
+                return Optional.empty();
+            }
+            if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
+                return Optional.empty();
+            }
+
+            InputStream inputStream = getConfigurationManager().getFileById
+                    (CUSTOM_TEXT_RESOURCE_TYPE, resourceName, resourceFiles.get(0).getId());
+            if (inputStream == null) {
+                return Optional.empty();
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Custom text preference for tenant: " + tenantDomain + " is retrieved successfully.");
+            }
+            return Optional.of(buildCustomTextFromResource(inputStream, type, name, screen, locale));
+        } catch (ConfigurationManagementException e) {
+            if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+            }
+        } catch (IOException e) {
+            throw handleServerException(ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE, tenantDomain);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Build a Custom Text Model from custom text preference file stream.
+     *
+     * @param inputStream Preference file stream.
+     * @param type        Custom Text resource type.
+     * @param name        Tenant/Application name.
+     * @param screen      Screen Name.
+     * @param locale      Language preference.
+     * @return Custom Text Preference.
+     */
+    private CustomText buildCustomTextFromResource(InputStream inputStream, String type, String name,
+                                                   String screen, String locale)
+            throws IOException, BrandingPreferenceMgtException {
+
+        String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
+            throw handleServerException(ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE, name);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        Object preference = mapper.readValue(preferencesJSON, Object.class);
+        CustomText customText = new CustomText();
+        customText.setPreference(preference);
+        customText.setType(type);
+        customText.setName(name);
+        customText.setLocale(locale);
+        customText.setScreen(screen);
+        return customText;
+    }
+
+    /**
+     * Generate and return resource name of the custom text resource.
+     *
+     * @param screen Screen name where the custom texts need to be applied.
+     * @param locale Language preference
+     * @return resource name for the custom text preference.
+     */
+    private String getResourceNameForCustomText(String screen, String locale) {
+
+        return StringUtils.upperCase(screen) + RESOURCE_NAME_SEPARATOR + StringUtils.lowerCase(locale);
     }
 }
