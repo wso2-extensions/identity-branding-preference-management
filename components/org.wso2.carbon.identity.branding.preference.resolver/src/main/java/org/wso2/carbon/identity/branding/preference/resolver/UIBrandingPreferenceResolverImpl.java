@@ -219,34 +219,39 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             try {
-                // Get the details of the parent organization and resolve the custom text preferences.
                 Organization organization = organizationManager.getOrganization(organizationId, false, false);
-                String parentId = organization.getParent().getId();
-                String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                // There's no need to resolve branding preferences for super tenant since it is the root organization.
+                if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
+                    // Get the details of the parent organization and resolve the custom text preferences.
+                    String parentId = organization.getParent().getId();
+                    String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
+                    int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
 
-                while (parentDepthInHierarchy > 0) {
-                    customText =
-                            getCustomText(type, name, screen, locale, parentTenantDomain);
-                    if (customText.isPresent()) {
-                        addCustomTextResolvedOrgToCache
-                                (organizationId, resourceName, currentTenantDomain, parentTenantDomain);
-                        return customText.get();
-                    }
+                    // Get the minimum hierarchy depth that needs to be reached to resolve branding preference.
+                    int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
 
-                    /*
-                        Get ancestor organization ids (including itself) of a given organization. The list is sorted
-                        from given organization id to the root organization id.
-                     */
-                    List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentId);
-                    if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
-                        // Go to the parent organization again.
-                        parentId = ancestorOrganizationIds.get(1);
-                        parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                        parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
-                    } else {
-                        // Reached to the root of the organization tree.
-                        parentDepthInHierarchy = 0;
+                    while (parentDepthInHierarchy >= minHierarchyDepth) {
+                        customText = getCustomText(type, name, screen, locale, parentTenantDomain);
+                        if (customText.isPresent()) {
+                            addCustomTextResolvedOrgToCache
+                                    (organizationId, resourceName, currentTenantDomain, parentTenantDomain);
+                            return customText.get();
+                        }
+
+                        /*
+                            Get ancestor organization ids (including itself) of a given organization. The list is sorted
+                            from given organization id to the root organization id.
+                        */
+                        List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentId);
+                        if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
+                            // Go to the parent organization again.
+                            parentId = ancestorOrganizationIds.get(1);
+                            parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
+                            parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                        } else {
+                            // Reached to the root of the organization tree.
+                            parentDepthInHierarchy = -1;
+                        }
                     }
                 }
             } catch (OrganizationManagementException e) {
