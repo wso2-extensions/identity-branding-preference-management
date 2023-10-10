@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) 2022-2023, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -49,16 +50,25 @@ import java.util.Map;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CHECKING_BRANDING_PREFERENCE_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
@@ -97,9 +107,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
-            Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
+            Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
             if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
                 BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
@@ -112,6 +121,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 }
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
             }
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
+        } catch (IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -191,11 +202,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        try {
-            InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8));
-            Resource brandingPreferenceResource = buildResourceFromBrandingPreference(resourceName, inputStream);
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
+            Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
-        } catch (ConfigurationManagementException e) {
+        } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -225,6 +235,138 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
     }
 
+    @Override
+    public CustomText addCustomText(CustomText customText) throws BrandingPreferenceMgtException {
+
+        String resourceName = getResourceNameForCustomText(customText.getScreen(), customText.getLocale());
+        String tenantDomain = getTenantDomain();
+        // Check whether a custom text resource already exists with the same name in the particular tenant to be added.
+        if (isResourceExists(CUSTOM_TEXT_RESOURCE_TYPE, resourceName)) {
+            throw handleClientException(ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS, tenantDomain);
+        }
+        String preferencesJSON = generatePreferencesJSONFromPreference(customText.getPreference());
+        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
+            throw handleClientException(ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE, tenantDomain);
+        }
+
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
+            Resource customTextPreferenceResource = buildResource(resourceName, inputStream);
+            getConfigurationManager().addResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextPreferenceResource);
+        } catch (ConfigurationManagementException e) {
+            if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Custom Text preferences are already exists for tenant: " + tenantDomain, e);
+                }
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS, tenantDomain);
+            }
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+        } catch (IOException e) {
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Custom Text preference for tenant: " + tenantDomain + " added successfully");
+        }
+        return customText;
+    }
+
+    @Override
+    public CustomText getCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        String resourceName = getResourceNameForCustomText(screen, locale);
+        String tenantDomain = getTenantDomain();
+        try {
+            List<ResourceFile> resourceFiles =
+                    getConfigurationManager().getFiles(CUSTOM_TEXT_RESOURCE_TYPE, resourceName);
+            if (resourceFiles.isEmpty()) {
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+            }
+            if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+            }
+
+            InputStream inputStream = getConfigurationManager().getFileById
+                    (CUSTOM_TEXT_RESOURCE_TYPE, resourceName, resourceFiles.get(0).getId());
+            if (inputStream == null) {
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Custom Text preference for tenant: " + tenantDomain + " is retrieved successfully.");
+            }
+            return buildCustomTextFromResource(inputStream, type, name, screen, locale);
+        } catch (ConfigurationManagementException e) {
+            if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Can not find a custom text preference configurations for tenant: " + tenantDomain, e);
+                }
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+            }
+            throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+        } catch (IOException e) {
+            throw handleServerException(ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE, tenantDomain);
+        }
+    }
+
+    @Override
+    public CustomText resolveCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
+            return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                    .resolveCustomText(type, name, screen, locale);
+        }
+        return getCustomText(type, name, screen, locale);
+    }
+
+    @Override
+    public CustomText replaceCustomText(CustomText customText)
+            throws BrandingPreferenceMgtException {
+
+        String resourceName = getResourceNameForCustomText(customText.getScreen(), customText.getLocale());
+        String tenantDomain = getTenantDomain();
+        // Check whether the custom text resource exists in the particular tenant.
+        if (!isResourceExists(CUSTOM_TEXT_RESOURCE_TYPE, resourceName)) {
+            throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+        }
+
+        String preferencesJSON = generatePreferencesJSONFromPreference(customText.getPreference());
+        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
+            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
+        }
+
+        try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
+            Resource customTextResource = buildResource(resourceName, inputStream);
+            getConfigurationManager().replaceResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextResource);
+        } catch (ConfigurationManagementException | IOException e) {
+            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Custom Text preference for tenant: " + tenantDomain + " replaced successfully.");
+        }
+        return customText;
+    }
+
+    @Override
+    public void deleteCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        String resourceName = getResourceNameForCustomText(screen, locale);
+        String tenantDomain = getTenantDomain();
+        // Check whether the custom text resource exists in the particular tenant.
+        if (!isResourceExists(CUSTOM_TEXT_RESOURCE_TYPE, resourceName)) {
+            throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+        }
+
+        try {
+            getConfigurationManager().deleteResource(CUSTOM_TEXT_RESOURCE_TYPE, resourceName);
+        } catch (ConfigurationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE, tenantDomain);
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Custom text preference for tenant: " + tenantDomain + " deleted successfully.");
+        }
+    }
+
     /**
      * Check whether a branding preference resource already exists with the same name in the particular tenant.
      *
@@ -250,7 +392,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     /**
      * Build a JSON string which contains preferences from a preference object.
      *
-     * @param object Preference object of Branding Preference Model.
+     * @param object Preference object of Branding Preference Model/Custom Text Model.
      * @return JSON string which contains preferences.
      */
     private String generatePreferencesJSONFromPreference(Object object) {
@@ -268,13 +410,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     /**
-     * Build a resource object from Branding Preference Model.
+     * Build a resource object.
      *
-     * @param resourceName Branding preference resource name.
-     * @param inputStream  Branding preference file stream.
+     * @param resourceName Preference resource name.
+     * @param inputStream  Preference file stream.
      * @return Resource object.
      */
-    private Resource buildResourceFromBrandingPreference(String resourceName, InputStream inputStream) {
+    private Resource buildResource(String resourceName, InputStream inputStream) {
 
         Resource resource = new Resource();
         resource.setResourceName(resourceName);
@@ -317,6 +459,36 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     /**
+     * Build a Custom Text Model from custom text preference file stream.
+     *
+     * @param inputStream Preference file stream.
+     * @param type        Custom Text resource type.
+     * @param name        Tenant/Application name.
+     * @param screen      Screen Name.
+     * @param locale      Language preference.
+     * @return Custom Text Preference.
+     */
+    private CustomText buildCustomTextFromResource(InputStream inputStream, String type, String name,
+                                                           String screen, String locale)
+            throws IOException, BrandingPreferenceMgtException {
+
+        String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
+            throw handleServerException(ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE, name);
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        Object preference = mapper.readValue(preferencesJSON, Object.class);
+        CustomText customText = new CustomText();
+        customText.setPreference(preference);
+        customText.setType(type);
+        customText.setName(name);
+        customText.setLocale(locale);
+        customText.setScreen(screen);
+        return customText;
+    }
+
+    /**
      * Generate and return resource name of the branding resource.
      *
      * @param type   Branding resource type.
@@ -332,6 +504,18 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
           Default resource name is the name used to save organization level branding for 'en-US' language.
          */
         return getTenantId() + RESOURCE_NAME_SEPARATOR + locale;
+    }
+
+    /**
+     * Generate and return resource name of the custom text resource.
+     *
+     * @param screen Screen name where the custom texts need to be applied.
+     * @param locale Language preference.
+     * @return resource name for the custom text preference.
+     */
+    private String getResourceNameForCustomText(String screen, String locale) {
+
+        return StringUtils.upperCase(screen) + RESOURCE_NAME_SEPARATOR + StringUtils.lowerCase(locale);
     }
 
     /**

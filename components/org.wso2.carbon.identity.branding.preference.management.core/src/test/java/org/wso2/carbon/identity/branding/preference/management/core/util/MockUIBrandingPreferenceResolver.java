@@ -21,10 +21,13 @@ package org.wso2.carbon.identity.branding.preference.management.core.util;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 
 public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceResolver {
 
     BrandingPreference brandingPreference;
+
+    CustomText customText;
 
     @Override
     public BrandingPreference resolveBranding(String type, String name, String locale)
@@ -36,10 +39,20 @@ public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceRes
     @Override
     public void clearBrandingResolverCache(String currentTenantDomain) throws BrandingPreferenceMgtException {
         setBranding(null);
+
+    public CustomText resolveCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        return customText;
     }
 
     public void setBranding(BrandingPreference brandingPreference) {
 
         this.brandingPreference = brandingPreference;
+    }
+
+    public void setCustomText(CustomText customText) {
+
+        this.customText = customText;
     }
 }
