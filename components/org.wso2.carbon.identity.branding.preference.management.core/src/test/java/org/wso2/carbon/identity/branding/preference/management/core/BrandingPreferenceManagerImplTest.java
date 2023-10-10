@@ -124,7 +124,7 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
-    public void testAddBrandingPreferenceWithResolverCaching(
+    public void testAddBrandingPreferenceWithBrandingResolver(
             Object brandingPreference, String tenantDomain, int tenantId) throws Exception {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
