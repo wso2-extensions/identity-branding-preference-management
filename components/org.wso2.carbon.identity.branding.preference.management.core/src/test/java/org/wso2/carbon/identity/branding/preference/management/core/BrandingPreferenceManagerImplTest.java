@@ -124,6 +124,39 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
+    public void testAddBrandingPreferenceWithResolverCaching(
+            Object brandingPreference, String tenantDomain, int tenantId) throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        // Initiate Branding Resolver
+        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
+        resolver.setBranding(inputBP);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+
+        // Adding new branding preference.
+        BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+        Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(addedBP.getName(), inputBP.getName());
+        Assert.assertNull(
+                resolver.resolveBranding(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
+
+        //  Retrieving added branding preference.
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
+                inputBP.getLocale());
+
+        // Remove Branding Resolver
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
+    }
+
+    @Test(dataProvider = "brandingPreferenceDataProvider")
     public void testAddConflictBrandingPreference(Object brandingPreference, String tenantDomain, int tenantId)
             throws Exception {
 

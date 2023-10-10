@@ -67,7 +67,9 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
                 "Requested branding preference configuration: %s is not allowed for the organization."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00012",
-                "Error while validating branding preference configurations for the organization: %s.");
+                "Error while validating branding preference configurations for the organization: %s."),
+        ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE("BRANDINGM_00013",
+                "Error while clearing branding preference resolver cache for tenant: %s."),;
 
         private final String code;
         private final String message;

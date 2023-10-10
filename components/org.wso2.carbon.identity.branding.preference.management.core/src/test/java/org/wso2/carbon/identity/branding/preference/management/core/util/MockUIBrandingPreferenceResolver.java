@@ -33,6 +33,11 @@ public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceRes
         return brandingPreference;
     }
 
+    @Override
+    public void clearBrandingResolverCache(String currentTenantDomain) throws BrandingPreferenceMgtException {
+        setBranding(null);
+    }
+
     public void setBranding(BrandingPreference brandingPreference) {
 
         this.brandingPreference = brandingPreference;
