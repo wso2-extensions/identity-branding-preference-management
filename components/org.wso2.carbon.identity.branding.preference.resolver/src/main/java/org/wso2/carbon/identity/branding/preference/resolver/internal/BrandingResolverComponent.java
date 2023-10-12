@@ -29,6 +29,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.resolver.UIBrandingPreferenceResolverImpl;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 
@@ -49,7 +50,8 @@ public class BrandingResolverComponent {
 
         try {
             context.getBundleContext().registerService(UIBrandingPreferenceResolver.class,
-                    new UIBrandingPreferenceResolverImpl(BrandedOrgCache.getInstance()), null);
+                    new UIBrandingPreferenceResolverImpl(BrandedOrgCache.getInstance(),
+                            TextCustomizedOrgCache.getInstance()), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BrandingResolver Component is activated.");
             }
