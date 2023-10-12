@@ -40,12 +40,13 @@ public interface UIBrandingPreferenceResolver {
     BrandingPreference resolveBranding(String type, String name, String locale) throws BrandingPreferenceMgtException;
 
     /**
-     * This method is used to clear the branding preference resolver cache.
+     * This method is used to clear the branding preference resolver caches of
+     * the organization and all its children down the tree.
      *
      * @param currentTenantDomain   Tenant domain where the cache needs to be cleared.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    void clearBrandingResolverCache(String currentTenantDomain) throws BrandingPreferenceMgtException;
+    void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException;
 
     default CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {

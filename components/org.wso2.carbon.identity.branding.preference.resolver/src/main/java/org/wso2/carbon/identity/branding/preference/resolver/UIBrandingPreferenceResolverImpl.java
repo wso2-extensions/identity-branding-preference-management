@@ -44,13 +44,14 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
@@ -169,25 +170,41 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     }
 
     @Override
-    public void clearBrandingResolverCache(String currentTenantDomain) throws BrandingPreferenceMgtException {
+    public void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException {
         String organizationId = getOrganizationId();
-        if (organizationId == null) {
-            try {
-                // If organization id is not available in the context, try to resolve it from tenant domain
-                OrganizationManager organizationManager =
-                        BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
-                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
-            } catch (OrganizationManagementException e) {
-                throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE,
-                        currentTenantDomain);
-            }
-        }
 
-        BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(organizationId);
-        BrandedOrgCacheEntry valueFromCache =
-                brandedOrgCache.getValueFromCache(brandedOrgCacheKey, currentTenantDomain);
-        if (valueFromCache != null) {
-            brandedOrgCache.clearCacheEntry(brandedOrgCacheKey, currentTenantDomain);
+        try {
+            OrganizationManager organizationManager =
+                        BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+
+            if (organizationId == null) {
+                // If organization id is not available in the context, try to resolve it from tenant domain
+                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            }
+
+            List<String> childOrganizationIds = new ArrayList<>();
+            childOrganizationIds.add(organizationId);
+
+            // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy
+            while (!childOrganizationIds.isEmpty()) {
+                // Pop the first child organization Id from the list
+                String childOrganizationId = childOrganizationIds.remove(0);
+                String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
+
+                BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(childOrganizationId);
+                BrandedOrgCacheEntry valueFromCache =
+                        brandedOrgCache.getValueFromCache(brandedOrgCacheKey, childTenantDomain);
+                if (valueFromCache != null) {
+                    // If cache exists, clear the cache
+                    brandedOrgCache.clearCacheEntry(brandedOrgCacheKey, childTenantDomain);
+                }
+
+                // Add Ids of all child organizations of the current (child) organization
+                childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
+            }
+        } catch (OrganizationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                    currentTenantDomain);
         }
     }
 
