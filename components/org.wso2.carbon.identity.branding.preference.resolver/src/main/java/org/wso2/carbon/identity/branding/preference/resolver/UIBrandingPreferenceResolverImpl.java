@@ -183,12 +183,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
     @Override
     public void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException {
+
+        OrganizationManager organizationManager =
+                BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
         String organizationId = getOrganizationId();
 
         try {
-            OrganizationManager organizationManager =
-                        BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
-
             if (organizationId == null) {
                 // If organization id is not available in the context, try to resolve it from tenant domain
                 organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
