@@ -48,6 +48,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +58,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
@@ -181,6 +183,45 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     }
 
     @Override
+    public void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException {
+
+        OrganizationManager organizationManager =
+                BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+        String organizationId = getOrganizationId();
+
+        try {
+            if (organizationId == null) {
+                // If organization id is not available in the context, try to resolve it from tenant domain
+                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            }
+
+            List<String> childOrganizationIds = new ArrayList<>();
+            childOrganizationIds.add(organizationId);
+
+            // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy
+            while (!childOrganizationIds.isEmpty()) {
+                // Pop the first child organization Id from the list
+                String childOrganizationId = childOrganizationIds.remove(0);
+                String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
+
+                BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(childOrganizationId);
+                BrandedOrgCacheEntry valueFromCache =
+                        brandedOrgCache.getValueFromCache(brandedOrgCacheKey, childTenantDomain);
+                if (valueFromCache != null) {
+                    // If cache exists, clear the cache
+                    brandedOrgCache.clearCacheEntry(brandedOrgCacheKey, childTenantDomain);
+                }
+
+                // Add Ids of all child organizations of the current (child) organization
+                childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
+            }
+        } catch (OrganizationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                    currentTenantDomain);
+        }
+    }
+  
+    @Override  
     public CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 

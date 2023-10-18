@@ -111,6 +111,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(BRANDING_RESOURCE_TYPE, brandingPreferenceResource);
+            if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
+                BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                        .clearBrandingResolverCacheHierarchy(tenantDomain);
+            }
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {

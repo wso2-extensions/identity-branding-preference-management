@@ -69,6 +69,8 @@ public class BrandingPreferenceMgtConstants {
                 "Unsupported Encoding in the branding preference configurations of the tenant: %s."),
         ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE("BRANDINGM_00011",
                 "Requested branding preference configuration: %s is not allowed for the organization."),
+        ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00012",
+                "Error while clearing branding preference resolver cache hierarchy for tenant: %s."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00021",
                 "Error while validating branding preference configurations for the organization: %s."),
         // Error messages related to custom text configurations.
