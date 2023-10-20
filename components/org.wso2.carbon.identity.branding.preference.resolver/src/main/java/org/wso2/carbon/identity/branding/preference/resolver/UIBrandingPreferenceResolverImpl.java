@@ -188,23 +188,30 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         OrganizationManager organizationManager =
                 BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
         String organizationId = getOrganizationId();
-
-        try {
-            if (organizationId == null) {
-                // If organization id is not available in the context, try to resolve it from tenant domain
+        if (organizationId == null) {
+            // If organization id is not available in the context, try to resolve it from tenant domain
+            try {
                 organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            } catch (OrganizationManagementException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Error occurred while resolving organization Id for tenant domain: "
+                            + currentTenantDomain, e);
+                }
+                return;
             }
+        }
 
-            List<String> childOrganizationIds = new ArrayList<>();
-            childOrganizationIds.add(organizationId);
+        List<String> childOrganizationIds = new ArrayList<>();
+        childOrganizationIds.add(organizationId);
 
-            // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy
-            while (!childOrganizationIds.isEmpty()) {
-                // Pop the first child organization Id from the list
-                String childOrganizationId = childOrganizationIds.remove(0);
+        // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy
+        while (!childOrganizationIds.isEmpty()) {
+            // Pop the first child organization Id from the list
+            String childOrganizationId = childOrganizationIds.remove(0);
+            BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(childOrganizationId);
+
+            try {
                 String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
-
-                BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(childOrganizationId);
                 BrandedOrgCacheEntry valueFromCache =
                         brandedOrgCache.getValueFromCache(brandedOrgCacheKey, childTenantDomain);
                 if (valueFromCache != null) {
@@ -214,10 +221,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
                 // Add Ids of all child organizations of the current (child) organization
                 childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                        currentTenantDomain);
             }
-        } catch (OrganizationManagementException e) {
-            throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
-                    currentTenantDomain);
         }
     }
   
