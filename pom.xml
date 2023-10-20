@@ -355,7 +355,7 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>5.20.267</carbon.identity.framework.version>
+        <carbon.identity.framework.version>5.25.389-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 7.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
