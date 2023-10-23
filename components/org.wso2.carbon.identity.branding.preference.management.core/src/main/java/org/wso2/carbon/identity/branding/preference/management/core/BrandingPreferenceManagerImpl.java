@@ -365,6 +365,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
     }
 
+    @Override
     public void deleteAllCustomText() throws BrandingPreferenceMgtException {
 
         String tenantDomain = getTenantDomain();
