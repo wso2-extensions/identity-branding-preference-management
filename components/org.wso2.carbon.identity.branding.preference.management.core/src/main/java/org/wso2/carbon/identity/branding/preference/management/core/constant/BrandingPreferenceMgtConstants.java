@@ -39,6 +39,7 @@ public class BrandingPreferenceMgtConstants {
     public static final String TENANT_DOMAIN = "tenant-domain";
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
+    public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
 
     /**
@@ -89,7 +90,9 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00028",
                 "Unable to update custom text preference configurations."),
         ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00029",
-                "Unable to build custom text preference from custom text configurations for tenant: %s.");
+                "Unable to build custom text preference from custom text configurations for tenant: %s."),
+        ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES("BRANDINGM_00030",
+                "Unable to bulk delete custom text preferences for tenant: %s.");
 
         private final String code;
         private final String message;

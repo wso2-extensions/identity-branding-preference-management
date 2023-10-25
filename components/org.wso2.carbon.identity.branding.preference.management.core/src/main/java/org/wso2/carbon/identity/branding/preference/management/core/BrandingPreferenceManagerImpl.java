@@ -59,6 +59,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CHECKING_BRANDING_PREFERENCE_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE;
@@ -74,6 +75,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCES_NOT_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
@@ -365,6 +367,26 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Custom text preference for tenant: " + tenantDomain + " deleted successfully.");
+        }
+    }
+
+    @Override
+    public void deleteAllCustomText() throws BrandingPreferenceMgtException {
+
+        String tenantDomain = getTenantDomain();
+        try {
+            getConfigurationManager().deleteResourcesByType(CUSTOM_TEXT_RESOURCE_TYPE);
+        } catch (ConfigurationManagementException e) {
+            if (RESOURCES_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Can not find a custom text preferences for tenant: " + tenantDomain, e);
+                }
+                throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, tenantDomain);
+            }
+            throw handleServerException(ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES, tenantDomain);
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Custom text preferences for tenant: " + tenantDomain + " deleted successfully.");
         }
     }
 
