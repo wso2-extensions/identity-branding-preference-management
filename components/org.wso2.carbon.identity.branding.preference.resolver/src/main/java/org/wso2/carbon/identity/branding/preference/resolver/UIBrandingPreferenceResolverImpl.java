@@ -117,10 +117,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             BrandedOrgCacheEntry valueFromCache =
                     brandedOrgCache.getValueFromCache(new BrandedOrgCacheKey(organizationId), currentTenantDomain);
             if (valueFromCache != null) {
-                Optional<BrandingPreference> brandingPreference =
-                        getBrandingPreference(type, name, locale, valueFromCache.getBrandingResolvedTenant());
-                return brandingPreference.orElseThrow(
-                        () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+                return getPreference(type, name, locale, valueFromCache.getBrandingResolvedTenant());
             }
 
             // No cache found. Start with current organization.
@@ -136,6 +133,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
                     // Get the details of the parent organization and resolve the branding preferences.
                     String parentId = organization.getParent().getId();
+                    // This is a root tenant.
+                    if (StringUtils.isBlank(parentId)) {
+                        return getPreference(type, name, locale, currentTenantDomain);
+                    }
                     String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
                     int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
 
@@ -175,10 +176,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, getTenantDomain());
         } else {
             // No need to resolve the branding preference. Try to fetch the config from the same org.
-            Optional<BrandingPreference> brandingPreference =
-                    getBrandingPreference(type, name, locale, currentTenantDomain);
-            return brandingPreference.orElseThrow(
-                    () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+            return getPreference(type, name, locale, currentTenantDomain);
         }
     }
 
@@ -519,5 +517,24 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         String formattedLocale = getFormattedLocale(locale);
         return StringUtils.upperCase(screen) + RESOURCE_NAME_SEPARATOR + StringUtils.lowerCase(formattedLocale);
+    }
+
+
+    /**
+     * Retrieve a branding preference by calling configuration-mgt service.
+     *
+     * @param type   Type of the branding preference.
+     * @param name   Name of the tenant/application where branding belongs.
+     * @param locale Language preference of the branding.
+     * @return The requested branding preference.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    private BrandingPreference getPreference(String type, String name, String locale, String currentTenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        Optional<BrandingPreference> brandingPreference =
+                getBrandingPreference(type, name, locale, currentTenantDomain);
+        return brandingPreference.orElseThrow(
+                () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, getTenantDomain()));
     }
 }
