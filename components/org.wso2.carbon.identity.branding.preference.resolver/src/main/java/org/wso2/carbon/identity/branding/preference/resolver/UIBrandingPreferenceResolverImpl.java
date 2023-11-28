@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -117,7 +118,17 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             BrandedOrgCacheEntry valueFromCache =
                     brandedOrgCache.getValueFromCache(new BrandedOrgCacheKey(organizationId), currentTenantDomain);
             if (valueFromCache != null) {
-                return getPreference(type, name, locale, valueFromCache.getBrandingResolvedTenant());
+                String brandingResolvedTenantDomain = valueFromCache.getBrandingResolvedTenant();
+                BrandingPreference resolvedBrandingPreference = getPreference(type, name, locale,
+                        brandingResolvedTenantDomain);
+
+                if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
+                    // Since Branding is inherited from Parent org, removing the Parent org displayName.
+                    ((LinkedHashMap) ((LinkedHashMap) resolvedBrandingPreference
+                            .getPreference()).get("organizationDetails"))
+                            .replace("displayName", StringUtils.EMPTY);
+                }
+                return resolvedBrandingPreference;
             }
 
             // No cache found. Start with current organization.
@@ -147,6 +158,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         brandingPreference =
                                 getBrandingPreference(type, name, locale, parentTenantDomain);
                         if (brandingPreference.isPresent()) {
+                            // Since Branding is inherited from Parent org, removing the Parent org displayName.
+                            ((LinkedHashMap) ((LinkedHashMap) brandingPreference.get()
+                                    .getPreference()).get("organizationDetails"))
+                                    .replace("displayName", StringUtils.EMPTY);
                             addToCache(organizationId, currentTenantDomain, parentTenantDomain);
                             return brandingPreference.get();
                         }
