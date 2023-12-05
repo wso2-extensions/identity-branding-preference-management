@@ -96,7 +96,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     public BrandingPreference resolveBranding(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
 
-        String organizationId = getOrganizationId();
+        String organizationId = Utils.getOrganizationId();
         String currentTenantDomain = getTenantDomain();
 
         OrganizationManager organizationManager =
