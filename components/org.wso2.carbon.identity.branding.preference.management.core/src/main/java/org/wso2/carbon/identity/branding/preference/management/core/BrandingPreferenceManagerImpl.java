@@ -255,6 +255,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource customTextPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextPreferenceResource);
+            if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
+                BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                        .clearCustomTextResolverCacheHierarchy
+                                (tenantDomain, customText.getScreen(), customText.getLocale());
+            }
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {

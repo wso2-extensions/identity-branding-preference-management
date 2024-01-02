@@ -41,10 +41,18 @@ public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceRes
         setBranding(null);
     }
 
+    @Override
     public CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
         return customText;
+    }
+
+    @Override
+    public void clearCustomTextResolverCacheHierarchy(String currentTenantDomain, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        setCustomText(null);
     }
 
     public void setBranding(BrandingPreference brandingPreference) {

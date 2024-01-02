@@ -92,7 +92,9 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00029",
                 "Unable to build custom text preference from custom text configurations for tenant: %s."),
         ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES("BRANDINGM_00030",
-                "Unable to bulk delete custom text preferences for tenant: %s.");
+                "Unable to bulk delete custom text preferences for tenant: %s."),
+        ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00031",
+                "Error while clearing branding preference resolver cache hierarchy for tenant: %s.");
 
         private final String code;
         private final String message;

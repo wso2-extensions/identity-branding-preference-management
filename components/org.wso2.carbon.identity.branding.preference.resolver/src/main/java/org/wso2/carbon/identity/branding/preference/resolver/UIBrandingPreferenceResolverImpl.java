@@ -60,6 +60,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
@@ -328,6 +329,54 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             Optional<CustomText> customText = getCustomText(type, name, screen, locale, currentTenantDomain);
             return customText.orElseThrow(
                     () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+        }
+    }
+
+    @Override
+    public void clearCustomTextResolverCacheHierarchy(String currentTenantDomain, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        OrganizationManager organizationManager =
+                BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+        String organizationId = getOrganizationId();
+        if (organizationId == null) {
+            // If organization id is not available in the context, try to resolve it from tenant domain.
+            try {
+                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            } catch (OrganizationManagementException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Error occurred while resolving organization Id for tenant domain: "
+                            + currentTenantDomain, e);
+                }
+                return;
+            }
+        }
+
+        List<String> childOrganizationIds = new ArrayList<>();
+        childOrganizationIds.add(organizationId);
+
+        // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy.
+        while (!childOrganizationIds.isEmpty()) {
+            // Pop the first child organization Id from the list.
+            String childOrganizationId = childOrganizationIds.remove(0);
+            String resourceName = getResourceNameForCustomText(screen, locale);
+            TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(childOrganizationId, resourceName);
+
+            try {
+                String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
+                TextCustomizedOrgCacheEntry valueFromCache =
+                        textCustomizedOrgCache.getValueFromCache(cacheKey, childTenantDomain);
+                if (valueFromCache != null) {
+                    // If cache exists, clear the cache.
+                    textCustomizedOrgCache.clearCacheEntry(cacheKey, childTenantDomain);
+                }
+
+                // Add Ids of all child organizations of the current (child) organization.
+                childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                        currentTenantDomain);
+            }
         }
     }
 
