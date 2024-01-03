@@ -355,7 +355,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         List<String> childOrganizationIds = new ArrayList<>();
         childOrganizationIds.add(organizationId);
 
-        // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy.
+        // Clear custom text resolver caches by looping (breadth-first) through child organization hierarchy.
         while (!childOrganizationIds.isEmpty()) {
             // Pop the first child organization Id from the list.
             String childOrganizationId = childOrganizationIds.remove(0);

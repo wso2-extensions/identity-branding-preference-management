@@ -76,5 +76,6 @@ public interface UIBrandingPreferenceResolver {
     default void clearCustomTextResolverCacheHierarchy(String currentTenantDomain, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
+        throw new NotImplementedException("This functionality is not implemented.");
     }
 }
