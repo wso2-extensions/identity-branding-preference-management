@@ -48,7 +48,32 @@ public interface UIBrandingPreferenceResolver {
      */
     void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException;
 
+    /**
+     * This method is used to retrieve a resolved custom text preference.
+     *
+     * @param type   Type of the custom text preference.
+     * @param name   Name of the tenant/application.
+     * @param screen Screen param of the custom text preference.
+     * @param locale Language preference of the custom text preference.
+     * @return The resolved custom text preference.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
     default CustomText resolveCustomText(String type, String name, String screen, String locale)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
+
+    /**
+     * This method is used to clear the custom text preference resolver caches of
+     * the organization and all its children down the tree.
+     *
+     * @param currentTenantDomain   Tenant domain where the cache needs to be cleared.
+     * @param screen                Screen param of the custom text.
+     * @param locale                Locale param of the custom text.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    default void clearCustomTextResolverCacheHierarchy(String currentTenantDomain, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
         throw new NotImplementedException("This functionality is not implemented.");
