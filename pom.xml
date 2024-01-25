@@ -356,7 +356,7 @@
 
         <!-- Carbon identity framework version -->
         <carbon.identity.framework.version>5.25.437</carbon.identity.framework.version>
-        <carbon.identity.package.import.version.range>[5.20.0, 7.0.0)</carbon.identity.package.import.version.range>
+        <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
         <identity.organization.management.core.version>1.0.58</identity.organization.management.core.version>
