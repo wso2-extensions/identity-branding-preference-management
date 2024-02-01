@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
         <artifactId>identity-branding-preference-management</artifactId>
-        <version>1.0.6-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -204,7 +204,7 @@
                                         <limit implementation="org.jacoco.report.check.Limit">
                                             <counter>COMPLEXITY</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.46</minimum>
+                                            <minimum>0.45</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

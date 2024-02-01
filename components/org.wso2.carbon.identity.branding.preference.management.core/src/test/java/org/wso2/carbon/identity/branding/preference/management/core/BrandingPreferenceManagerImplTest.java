@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) (2022-2023), WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.ConfigurationManagementUtils;
 import org.wso2.carbon.identity.branding.preference.management.core.util.MockUIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
@@ -39,6 +40,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.user.core.UserStoreException;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -62,6 +64,8 @@ public class BrandingPreferenceManagerImplTest {
     public static final String SAMPLE_TENANT_DOMAIN_NAME_ABC = "abc";
     public static final String SAMPLE_APPLICATION_NAME_1 = "SampleApp1";
     public static final String SAMPLE_APPLICATION_NAME_2 = "SampleApp2";
+    public static final String LOGIN_SCREEN = "login";
+    public static final String FRENCH_LOCALE = "fr-FR";
 
     @Mock
     IdentityEventService identityEventService;
@@ -152,6 +156,39 @@ public class BrandingPreferenceManagerImplTest {
         // Deleting added branding preference.
         brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
                 inputBP.getLocale());
+    }
+
+    @Test(dataProvider = "brandingPreferenceDataProvider")
+    public void testAddBrandingPreferenceWithBrandingResolver(
+            Object brandingPreference, String tenantDomain, int tenantId) throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+
+        // Initiate Branding Resolver
+        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
+        resolver.setBranding(inputBP);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+
+        // Adding new branding preference.
+        BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+        Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(addedBP.getName(), inputBP.getName());
+        Assert.assertNull(
+                resolver.resolveBranding(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
+
+        //  Retrieving added branding preference.
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
+                inputBP.getLocale());
+
+        // Remove Branding Resolver
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
@@ -422,6 +459,309 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(tenantDomain, tenantId);
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .deleteBrandingPreference(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
+    }
+
+    @DataProvider(name = "customTextPreferenceDataProvider")
+    public Object[][] customTextPreferenceDataProvider() throws Exception {
+
+        CustomText customText1 = new CustomText();
+        customText1.setType(ORGANIZATION_TYPE);
+        customText1.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText1.setScreen(LOGIN_SCREEN);
+        customText1.setLocale(DEFAULT_LOCALE);
+        customText1.setPreference(getPreferenceFromFile("sample-text-customization-1.json"));
+
+        CustomText customText2 = new CustomText();
+        customText2.setType(ORGANIZATION_TYPE);
+        customText2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        customText2.setScreen(LOGIN_SCREEN);
+        customText2.setLocale(FRENCH_LOCALE);
+        customText2.setPreference(getPreferenceFromFile("sample-text-customization-2.json"));
+
+        return new Object[][]{
+                {customText1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {customText2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+        };
+    }
+
+    @Test(dataProvider = "customTextPreferenceDataProvider")
+    public void testAddCustomText(Object customText, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText inputCT = (CustomText) customText;
+
+        // Adding new custom text preference.
+        CustomText addedCT = brandingPreferenceManagerImpl.addCustomText(inputCT);
+        Assert.assertEquals(addedCT.getPreference(), inputCT.getPreference());
+        Assert.assertEquals(addedCT.getName(), inputCT.getName());
+        Assert.assertEquals(addedCT.getLocale(), inputCT.getLocale());
+        Assert.assertEquals(addedCT.getScreen(), inputCT.getScreen());
+
+        // Retrieving added custom text preference.
+        CustomText retrievedCT = brandingPreferenceManagerImpl.getCustomText
+                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
+        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
+        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
+        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
+        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
+        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
+
+        // Deleting added custom text preference.
+        brandingPreferenceManagerImpl.deleteCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(),
+                inputCT.getLocale());
+
+        // Retrieving deleted custom text preference.
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale()));
+    }
+
+    @DataProvider(name = "invalidCustomTextPreferenceDataProvider")
+    public Object[][] invalidCustomTextPreferenceDataProvider() throws IOException {
+
+        CustomText customText1 = new CustomText();
+        customText1.setType(ORGANIZATION_TYPE);
+        customText1.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText1.setScreen(LOGIN_SCREEN);
+        customText1.setLocale(DEFAULT_LOCALE);
+        customText1.setPreference(1234);
+
+        CustomText customText2 = new CustomText();
+        customText2.setType(ORGANIZATION_TYPE);
+        customText2.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText2.setScreen(LOGIN_SCREEN);
+        customText2.setLocale(DEFAULT_LOCALE);
+        customText2.setPreference("Branding Preference");
+
+        CustomText customText3 = new CustomText();
+        customText3.setType(ORGANIZATION_TYPE);
+        customText3.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText3.setScreen(LOGIN_SCREEN);
+        customText3.setLocale(DEFAULT_LOCALE);
+        customText3.setPreference(new JSONObject());
+
+        return new Object[][]{
+                {customText1},
+                {customText2},
+                {customText3},
+        };
+    }
+
+    @Test(dataProvider = "invalidCustomTextPreferenceDataProvider")
+    public void testAddInvaliCustomTextPreference(Object customText) {
+
+        CustomText inputCT = (CustomText) customText;
+
+        // Adding new custom text preference.
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .addCustomText(inputCT));
+    }
+
+    @Test(dataProvider = "customTextPreferenceDataProvider")
+    public void testResolveCustomTextPreference(Object customText, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText inputCT = (CustomText) customText;
+
+        // Adding new custom text preference.
+        brandingPreferenceManagerImpl.addCustomText(inputCT);
+
+        // Retrieving added custom text preference.
+        CustomText retrievedCT =
+                brandingPreferenceManagerImpl.resolveCustomText(inputCT.getType(), inputCT.getName(),
+                        inputCT.getScreen(), inputCT.getLocale());
+        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
+        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
+        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
+        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
+        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
+
+        // Deleting added custom text preference.
+        brandingPreferenceManagerImpl.deleteCustomText
+                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
+    }
+
+    @Test(dataProvider = "customTextPreferenceDataProvider")
+    public void testResolveCustomTextWithResolver(Object customText, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText inputCT = (CustomText) customText;
+
+        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
+        resolver.setCustomText(inputCT);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+
+        CustomText retrievedCT =
+                brandingPreferenceManagerImpl.resolveCustomText(inputCT.getType(), inputCT.getName(),
+                        inputCT.getScreen(), inputCT.getLocale());
+        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
+        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
+        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
+        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
+        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
+    }
+
+    @DataProvider(name = "notExistingCustomTextDataProvider")
+    public Object[][] notExistingCustomTextDataProvider() {
+
+        return new Object[][]{
+                {SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+        };
+    }
+
+    @Test(dataProvider = "notExistingCustomTextDataProvider")
+    public void testGetNotExistingCustomText(String tenantDomain, int tenantId) throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN, DEFAULT_LOCALE));
+    }
+
+    @DataProvider(name = "replaceCustomTextDataProvider")
+    public Object[][] replaceCustomTextDataProvider() throws Exception {
+
+        CustomText customText1 = new CustomText();
+        customText1.setType(ORGANIZATION_TYPE);
+        customText1.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText1.setScreen(LOGIN_SCREEN);
+        customText1.setLocale(DEFAULT_LOCALE);
+        customText1.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        CustomText newCustomText1 = new CustomText();
+        newCustomText1.setType(ORGANIZATION_TYPE);
+        newCustomText1.setName(SUPER_TENANT_DOMAIN_NAME);
+        newCustomText1.setScreen(LOGIN_SCREEN);
+        newCustomText1.setLocale(DEFAULT_LOCALE);
+        newCustomText1.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        CustomText customText2 = new CustomText();
+        customText2.setType(ORGANIZATION_TYPE);
+        customText2.setName(SUPER_TENANT_DOMAIN_NAME);
+        customText2.setScreen(LOGIN_SCREEN);
+        customText2.setLocale(DEFAULT_LOCALE);
+        customText2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        CustomText newCustomText2 = new CustomText();
+        newCustomText2.setType(ORGANIZATION_TYPE);
+        newCustomText2.setName(SUPER_TENANT_DOMAIN_NAME);
+        newCustomText2.setScreen(LOGIN_SCREEN);
+        newCustomText2.setLocale(DEFAULT_LOCALE);
+        newCustomText2.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        return new Object[][]{
+                {customText1, newCustomText1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {customText1, newCustomText2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+        };
+    }
+
+    @Test(dataProvider = "replaceCustomTextDataProvider")
+    public void testReplaceCustomText(Object customText, Object newCustomText, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText inputCT = (CustomText) customText;
+        CustomText newCT = (CustomText) newCustomText;
+
+        // Adding new custom text preference.
+        CustomText addedCT = brandingPreferenceManagerImpl.addCustomText(inputCT);
+        Assert.assertEquals(addedCT.getPreference(), inputCT.getPreference());
+
+        CustomText updatedCT = brandingPreferenceManagerImpl.replaceCustomText(newCT);
+        Assert.assertEquals(updatedCT.getPreference(), newCT.getPreference());
+
+        // Retrieving updated custom text preference.
+        CustomText retrievedBP = brandingPreferenceManagerImpl.getCustomText
+                (newCT.getType(), newCT.getName(), newCT.getScreen(), newCT.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), newCT.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), newCT.getName());
+        Assert.assertEquals(retrievedBP.getType(), newCT.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), newCT.getLocale());
+
+        // Deleting added custom text preference.
+        brandingPreferenceManagerImpl.deleteCustomText
+                (newCT.getType(), newCT.getName(), newCT.getScreen(), newCT.getLocale());
+    }
+
+    @Test(dataProvider = "customTextPreferenceDataProvider")
+    public void testReplaceNotExistingCustomText(Object customText, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText newCT = (CustomText) customText;
+
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .replaceCustomText(newCT));
+    }
+
+    @Test(dataProvider = "notExistingCustomTextDataProvider")
+    public void testDeleteNotExistingCustomData(String tenantDomain, int tenantId) throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .deleteCustomText(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN, DEFAULT_LOCALE));
+    }
+
+    @DataProvider(name = "multipleCustomTextDataProvider")
+    public Object[][] multipleCustomTextDataProvider() throws Exception {
+
+        CustomText customText1 = new CustomText();
+        customText1.setType(ORGANIZATION_TYPE);
+        customText1.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        customText1.setScreen(LOGIN_SCREEN);
+        customText1.setLocale(DEFAULT_LOCALE);
+        customText1.setPreference(getPreferenceFromFile("sample-text-customization-1.json"));
+
+        CustomText customText2 = new CustomText();
+        customText2.setType(ORGANIZATION_TYPE);
+        customText2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        customText2.setScreen(LOGIN_SCREEN);
+        customText2.setLocale(FRENCH_LOCALE);
+        customText2.setPreference(getPreferenceFromFile("sample-text-customization-2.json"));
+
+        return new Object[][]{
+                {customText1, customText2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SUPER_TENANT_ID},
+        };
+    }
+
+    @Test(dataProvider = "multipleCustomTextDataProvider")
+    public void testDeleteAllCustomText(Object customText1, Object customText2, String tenantDomain, int tenantId)
+            throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        CustomText inputCT1 = (CustomText) customText1;
+        CustomText inputCT2 = (CustomText) customText2;
+
+        // Adding new custom text preference.
+        brandingPreferenceManagerImpl.addCustomText(inputCT1);
+        brandingPreferenceManagerImpl.addCustomText(inputCT2);
+
+        // Retrieving added custom text preference.
+        CustomText retrievedCT1 = brandingPreferenceManagerImpl.getCustomText
+                (inputCT1.getType(), inputCT1.getName(), inputCT1.getScreen(), inputCT1.getLocale());
+        Assert.assertEquals(retrievedCT1.getPreference(), inputCT1.getPreference());
+        Assert.assertEquals(retrievedCT1.getName(), inputCT1.getName());
+        Assert.assertEquals(retrievedCT1.getType(), inputCT1.getType());
+        Assert.assertEquals(retrievedCT1.getLocale(), inputCT1.getLocale());
+
+        CustomText retrievedCT2 = brandingPreferenceManagerImpl.getCustomText
+                (inputCT2.getType(), inputCT2.getName(), inputCT2.getScreen(), inputCT2.getLocale());
+        Assert.assertEquals(retrievedCT2.getPreference(), inputCT2.getPreference());
+        Assert.assertEquals(retrievedCT2.getName(), inputCT2.getName());
+        Assert.assertEquals(retrievedCT2.getType(), inputCT2.getType());
+        Assert.assertEquals(retrievedCT2.getLocale(), inputCT2.getLocale());
+
+        // Bulk Deleting added custom text preferences.
+        brandingPreferenceManagerImpl.deleteAllCustomText();
+
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(inputCT1.getType(), inputCT1.getName(), inputCT1.getScreen(), inputCT1.getLocale()));
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(inputCT2.getType(), inputCT2.getName(), inputCT2.getScreen(), inputCT2.getLocale()));
     }
 
     private void setCarbonContextForTenant(String tenantDomain, int tenantId) throws UserStoreException {

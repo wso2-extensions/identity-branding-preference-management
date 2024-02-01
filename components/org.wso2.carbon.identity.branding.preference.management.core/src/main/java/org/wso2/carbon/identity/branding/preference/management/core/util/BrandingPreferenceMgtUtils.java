@@ -27,6 +27,9 @@ import org.wso2.carbon.identity.branding.preference.management.core.constant.Bra
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LOCAL_CODE_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
+
 /**
  * Util class for branding preference management.
  */
@@ -109,6 +112,21 @@ public class BrandingPreferenceMgtUtils {
 
         String message = populateMessageWithData(error);
         return new BrandingPreferenceMgtServerException(message, error.getCode(), e);
+    }
+
+    /**
+     * Replace '_' with '-' in the locale code for support both the locale code formats like en-US & en_US.
+     *
+     * @param locale Locale code.
+     * @return Formatted locale code.
+     */
+    public static String getFormattedLocale(String locale) {
+
+        String formattedLocale = locale;
+        if (StringUtils.isNotBlank(locale)) {
+            formattedLocale = locale.replace(RESOURCE_NAME_SEPARATOR, LOCAL_CODE_SEPARATOR);
+        }
+        return formattedLocale;
     }
 
     private static String populateMessageWithData(BrandingPreferenceMgtConstants.ErrorMessages error, String... data) {
