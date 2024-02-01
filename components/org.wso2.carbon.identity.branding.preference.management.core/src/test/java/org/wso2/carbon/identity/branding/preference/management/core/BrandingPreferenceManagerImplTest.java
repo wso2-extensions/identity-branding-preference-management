@@ -330,9 +330,8 @@ public class BrandingPreferenceManagerImplTest {
         brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
 
         //  Retrieving added branding preference.
-        BrandingPreference retrievedBP =
-                brandingPreferenceManagerImpl.resolveApplicationBrandingPreference(inputBP.getType(), inputBP.getName(),
-                        inputBP.getLocale());
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveApplicationBrandingPreference
+                (inputBP.getName(), inputBP.getLocale());
         Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());

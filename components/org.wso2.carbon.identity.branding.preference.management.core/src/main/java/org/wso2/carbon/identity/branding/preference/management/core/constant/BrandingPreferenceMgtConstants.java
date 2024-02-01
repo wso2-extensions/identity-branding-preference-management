@@ -73,6 +73,8 @@ public class BrandingPreferenceMgtConstants {
                 "Requested branding preference configuration: %s is not allowed for the organization."),
         ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00012",
                 "Error while clearing branding preference resolver cache hierarchy for tenant: %s."),
+        ERROR_CODE_APPLICATION_NOT_FOUND("BRANDINGM_00013",
+                "There is no application with the name : %s , in the organization: %s."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00021",
                 "Error while validating branding preference configurations for the organization: %s."),
         // Error messages related to custom text configurations.
@@ -96,10 +98,6 @@ public class BrandingPreferenceMgtConstants {
                 "Unable to bulk delete custom text preferences for tenant: %s."),
         ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00031",
                 "Error while clearing custom text preference resolver cache hierarchy for tenant: %s.");
-        ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00012",
-                "Error while validating branding preference configurations for the organization: %s."),
-        ERROR_CODE_APPLICATION_NOT_FOUND("BRANDINGM_00013",
-                "There is no application with the name : %s , in the organization: %s.");
 
         private final String code;
         private final String message;

@@ -199,11 +199,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     @Override
-    public BrandingPreference resolveApplicationBrandingPreference(String type, String name, String locale)
+    public BrandingPreference resolveApplicationBrandingPreference(String name, String locale)
             throws BrandingPreferenceMgtException {
 
         try {
-            return getBrandingPreference(type, name, locale);
+            return getBrandingPreference(APPLICATION_TYPE, name, locale);
         } catch (BrandingPreferenceMgtClientException e) {
             if (ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -211,9 +211,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 }
                 // Return default branding preference.(organization level branding preferences)
                 return resolveBrandingPreference(ORGANIZATION_TYPE, name, locale);
-            } else {
-                throw e;
             }
+            throw e;
         }
     }
 
