@@ -65,13 +65,16 @@ public interface BrandingPreferenceManager {
     /**
      * This API is used to retrieve a resolved branding preference for an application.
      *
-     * @param name   Name of the application.
-     * @param locale Language preference of the branding.
+     * @param identifier Application identifier.
+     * @param locale     Language preference of the branding.
      * @return The resolved branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    BrandingPreference resolveApplicationBrandingPreference(String name, String locale)
-            throws BrandingPreferenceMgtException;
+    default BrandingPreference resolveApplicationBrandingPreference(String identifier, String locale)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 
     /**
      * This API is used to replace a given branding preference.

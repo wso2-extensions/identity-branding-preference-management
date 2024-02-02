@@ -199,18 +199,18 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     }
 
     @Override
-    public BrandingPreference resolveApplicationBrandingPreference(String name, String locale)
+    public BrandingPreference resolveApplicationBrandingPreference(String identifier, String locale)
             throws BrandingPreferenceMgtException {
 
         try {
-            return getBrandingPreference(APPLICATION_TYPE, name, locale);
+            return getBrandingPreference(APPLICATION_TYPE, identifier, locale);
         } catch (BrandingPreferenceMgtClientException e) {
             if (ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Can not find a branding preference configurations for Application: " + name);
+                    LOG.debug("Can not find a branding preference configurations for Application: " + identifier);
                 }
                 // Return default branding preference.(organization level branding preferences)
-                return resolveBrandingPreference(ORGANIZATION_TYPE, name, locale);
+                return resolveBrandingPreference(ORGANIZATION_TYPE, getTenantDomain(), locale);
             }
             throw e;
         }
@@ -594,9 +594,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return BRANDING_RESOURCE_TYPE;
     }
 
-    private boolean isApplicationExists(String applicationName, String tenantDomain) {
+    private boolean isApplicationExists(String identifier, String tenantDomain) {
 
-        //TODO: Implement this method to check the existence of application before add application branding preferences.
+        //TODO: Implement this to check the existence of application(https://github.com/wso2/product-is/issues/19366).
         return true;
     }
 
