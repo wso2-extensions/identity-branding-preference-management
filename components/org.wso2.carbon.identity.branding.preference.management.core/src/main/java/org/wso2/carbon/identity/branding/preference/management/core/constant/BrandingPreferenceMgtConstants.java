@@ -24,6 +24,7 @@ package org.wso2.carbon.identity.branding.preference.management.core.constant;
 public class BrandingPreferenceMgtConstants {
 
     public static final String BRANDING_RESOURCE_TYPE = "BRANDING_PREFERENCES";
+    public static final String APPLICATION_BRANDING_RESOURCE_TYPE = "APPLICATION_BRANDING_PREFERENCES";
     public static final String CUSTOM_TEXT_RESOURCE_TYPE = "CUSTOM_TEXT";
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
@@ -72,6 +73,8 @@ public class BrandingPreferenceMgtConstants {
                 "Requested branding preference configuration: %s is not allowed for the organization."),
         ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00012",
                 "Error while clearing branding preference resolver cache hierarchy for tenant: %s."),
+        ERROR_CODE_APPLICATION_NOT_FOUND("BRANDINGM_00013",
+                "There is no application with the name : %s , in the organization: %s."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00021",
                 "Error while validating branding preference configurations for the organization: %s."),
         // Error messages related to custom text configurations.
