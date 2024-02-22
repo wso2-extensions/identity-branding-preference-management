@@ -109,7 +109,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 (brandingPreference.getType(), brandingPreference.getName(), brandingPreference.getLocale());
         String resourceType = getResourceType(brandingPreference.getType());
         String tenantDomain = getTenantDomain();
-        validatePreferenceUrls(brandingPreference);
         // Check whether a branding resource already exists with the same name in the particular tenant to be added.
         if (isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
@@ -127,6 +126,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+        validatePreferenceUrls(brandingPreference);
 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
@@ -231,7 +231,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 (brandingPreference.getType(), brandingPreference.getName(), brandingPreference.getLocale());
         String resourceType = getResourceType(brandingPreference.getType());
         String tenantDomain = getTenantDomain();
-        validatePreferenceUrls(brandingPreference);
         // Check whether the branding resource exists in the particular tenant.
         if (!isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
@@ -241,6 +240,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+        validatePreferenceUrls(brandingPreference);
         BrandingPreference oldBrandingPreference = getBrandingPreference(brandingPreference.getType(),
                 brandingPreference.getName(), brandingPreference.getLocale());
 
