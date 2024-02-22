@@ -74,6 +74,10 @@
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections.wso2</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.json.wso2</groupId>
             <artifactId>json</artifactId>
         </dependency>
@@ -139,6 +143,7 @@
                             org.osgi.framework;version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component;version="${osgi.service.component.imp.pkg.version.range}",
 
+                            org.apache.commons.collections; version="${commons-collections.wso2.osgi.version.range}",
                             org.apache.commons.io; version="${commons.io.wso2.osgi.version.range}",
                             org.apache.commons.lang;version="${org.apache.commons.lang.imp.pkg.version.range}",
                             org.apache.commons.logging;version="${org.apache.commons.logging.imp.pkg.version.range}",

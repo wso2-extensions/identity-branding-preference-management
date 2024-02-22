@@ -104,6 +104,11 @@
                 <version>${commons-io.wso2.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-collections.wso2</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${apache.common.collection.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.json.wso2</groupId>
                 <artifactId>json</artifactId>
                 <version>${json.wso2.version}</version>
@@ -370,6 +375,8 @@
         <org.apache.commons.logging.imp.pkg.version.range>[1.2,2)</org.apache.commons.logging.imp.pkg.version.range>
         <commons-io.wso2.version>2.4.0.wso2v1</commons-io.wso2.version>
         <commons.io.wso2.osgi.version.range>[2.4.0,3.0.0)</commons.io.wso2.osgi.version.range>
+        <apache.common.collection.version>3.2.0.wso2v1</apache.common.collection.version>
+        <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
 
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>

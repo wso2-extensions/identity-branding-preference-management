@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.branding.preference.management.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -42,9 +43,12 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +56,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
@@ -74,6 +79,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
@@ -103,6 +109,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 (brandingPreference.getType(), brandingPreference.getName(), brandingPreference.getLocale());
         String resourceType = getResourceType(brandingPreference.getType());
         String tenantDomain = getTenantDomain();
+        validatePreferenceUrls(brandingPreference);
         // Check whether a branding resource already exists with the same name in the particular tenant to be added.
         if (isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
@@ -224,6 +231,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 (brandingPreference.getType(), brandingPreference.getName(), brandingPreference.getLocale());
         String resourceType = getResourceType(brandingPreference.getType());
         String tenantDomain = getTenantDomain();
+        validatePreferenceUrls(brandingPreference);
         // Check whether the branding resource exists in the particular tenant.
         if (!isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, tenantDomain);
@@ -666,5 +674,35 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     private ConfigurationManager getConfigurationManager() {
 
         return BrandingPreferenceManagerComponentDataHolder.getInstance().getConfigurationManager();
+    }
+
+    private void validatePreferenceUrls(BrandingPreference preference) throws BrandingPreferenceMgtClientException {
+
+        if (preference.getPreference() == null) {
+            return;
+        }
+        LinkedHashMap<String, String> urlsMap =
+                (LinkedHashMap) ((LinkedHashMap) preference.getPreference()).get(BRANDING_URLS);
+        if (MapUtils.isEmpty(urlsMap)) {
+            return;
+        }
+
+        for (String url : urlsMap.values()) {
+            if (StringUtils.isNotBlank(url)) {
+                try {
+                    URI providedUri = new URI(url);
+                    if (StringUtils.equalsIgnoreCase(providedUri.getScheme(), JAVASCRIPT)) {
+                        throw new BrandingPreferenceMgtClientException
+                                (ERROR_CODE_INVALID_BRANDING_PREFERENCE.getMessage(),
+                                        ERROR_CODE_INVALID_BRANDING_PREFERENCE.getCode());
+                    }
+                } catch (URISyntaxException e) {
+                    throw new BrandingPreferenceMgtClientException
+                            (ERROR_CODE_INVALID_BRANDING_PREFERENCE.getMessage(),
+                                    ERROR_CODE_INVALID_BRANDING_PREFERENCE.getCode());
+
+                }
+            }
+        }
     }
 }
