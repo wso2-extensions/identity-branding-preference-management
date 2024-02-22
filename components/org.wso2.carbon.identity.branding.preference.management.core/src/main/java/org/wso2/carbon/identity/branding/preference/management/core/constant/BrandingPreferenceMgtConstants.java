@@ -38,6 +38,8 @@ public class BrandingPreferenceMgtConstants {
     public static final String OLD_BRANDING_PREFERENCE = "old-branding-preference";
     public static final String NEW_BRANDING_PREFERENCE = "new-branding-preference";
     public static final String TENANT_DOMAIN = "tenant-domain";
+    public static final String JAVASCRIPT = "javascript";
+    public static final String BRANDING_URLS = "urls";
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
