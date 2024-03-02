@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
@@ -41,6 +42,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.model.BasicOrganization;
 import org.wso2.carbon.identity.organization.management.service.model.Organization;
 import org.wso2.carbon.identity.organization.management.service.util.Utils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
@@ -48,10 +50,13 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
@@ -76,6 +81,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceResolver {
 
     private static final Log LOG = LogFactory.getLog(UIBrandingPreferenceResolverImpl.class);
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     private final BrandedOrgCache brandedOrgCache;
     private final TextCustomizedOrgCache textCustomizedOrgCache;
@@ -215,32 +221,58 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
         }
 
-        List<String> childOrganizationIds = new ArrayList<>();
-        childOrganizationIds.add(organizationId);
-
-        // Clear branding resolver caches by looping (breadth-first) through child organization hierarchy
-        while (!childOrganizationIds.isEmpty()) {
-            // Pop the first child organization Id from the list
-            String childOrganizationId = childOrganizationIds.remove(0);
-            BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(childOrganizationId);
-
-            try {
-                String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
-                if (StringUtils.isNotBlank(childTenantDomain)) {
-                    BrandedOrgCacheEntry valueFromCache =
-                            brandedOrgCache.getValueFromCache(brandedOrgCacheKey, childTenantDomain);
-                    if (valueFromCache != null) {
-                        // If cache exists, clear the cache
-                        brandedOrgCache.clearCacheEntry(brandedOrgCacheKey, childTenantDomain);
-                    }
-
-                    // Add Ids of all child organizations of the current (child) organization
-                    childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
+        if (organizationId != null) {
+            clearBrandingResolverCache(currentTenantDomain, organizationId);
+            // Clear branding resolver caches by looping through child organization hierarchy.
+            CompletableFuture.runAsync(() -> {
+                try {
+                    clearBrandingResolverCacheHierarchy(organizationManager, currentTenantDomain);
+                } catch (BrandingPreferenceMgtServerException e) {
+                    LOG.error("An error occurred while clearing branding preference cache hierarchy", e);
                 }
-            } catch (OrganizationManagementException e) {
-                throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
-                        currentTenantDomain);
-            }
+            }, executorService);
+        }
+    }
+
+    private void clearBrandingResolverCacheHierarchy(OrganizationManager organizationManager,
+                                                     String currentTenantDomain)
+            throws BrandingPreferenceMgtServerException {
+
+        String cursor = null;
+        int pageSize = 10000;
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(currentTenantDomain, true);
+            do {
+                try {
+                    List<BasicOrganization> organizations =
+                            organizationManager.getOrganizations(pageSize, cursor, null, "DESC", "", true);
+                    for (BasicOrganization childOrganization : organizations) {
+                        String childTenantDomain = organizationManager.resolveTenantDomain(childOrganization.getId());
+                        if (StringUtils.isNotBlank(childTenantDomain)) {
+                            clearBrandingResolverCache(childTenantDomain, childOrganization.getId());
+                        }
+                    }
+                    cursor = organizations.isEmpty() ? null : Base64.getEncoder().encodeToString(
+                            organizations.get(organizations.size() - 1).getCreated().getBytes(StandardCharsets.UTF_8));
+                } catch (OrganizationManagementException e) {
+                    throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                            currentTenantDomain);
+                }
+            } while (cursor != null);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    private void clearBrandingResolverCache(String tenantDomain, String organizationId) {
+
+        BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(organizationId);
+        BrandedOrgCacheEntry valueFromCache =
+                brandedOrgCache.getValueFromCache(brandedOrgCacheKey, tenantDomain);
+        if (valueFromCache != null) {
+            // If cache exists, clear the cache
+            brandedOrgCache.clearCacheEntry(brandedOrgCacheKey, tenantDomain);
         }
     }
   
@@ -353,32 +385,60 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 return;
             }
         }
-
-        List<String> childOrganizationIds = new ArrayList<>();
-        childOrganizationIds.add(organizationId);
-
-        // Clear custom text resolver caches by looping (breadth-first) through child organization hierarchy.
-        while (!childOrganizationIds.isEmpty()) {
-            // Pop the first child organization Id from the list.
-            String childOrganizationId = childOrganizationIds.remove(0);
-            String resourceName = getResourceNameForCustomText(screen, locale);
-            TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(childOrganizationId, resourceName);
-
-            try {
-                String childTenantDomain = organizationManager.resolveTenantDomain(childOrganizationId);
-                TextCustomizedOrgCacheEntry valueFromCache =
-                        textCustomizedOrgCache.getValueFromCache(cacheKey, childTenantDomain);
-                if (valueFromCache != null) {
-                    // If cache exists, clear the cache.
-                    textCustomizedOrgCache.clearCacheEntry(cacheKey, childTenantDomain);
+        String resourceName = getResourceNameForCustomText(screen, locale);
+        if (organizationId != null) {
+            clearCustomTextResolverCache(currentTenantDomain, organizationId, resourceName);
+            // Clear custom text resolver caches by looping through child organization hierarchy.
+            CompletableFuture.runAsync(() -> {
+                try {
+                    clearCustomTextResolverCacheHierarchy(organizationManager, currentTenantDomain, resourceName);
+                } catch (BrandingPreferenceMgtServerException e) {
+                    LOG.error("An error occurred while clearing custom text preference cache hierarchy", e);
                 }
+            }, executorService);
+        }
+    }
 
-                // Add Ids of all child organizations of the current (child) organization.
-                childOrganizationIds.addAll(organizationManager.getChildOrganizationsIds(childOrganizationId));
-            } catch (OrganizationManagementException e) {
-                throw handleServerException(ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
-                        currentTenantDomain);
-            }
+    private void clearCustomTextResolverCacheHierarchy(OrganizationManager organizationManager,
+                                                       String currentTenantDomain, String resourceName)
+            throws BrandingPreferenceMgtServerException {
+
+        String cursor = null;
+        int pageSize = 10000;
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(currentTenantDomain, true);
+            do {
+                try {
+                    List<BasicOrganization> organizations =
+                            organizationManager.getOrganizations(pageSize, cursor, null, "DESC", "", true);
+                    for (BasicOrganization childOrganization : organizations) {
+                        String childTenantDomain = organizationManager.resolveTenantDomain(childOrganization.getId());
+                        if (StringUtils.isNotBlank(childTenantDomain)) {
+                            clearCustomTextResolverCache(childTenantDomain, childOrganization.getId(), resourceName);
+                        }
+                    }
+                    cursor = organizations.isEmpty() ? null : Base64.getEncoder().encodeToString(
+                            organizations.get(organizations.size() - 1).getCreated().getBytes(StandardCharsets.UTF_8));
+                } catch (OrganizationManagementException e) {
+                    throw handleServerException(
+                            ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
+                            currentTenantDomain);
+                }
+            } while (cursor != null);
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    private void clearCustomTextResolverCache(String tenantDomain, String organizationId, String resourceName) {
+
+        TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(organizationId, resourceName);
+        TextCustomizedOrgCacheEntry valueFromCache =
+                textCustomizedOrgCache.getValueFromCache(cacheKey, tenantDomain);
+        if (valueFromCache != null) {
+            // If cache exists, clear the cache.
+            textCustomizedOrgCache.clearCacheEntry(cacheKey, tenantDomain);
         }
     }
 
