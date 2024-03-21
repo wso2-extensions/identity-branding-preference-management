@@ -690,7 +690,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         for (String url : urlsMap.values()) {
             if (StringUtils.isNotBlank(url)) {
                 try {
-                    URI providedUri = new URI(url);
+                    /*
+                    Provided string should contain only allowed uri characters with an exception for '{' and '}'
+                    since they are required for specifying placeholders. Hence, replacing only these characters with
+                    their encoded values.
+                    */
+                    URI providedUri = new URI(
+                            url.replace("{{", "%7B%7B").replace("}}", "%7D%7D"));
                     if (StringUtils.equalsIgnoreCase(providedUri.getScheme(), JAVASCRIPT)) {
                         throw new BrandingPreferenceMgtClientException
                                 (ERROR_CODE_INVALID_BRANDING_PREFERENCE.getMessage(),
