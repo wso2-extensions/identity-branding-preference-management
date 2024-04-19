@@ -241,10 +241,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         String cursor = null;
         int pageSize = 10000;
+        int iteratorLimit = 100;
         try {
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(currentTenantDomain, true);
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(usernameInContext);
+            int counter = 0;
             do {
                 try {
                     List<BasicOrganization> organizations =
@@ -257,10 +259,17 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     }
                     cursor = organizations.isEmpty() ? null : Base64.getEncoder().encodeToString(
                             organizations.get(organizations.size() - 1).getCreated().getBytes(StandardCharsets.UTF_8));
+                    if (counter > iteratorLimit) {
+                        LOG.info("Cursor: " + cursor + "Organization Size : " + organizations.size());
+                    }
+                    if (counter > iteratorLimit + 5) {
+                        break;
+                    }
                 } catch (OrganizationManagementException e) {
                     throw handleServerException(ERROR_CODE_ERROR_CLEARING_BRANDING_PREFERENCE_RESOLVER_CACHE_HIERARCHY,
                             currentTenantDomain);
                 }
+                counter++;
             } while (cursor != null);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
