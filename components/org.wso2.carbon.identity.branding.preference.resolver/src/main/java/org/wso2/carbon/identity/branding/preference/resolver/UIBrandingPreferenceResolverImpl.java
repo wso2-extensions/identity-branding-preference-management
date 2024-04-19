@@ -259,8 +259,9 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     }
                     cursor = organizations.isEmpty() ? null : Base64.getEncoder().encodeToString(
                             organizations.get(organizations.size() - 1).getCreated().getBytes(StandardCharsets.UTF_8));
-                    if (counter > iteratorLimit) {
-                        LOG.info("Cursor: " + cursor + "Organization Size : " + organizations.size());
+                    if (counter > iteratorLimit || counter == 0) {
+                        LOG.info("Cursor: " + cursor + "Organization Size : " + organizations.size()
+                                + ". Counter :" + counter);
                     }
                     if (counter > iteratorLimit + 5) {
                         break;
