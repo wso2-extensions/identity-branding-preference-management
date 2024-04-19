@@ -223,10 +223,11 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         if (organizationId != null) {
             clearBrandingResolverCache(currentTenantDomain, organizationId);
+            String usernameInContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
             // Clear branding resolver caches by looping through child organization hierarchy.
             CompletableFuture.runAsync(() -> {
                 try {
-                    clearBrandingResolverCacheHierarchy(organizationManager, currentTenantDomain);
+                    clearBrandingResolverCacheHierarchy(organizationManager, currentTenantDomain, usernameInContext);
                 } catch (BrandingPreferenceMgtServerException e) {
                     LOG.error("An error occurred while clearing branding preference cache hierarchy", e);
                 }
@@ -235,7 +236,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     }
 
     private void clearBrandingResolverCacheHierarchy(OrganizationManager organizationManager,
-                                                     String currentTenantDomain)
+                                                     String currentTenantDomain, String usernameInContext)
             throws BrandingPreferenceMgtServerException {
 
         String cursor = null;
@@ -243,6 +244,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         try {
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(currentTenantDomain, true);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(usernameInContext);
             do {
                 try {
                     List<BasicOrganization> organizations =
