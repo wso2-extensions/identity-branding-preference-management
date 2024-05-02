@@ -408,10 +408,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         String resourceName = getResourceNameForCustomText(screen, locale);
         if (organizationId != null) {
             clearCustomTextResolverCache(currentTenantDomain, organizationId, resourceName);
+            String usernameInContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
             // Clear custom text resolver caches by looping through child organization hierarchy.
             CompletableFuture.runAsync(() -> {
                 try {
-                    clearCustomTextResolverCacheHierarchy(organizationManager, currentTenantDomain, resourceName);
+                    clearCustomTextResolverCacheHierarchy(organizationManager, currentTenantDomain, resourceName,
+                            usernameInContext);
                 } catch (BrandingPreferenceMgtServerException e) {
                     LOG.error("An error occurred while clearing custom text preference cache hierarchy", e);
                 }
@@ -420,7 +422,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     }
 
     private void clearCustomTextResolverCacheHierarchy(OrganizationManager organizationManager,
-                                                       String currentTenantDomain, String resourceName)
+                                                       String currentTenantDomain, String resourceName,
+                                                       String usernameInContext)
             throws BrandingPreferenceMgtServerException {
 
         String cursor = null;
@@ -428,6 +431,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         try {
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(currentTenantDomain, true);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(usernameInContext);
             do {
                 try {
                     List<BasicOrganization> organizations =
