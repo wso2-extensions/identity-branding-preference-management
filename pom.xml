@@ -132,6 +132,11 @@
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.core</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!-- Org Management related dependencies -->
             <dependency>
@@ -360,7 +365,7 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>5.25.437</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.2.24</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->

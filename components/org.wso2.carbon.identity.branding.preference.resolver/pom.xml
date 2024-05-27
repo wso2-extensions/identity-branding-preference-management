@@ -58,6 +58,10 @@
             <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
             <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
         </dependency>
@@ -115,7 +119,7 @@
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.event.*; version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.core.cache; version="${carbon.identity.package.import.version.range}",
-
+                            org.wso2.carbon.identity.core.*; version="${carbon.identity.package.import.version.range}",
                             org.json; version="${json.wso2.version.range}",
 
                             org.wso2.carbon.identity.branding.preference.management.core.*; version="${org.wso2.identity.branding.preference.mgt.imp.pkg.version.range}",
