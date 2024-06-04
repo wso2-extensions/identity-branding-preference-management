@@ -38,6 +38,7 @@ public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceRes
 
     @Override
     public void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException {
+        
         setBranding(null);
     }
 
