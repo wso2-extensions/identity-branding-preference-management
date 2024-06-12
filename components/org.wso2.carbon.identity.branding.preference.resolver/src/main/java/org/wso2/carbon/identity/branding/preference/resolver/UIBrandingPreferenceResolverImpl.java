@@ -40,7 +40,7 @@ import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingRe
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
-import org.wso2.carbon.identity.core.MDCAwareExecutors;
+import org.wso2.carbon.identity.core.ThreadLocalAwareExecutors;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.organization.management.service.model.BasicOrganization;
@@ -81,7 +81,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceResolver {
 
     private static final Log LOG = LogFactory.getLog(UIBrandingPreferenceResolverImpl.class);
-    private final ExecutorService executorService = MDCAwareExecutors.newFixedThreadPool(1);
+    private final ExecutorService executorService = ThreadLocalAwareExecutors.newFixedThreadPool(1);
 
     private final BrandedOrgCache brandedOrgCache;
     private final TextCustomizedOrgCache textCustomizedOrgCache;
