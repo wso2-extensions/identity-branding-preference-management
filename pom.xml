@@ -132,6 +132,11 @@
                 <artifactId>org.wso2.carbon.identity.event</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.core</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!-- Org Management related dependencies -->
             <dependency>
@@ -360,7 +365,7 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>5.25.437</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.3.1</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
@@ -399,12 +404,11 @@
         <findsecbugs-plugin.version>1.10.1</findsecbugs-plugin.version>
 
         <!-- Unit test versions -->
-        <testng.version>6.9.10</testng.version>
-        <jacoco.version>0.8.2</jacoco.version>
+        <testng.version>7.10.1</testng.version>
+        <jacoco.version>0.8.4</jacoco.version>
         <jmockit.version>1.44</jmockit.version>
-        <maven.surefire.plugin.version>2.22.0</maven.surefire.plugin.version>
-        <org.mockito.version>2.1.0</org.mockito.version>
+        <org.mockito.version>5.3.1</org.mockito.version>
         <h2database.version>1.4.199</h2database.version>
-        <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
     </properties>
 </project>
