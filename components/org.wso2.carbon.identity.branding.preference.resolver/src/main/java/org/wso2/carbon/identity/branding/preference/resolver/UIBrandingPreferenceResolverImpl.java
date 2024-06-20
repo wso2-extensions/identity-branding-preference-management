@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
@@ -92,7 +91,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceResolver {
 
     private static final Log LOG = LogFactory.getLog(UIBrandingPreferenceResolverImpl.class);
-    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
     private final ExecutorService executorService = ThreadLocalAwareExecutors.newFixedThreadPool(1);
     private static final String ORGANIZATION_DETAILS = "organizationDetails";
     private static final String DISPLAY_NAME = "displayName";
