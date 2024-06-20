@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.resolver.internal;
 
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.organization.management.application.OrgApplicationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 
 /**
@@ -31,7 +32,7 @@ public class BrandingResolverComponentDataHolder {
 
     private ConfigurationManager configurationManager;
     private OrganizationManager organizationManager;
-
+    private OrgApplicationManager orgApplicationManager;
 
     public static BrandingResolverComponentDataHolder getInstance() {
 
@@ -60,5 +61,15 @@ public class BrandingResolverComponentDataHolder {
     public void setConfigurationManager(ConfigurationManager configurationManager) {
 
         this.configurationManager = configurationManager;
+    }
+
+    public OrgApplicationManager getOrgApplicationManager() {
+
+        return orgApplicationManager;
+    }
+
+    public void setOrgApplicationManager(OrgApplicationManager orgApplicationManager) {
+
+        this.orgApplicationManager = orgApplicationManager;
     }
 }

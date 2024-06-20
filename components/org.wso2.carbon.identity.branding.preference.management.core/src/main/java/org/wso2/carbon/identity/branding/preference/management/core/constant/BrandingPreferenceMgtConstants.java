@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -54,7 +54,7 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_INVALID_BRANDING_PREFERENCE("BRANDINGM_00001",
                 "Invalid Branding Preference configurations for tenant: %s."),
         ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS("BRANDINGM_00002",
-                "Branding preferences are not configured for tenant: %s."),
+                "Branding preferences are not configured for name: %s, type: %s, tenant: %s."),
         ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS("BRANDINGM_00003",
                 "Branding preference already exists for tenant: %s."),
         ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE("BRANDINGM_00004",
@@ -99,7 +99,12 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES("BRANDINGM_00030",
                 "Unable to bulk delete custom text preferences for tenant: %s."),
         ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY("BRANDINGM_00031",
-                "Error while clearing custom text preference resolver cache hierarchy for tenant: %s.");
+                "Error while clearing custom text preference resolver cache hierarchy for tenant: %s."),
+        ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE("BRANDINGM_00032",
+                "Invalid branding preference type: %s for tenant: %s."),
+        ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE("BRANDINGM_00033",
+                "Error while getting app-level branding preference configurations for application id: %s " +
+                        "in tenant: %s.");
 
         private final String code;
         private final String message;

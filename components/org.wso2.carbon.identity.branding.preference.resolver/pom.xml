@@ -58,6 +58,10 @@
             <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.organization.management</groupId>
+            <artifactId>org.wso2.carbon.identity.organization.management.application</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
             <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
         </dependency>
@@ -118,6 +122,7 @@
 
                             org.json; version="${json.wso2.version.range}",
 
+                            org.wso2.carbon.identity.organization.management.application; version="${org.wso2.identity.branding.preference.mgt.imp.pkg.version.range}",
                             org.wso2.carbon.identity.branding.preference.management.core.*; version="${org.wso2.identity.branding.preference.mgt.imp.pkg.version.range}",
 
                             org.wso2.carbon.identity.organization.management.service; version="${identity.organization.management.core.imp.pkg.version.range}",

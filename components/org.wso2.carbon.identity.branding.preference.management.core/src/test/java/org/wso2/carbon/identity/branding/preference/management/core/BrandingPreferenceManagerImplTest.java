@@ -1,5 +1,5 @@
 /*
- * Copyright (c) (2022-2023), WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -330,8 +330,8 @@ public class BrandingPreferenceManagerImplTest {
         brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
 
         //  Retrieving added branding preference.
-        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveApplicationBrandingPreference
-                (inputBP.getName(), inputBP.getLocale());
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
         Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
