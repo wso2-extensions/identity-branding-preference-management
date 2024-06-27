@@ -34,6 +34,8 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheEntry;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -128,31 +131,32 @@ public class UIBrandingPreferenceResolverImplTest {
     @Test
     public void testResolveAppBrandingFromCurrentAppBranding() throws Exception {
 
-        setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
 
-        String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
-        String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
-        String resourceFileName = "sample-child-app-branding-preference.json";
+            String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-app-branding-preference.json";
 
-        mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE, resourceFileName);
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
 
-        BrandingPreference resolvedBrandingPreference =
-                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
 
-        Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_APP_ID);
-        Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
-        Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
-        Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_APP_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
     }
 
     @Test
     public void testResolveAppBrandingFromCurrentOrgBranding() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
 
             String resourceName =
@@ -176,10 +180,7 @@ public class UIBrandingPreferenceResolverImplTest {
     public void testResolveAppBrandingFromParentAppBranding() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
 
             String resourceName = PARENT_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
@@ -217,11 +218,7 @@ public class UIBrandingPreferenceResolverImplTest {
     public void testResolveAppBrandingFromParentOrgBranding() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(ROOT_TENANT_DOMAIN)).thenReturn(ROOT_TENANT_ID);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
             String resourceName =
                     String.valueOf(PARENT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
@@ -258,11 +255,7 @@ public class UIBrandingPreferenceResolverImplTest {
     public void testResolveAppBrandingFromRootAppBranding() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(ROOT_TENANT_DOMAIN)).thenReturn(ROOT_TENANT_ID);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
             String resourceName = ROOT_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
             String resourceId = "91356f5e-e10b-49f2-87a6-f7f48e164374";
@@ -310,11 +303,7 @@ public class UIBrandingPreferenceResolverImplTest {
     public void testResolveAppBrandingFromRootOrgBranding() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(ROOT_TENANT_DOMAIN)).thenReturn(ROOT_TENANT_ID);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
             String resourceName =
                     String.valueOf(ROOT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
@@ -359,14 +348,10 @@ public class UIBrandingPreferenceResolverImplTest {
     }
 
     @Test
-    public void testResolveAppBrandingEmpty() throws Exception {
+    public void testResolveAppBrandingWhenNoBrandingAvailable() throws Exception {
 
         try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
-            TenantManager tenantManager = mockTenantManager(mockedOSGiDataHolder);
-            when(tenantManager.getTenantId(ROOT_TENANT_DOMAIN)).thenReturn(ROOT_TENANT_ID);
-            when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
-            when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
-
+            mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
 
             Organization childOrganization = new Organization();
@@ -400,15 +385,78 @@ public class UIBrandingPreferenceResolverImplTest {
         }
     }
 
-    private TenantManager mockTenantManager(MockedStatic<OSGiDataHolder> mockedOSGiDataHolder) {
+    @Test
+    public void testResolveAppBrandingFromCacheWithAppLevelBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName = PARENT_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "12356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-parent-app-branding-preference.json";
+
+            BrandedAppCacheEntry brandedAppCacheEntry =
+                    new BrandedAppCacheEntry(PARENT_ORG_ID, PARENT_APP_ID, APPLICATION_TYPE);
+            when(brandedAppCache.getValueFromCache(any(BrandedAppCacheKey.class), eq(CHILD_ORG_ID))).thenReturn(
+                    brandedAppCacheEntry);
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+
+            Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_APP_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(),
+                    getPreferenceFromFile("sample-parent-app-branding-preference-without-display-name.json"));
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingFromCacheWithOrgLevelBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName =
+                    String.valueOf(PARENT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "13356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-parent-org-branding-preference.json";
+
+            BrandedAppCacheEntry brandedAppCacheEntry =
+                    new BrandedAppCacheEntry(PARENT_ORG_ID, null, ORGANIZATION_TYPE);
+            when(brandedAppCache.getValueFromCache(any(BrandedAppCacheKey.class), eq(CHILD_ORG_ID))).thenReturn(
+                    brandedAppCacheEntry);
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+
+            Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(),
+                    getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
+        }
+    }
+
+    private void mockOSGiDataHolder(MockedStatic<OSGiDataHolder> mockedOSGiDataHolder)
+            throws Exception {
+
+        TenantManager tenantManager = mock(TenantManager.class);
+        when(tenantManager.getTenantId(ROOT_TENANT_DOMAIN)).thenReturn(ROOT_TENANT_ID);
+        when(tenantManager.getTenantId(PARENT_ORG_ID)).thenReturn(PARENT_TENANT_ID);
+        when(tenantManager.getTenantId(CHILD_ORG_ID)).thenReturn(CHILD_TENANT_ID);
+
+        UserRealmService userRealmService = mock(UserRealmService.class);
+        when(userRealmService.getTenantManager()).thenReturn(tenantManager);
 
         OSGiDataHolder dataHolder = mock(OSGiDataHolder.class);
-        mockedOSGiDataHolder.when(OSGiDataHolder::getInstance).thenReturn(dataHolder);
-        UserRealmService userRealmService = mock(UserRealmService.class);
         when(dataHolder.getUserRealmService()).thenReturn(userRealmService);
-        TenantManager tenantManager = mock(TenantManager.class);
-        when(userRealmService.getTenantManager()).thenReturn(tenantManager);
-        return tenantManager;
+        mockedOSGiDataHolder.when(OSGiDataHolder::getInstance).thenReturn(dataHolder);
     }
 
     private void mockBrandingPreferenceRetrieval(String resourceName, String resourceId, String resourceType,
