@@ -342,8 +342,9 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentOrgId);
                 if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
                     // Go to the parent organization again.
-                    parentOrgId = ancestorOrganizationIds.get(1);
-                    parentAppId = orgApplicationManager.getParentAppId(appId, orgId, parentOrgId);
+                    String ancestorOrgId = ancestorOrganizationIds.get(1);
+                    parentAppId = orgApplicationManager.getParentAppId(parentAppId, parentOrgId, ancestorOrgId);
+                    parentOrgId = ancestorOrgId;
                     parentTenantDomain = organizationManager.resolveTenantDomain(parentOrgId);
                     parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentOrgId);
                 } else {
