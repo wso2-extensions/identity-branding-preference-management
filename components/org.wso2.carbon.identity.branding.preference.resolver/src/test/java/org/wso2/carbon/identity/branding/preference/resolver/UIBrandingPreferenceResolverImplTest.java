@@ -195,7 +195,7 @@ public class UIBrandingPreferenceResolverImplTest {
 
             when(organizationManager.getOrganization(CHILD_ORG_ID, false, false)).thenReturn(childOrganization);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID, PARENT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
                     PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
@@ -233,7 +233,7 @@ public class UIBrandingPreferenceResolverImplTest {
 
             when(organizationManager.getOrganization(CHILD_ORG_ID, false, false)).thenReturn(childOrganization);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID, PARENT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
                     PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
@@ -269,12 +269,12 @@ public class UIBrandingPreferenceResolverImplTest {
 
             when(organizationManager.getOrganization(CHILD_ORG_ID, false, false)).thenReturn(childOrganization);
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID, ROOT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
                     ROOT_APP_ID);
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID, PARENT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
                     PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
@@ -318,12 +318,12 @@ public class UIBrandingPreferenceResolverImplTest {
 
             when(organizationManager.getOrganization(CHILD_ORG_ID, false, false)).thenReturn(childOrganization);
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID, ROOT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
                     ROOT_APP_ID);
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID, PARENT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
                     PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
@@ -362,12 +362,12 @@ public class UIBrandingPreferenceResolverImplTest {
 
             when(organizationManager.getOrganization(CHILD_ORG_ID, false, false)).thenReturn(childOrganization);
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID, ROOT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
                     ROOT_APP_ID);
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID, PARENT_ORG_ID)).thenReturn(
+            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
                     PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);

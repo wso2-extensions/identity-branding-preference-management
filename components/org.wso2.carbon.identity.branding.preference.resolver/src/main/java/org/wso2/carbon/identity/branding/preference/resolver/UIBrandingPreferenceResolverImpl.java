@@ -301,7 +301,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
             OrgApplicationManager orgApplicationManager =
                     BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
-            String parentAppId = orgApplicationManager.getParentAppId(appId, orgId, parentOrgId);
+            String parentAppId = orgApplicationManager.getParentAppId(appId, orgId);
             String parentTenantDomain = organizationManager.resolveTenantDomain(parentOrgId);
             int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentOrgId);
 
@@ -342,9 +342,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentOrgId);
                 if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
                     // Go to the parent organization again.
-                    String ancestorOrgId = ancestorOrganizationIds.get(1);
-                    parentAppId = orgApplicationManager.getParentAppId(parentAppId, parentOrgId, ancestorOrgId);
-                    parentOrgId = ancestorOrgId;
+                    parentAppId = orgApplicationManager.getParentAppId(parentAppId, parentOrgId);
+                    parentOrgId = ancestorOrganizationIds.get(1);;
                     parentTenantDomain = organizationManager.resolveTenantDomain(parentOrgId);
                     parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentOrgId);
                 } else {
