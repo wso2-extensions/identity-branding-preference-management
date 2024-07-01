@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.resolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -68,7 +69,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
@@ -137,7 +138,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         } else if (ORGANIZATION_TYPE.equals(type)) {
             return resolveOrganizationBranding(name, locale, organizationManager, organizationId, currentTenantDomain);
         } else {
-            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE, type, getTenantDomain());
+            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE, type, currentTenantDomain);
         }
     }
 
@@ -180,55 +181,47 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             try {
-                Organization organization = organizationManager.getOrganization(organizationId, false, false);
                 // There's no need to resolve branding preferences for super tenant since it is the root organization.
                 if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
-                    // Get the details of the parent organization and resolve the branding preferences.
-                    String parentId = organization.getParent().getId();
-                    // This is a root tenant.
-                    if (StringUtils.isBlank(parentId)) {
-                        return getPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
+                    List<String> ancestorOrganizationIds =
+                            organizationManager.getAncestorOrganizationIds(organizationId);
+                    if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
+                        /*  No branding found. Adding the same tenant domain to cache
+                          to avoid the resolving in the next run. */
+                        addToCache(organizationId, currentTenantDomain, currentTenantDomain);
+                        throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                                ORGANIZATION_TYPE, name, currentTenantDomain);
                     }
-                    String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                    int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
 
                     // Get the minimum hierarchy depth that needs to be reached to resolve branding preference
                     int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
+                    for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
+                        String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
+                        int ancestorDepthInHierarchy =
+                                organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
 
-                    while (parentDepthInHierarchy >= minHierarchyDepth) {
-                        brandingPreference =
-                                getBrandingPreference(ORGANIZATION_TYPE, name, locale, parentTenantDomain);
-                        if (brandingPreference.isPresent()) {
-                            // Since Branding is inherited from Parent org, removing the Parent org displayName.
-                            removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                            addToCache(organizationId, currentTenantDomain, parentTenantDomain);
-                            return brandingPreference.get();
-                        }
-
-                        /*
-                            Get ancestor organization ids (including itself) of a given organization. The list is sorted
-                            from given organization id to the root organization id.
-                         */
-                        List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentId);
-                        if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
-                            // Go to the parent organization again.
-                            parentId = ancestorOrganizationIds.get(1);
-                            parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                            parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                        if (ancestorDepthInHierarchy >= minHierarchyDepth) {
+                            brandingPreference =
+                                    getBrandingPreference(ORGANIZATION_TYPE, name, locale, ancestorTenantDomain);
+                            if (brandingPreference.isPresent()) {
+                                // Since Branding is inherited from Parent org, removing the Parent org displayName.
+                                removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
+                                addToCache(organizationId, currentTenantDomain, ancestorTenantDomain);
+                                return brandingPreference.get();
+                            }
                         } else {
-                            // Reached to the root of the organization tree.
-                            parentDepthInHierarchy = -1;
+                            break;
                         }
                     }
                 }
             } catch (OrganizationManagementException e) {
-                throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, getTenantDomain());
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, currentTenantDomain);
             }
 
             // No branding found. Adding the same tenant domain to cache to avoid the resolving in the next run.
             addToCache(organizationId, currentTenantDomain, currentTenantDomain);
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS,
-                    name, ORGANIZATION_TYPE, getTenantDomain());
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    ORGANIZATION_TYPE, name, currentTenantDomain);
         } else {
             // No need to resolve the branding preference. Try to fetch the config from the same org.
             return getPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
@@ -278,88 +271,90 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             return brandingPreference.get();
         }
 
-        /*
-            It is not possible to resolve application branding further if the organization ID is null or
-            if the current tenant domain is super tenant since it is the root organization.
-         */
+        /* It is not possible to resolve application branding further if the organization ID is null or
+          if the current tenant domain is super tenant since it is the root organization. */
         if (orgId == null || MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
-            // No branding found. Adding the same tenant domain to cache to avoid the resolving in the next run.
+            // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
             addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS,
-                    appId, APPLICATION_TYPE, getTenantDomain());
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    APPLICATION_TYPE, appId, currentTenantDomain);
         }
 
         try {
-            // Get the details of the parent organization and resolve the branding preferences.
-            Organization organization = organizationManager.getOrganization(orgId, false, false);
-            String parentOrgId = organization.getParent().getId();
-            // This is a root tenant.
-            if (StringUtils.isBlank(parentOrgId)) {
-                return getPreference(ORGANIZATION_TYPE, currentTenantDomain, locale,
-                        currentTenantDomain);
+            List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(orgId);
+            if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
+                // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
+                addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                        APPLICATION_TYPE, appId, currentTenantDomain);
             }
 
             OrgApplicationManager orgApplicationManager =
                     BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
-            String parentAppId = orgApplicationManager.getParentAppId(appId, orgId);
-            String parentTenantDomain = organizationManager.resolveTenantDomain(parentOrgId);
-            int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentOrgId);
-
-            // Get the minimum hierarchy depth that needs to be reached to resolve branding preference
             int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
+            String childAppId = appId;
+            String childOrgId = orgId;
+            for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
+                String ancestorAppId = orgApplicationManager.getParentAppId(childAppId, childOrgId);
+                String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
+                int ancestorDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
 
-            while (parentDepthInHierarchy >= minHierarchyDepth) {
-                // If the app is selectively not shared with the parent org, parent app id can be empty.
-                if (StringUtils.isNotBlank(parentAppId)) {
-                    // Check parent organization app-level branding.
-                    brandingPreference = getBrandingPreference(APPLICATION_TYPE, parentAppId, locale,
-                            parentTenantDomain);
+                if (ancestorDepthInHierarchy >= minHierarchyDepth) {
+                    brandingPreference =
+                            getAppBrandingPreferenceFromAncestor(appId, locale, currentTenantDomain, ancestorAppId,
+                                    ancestorTenantDomain);
                     if (brandingPreference.isPresent()) {
-                        // Since Branding is inherited from app-level branding of the parent org,
-                        // removing the parent org displayName.
-                        removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                        addAppBrandingToCache(appId, currentTenantDomain, parentAppId, parentTenantDomain,
-                                APPLICATION_TYPE);
                         return brandingPreference.get();
                     }
-                }
-
-                // No parent organization app-level branding found. Check parent organization org-level branding.
-                brandingPreference =
-                        getBrandingPreference(ORGANIZATION_TYPE, parentTenantDomain, locale, parentTenantDomain);
-                if (brandingPreference.isPresent()) {
-                    // Since Branding is inherited from org-level branding of the parent org,
-                    // removing the parent org displayName.
-                    removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                    addAppBrandingToCache(appId, currentTenantDomain, null, parentTenantDomain, ORGANIZATION_TYPE);
-                    return brandingPreference.get();
-                }
-
-                /*
-                    Get ancestor organization ids (including itself) of a given organization. The list is sorted
-                    from given organization id to the root organization id.
-                */
-                List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentOrgId);
-                if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
-                    // Go to the parent organization again.
-                    parentAppId = orgApplicationManager.getParentAppId(parentAppId, parentOrgId);
-                    parentOrgId = ancestorOrganizationIds.get(1);;
-                    parentTenantDomain = organizationManager.resolveTenantDomain(parentOrgId);
-                    parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentOrgId);
+                    childAppId = ancestorAppId;
+                    childOrgId = ancestorOrgId;
                 } else {
-                    // Reached to the root of the organization tree.
-                    parentDepthInHierarchy = -1;
+                    break;
                 }
             }
 
             // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
             addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS,
-                    appId, APPLICATION_TYPE, getTenantDomain());
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    APPLICATION_TYPE, appId, currentTenantDomain);
         } catch (OrganizationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE,
-                    appId, getTenantDomain());
+                    appId, currentTenantDomain);
         }
+    }
+
+    private Optional<BrandingPreference> getAppBrandingPreferenceFromAncestor(
+            String appId, String locale, String currentTenantDomain, String ancestorAppId,
+            String ancestorTenantDomain) throws BrandingPreferenceMgtException {
+
+        Optional<BrandingPreference> brandingPreference;
+        // If the app is selectively not shared with the ancestor org, ancestor app id can be empty.
+        if (StringUtils.isNotBlank(ancestorAppId)) {
+            // Check ancestor organization app-level branding.
+            brandingPreference = getBrandingPreference(APPLICATION_TYPE, ancestorAppId, locale,
+                    ancestorTenantDomain);
+            if (brandingPreference.isPresent()) {
+                /* Since Branding is inherited from app-level branding of the ancestor org,
+                  removing the ancestor org displayName. */
+                removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
+                addAppBrandingToCache(appId, currentTenantDomain, ancestorAppId, ancestorTenantDomain,
+                        APPLICATION_TYPE);
+                return brandingPreference;
+            }
+        }
+        // Since no ancestor organization app-level branding found, check ancestor organization org-level branding.
+        brandingPreference =
+                getBrandingPreference(ORGANIZATION_TYPE, ancestorTenantDomain, locale,
+                        ancestorTenantDomain);
+        if (brandingPreference.isPresent()) {
+            /* Since Branding is inherited from org-level branding of the parent org,
+              removing the ancestor org displayName. */
+            removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
+            addAppBrandingToCache(appId, currentTenantDomain, null, ancestorTenantDomain,
+                    ORGANIZATION_TYPE);
+            return brandingPreference;
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -907,7 +902,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         Optional<BrandingPreference> brandingPreference =
                 getBrandingPreference(type, name, locale, currentTenantDomain);
         return brandingPreference.orElseThrow(
-                () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, getTenantDomain()));
+                () -> handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name,
+                        currentTenantDomain));
     }
 
     /**

@@ -53,8 +53,11 @@ public class BrandingPreferenceMgtConstants {
         // Error messages related to branding preference configurations.
         ERROR_CODE_INVALID_BRANDING_PREFERENCE("BRANDINGM_00001",
                 "Invalid Branding Preference configurations for tenant: %s."),
+        @Deprecated
         ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS("BRANDINGM_00002",
-                "Branding preferences are not configured for name: %s, type: %s, tenant: %s."),
+                "Branding preferences are not configured for tenant: %s."),
+        ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED("BRANDINGM_00002",
+                "Branding preferences are not configured for type: %s, name: %s in tenant: %s."),
         ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS("BRANDINGM_00003",
                 "Branding preference already exists for tenant: %s."),
         ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE("BRANDINGM_00004",

@@ -374,10 +374,10 @@
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
-        <identity.organization.management.version>1.4.34</identity.organization.management.version>
+        <identity.organization.management.version>1.4.40</identity.organization.management.version>
         <identity.organization.management.imp.pkg.version.range>[1.0.0,2.0.0)
         </identity.organization.management.imp.pkg.version.range>
-        <identity.organization.management.core.version>1.0.58</identity.organization.management.core.version>
+        <identity.organization.management.core.version>1.1.8</identity.organization.management.core.version>
         <identity.organization.management.core.imp.pkg.version.range>[1.0.0,2.0.0)
         </identity.organization.management.core.imp.pkg.version.range>
 

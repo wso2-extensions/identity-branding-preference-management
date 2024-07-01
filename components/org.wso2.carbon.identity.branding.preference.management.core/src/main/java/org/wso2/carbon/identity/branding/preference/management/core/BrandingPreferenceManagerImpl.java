@@ -60,7 +60,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE;
@@ -82,7 +82,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCES_NOT_EXISTS_ERROR_CODE;
@@ -167,16 +166,16 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             // Return default branding preference.
             List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(resourceType, resourceName);
             if (resourceFiles.isEmpty()) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, tenantDomain);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
             }
             if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, tenantDomain);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
             }
 
             InputStream inputStream = getConfigurationManager().getFileById
                     (resourceType, resourceName, resourceFiles.get(0).getId());
             if (inputStream == null) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, tenantDomain);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
@@ -187,7 +186,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain, e);
                 }
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, tenantDomain);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
             }
             throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
         } catch (IOException e) {
@@ -199,23 +198,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     public BrandingPreference resolveBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
 
-        if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
-            return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
-                    .resolveBranding(type, name, locale);
-        }
-        try {
-            return getBrandingPreference(type, name, locale);
-        } catch (BrandingPreferenceMgtClientException e) {
-            if (APPLICATION_TYPE.equals(type) &&
-                    ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Can not find a branding preference configurations for Application: " + name);
-                }
-                // Return default branding preference.(organization level branding preferences)
-                return resolveBrandingPreference(ORGANIZATION_TYPE, getTenantDomain(), locale);
-            }
-            throw e;
-        }
+        return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
+                .resolveBranding(type, name, locale);
     }
 
     /**
@@ -239,8 +223,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         String tenantDomain = getTenantDomain();
         // Check whether the branding resource exists in the particular tenant.
         if (!isResourceExists(resourceType, resourceName)) {
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS,
-                    brandingPreference.getName(), brandingPreference.getType(), tenantDomain);
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, brandingPreference.getType(),
+                    brandingPreference.getName(), tenantDomain);
         }
 
         String preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
@@ -275,7 +259,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         String tenantDomain = getTenantDomain();
         // Check whether the branding resource exists in the particular tenant.
         if (!isResourceExists(resourceType, resourceName)) {
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_EXISTS, name, type, tenantDomain);
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
         }
 
         try {

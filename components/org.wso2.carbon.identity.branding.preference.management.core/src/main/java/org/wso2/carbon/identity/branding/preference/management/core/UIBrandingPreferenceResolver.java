@@ -48,8 +48,12 @@ public interface UIBrandingPreferenceResolver {
      * @param currentTenantDomain Tenant domain where the cache needs to be cleared.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
-    void clearBrandingResolverCacheHierarchy(String type, String name, String currentTenantDomain)
-            throws BrandingPreferenceMgtException;
+    default void clearBrandingResolverCacheHierarchy(String type, String name, String currentTenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException(
+                "clearBrandingResolverCacheHierarchy method is not implemented in " + this.getClass().getName());
+    }
 
     /**
      * This method is used to clear the branding preference resolver caches of
