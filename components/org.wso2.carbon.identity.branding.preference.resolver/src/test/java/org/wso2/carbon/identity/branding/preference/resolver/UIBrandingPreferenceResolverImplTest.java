@@ -48,7 +48,7 @@ import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.organization.management.application.OrgApplicationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
-import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementServerException;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -60,7 +60,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -186,10 +188,8 @@ public class UIBrandingPreferenceResolverImplTest {
             String resourceId = "71356f5e-e10b-49f2-87a6-f7f48e164374";
             String resourceFileName = "sample-parent-app-branding-preference.json";
 
-            mockAncestorOrgIdRetrieval();
+            mockAncestorOrgIdAndAppIdRetrieval();
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
-                    PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
 
@@ -218,10 +218,8 @@ public class UIBrandingPreferenceResolverImplTest {
             String resourceId = "81356f5e-e10b-49f2-87a6-f7f48e164374";
             String resourceFileName = "sample-parent-org-branding-preference.json";
 
-            mockAncestorOrgIdRetrieval();
+            mockAncestorOrgIdAndAppIdRetrieval();
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
-                    PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
 
@@ -248,15 +246,11 @@ public class UIBrandingPreferenceResolverImplTest {
             String resourceId = "91356f5e-e10b-49f2-87a6-f7f48e164374";
             String resourceFileName = "sample-root-app-branding-preference.json";
 
-            mockAncestorOrgIdRetrieval();
+            mockAncestorOrgIdAndAppIdRetrieval();
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
-                    ROOT_APP_ID);
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
-                    PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
 
@@ -285,15 +279,12 @@ public class UIBrandingPreferenceResolverImplTest {
             String resourceId = "11356f5e-e10b-49f2-87a6-f7f48e164374";
             String resourceFileName = "sample-root-org-branding-preference.json";
 
-            mockAncestorOrgIdRetrieval();
+            mockAncestorOrgIdAndAppIdRetrieval();
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
-                    ROOT_APP_ID);
+
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
-                    PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
 
@@ -317,15 +308,11 @@ public class UIBrandingPreferenceResolverImplTest {
             mockOSGiDataHolder(mockedOSGiDataHolder);
             setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
 
-            mockAncestorOrgIdRetrieval();
+            mockAncestorOrgIdAndAppIdRetrieval();
 
-            when(orgApplicationManager.getParentAppId(PARENT_APP_ID, PARENT_ORG_ID)).thenReturn(
-                    ROOT_APP_ID);
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
-            when(orgApplicationManager.getParentAppId(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(
-                    PARENT_APP_ID);
             when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
             when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
 
@@ -423,7 +410,7 @@ public class UIBrandingPreferenceResolverImplTest {
         when(configurationManager.getFileById(resourceType, resourceName, resourceId)).thenReturn(inputStream);
     }
 
-    private void mockAncestorOrgIdRetrieval() throws OrganizationManagementServerException {
+    private void mockAncestorOrgIdAndAppIdRetrieval() throws OrganizationManagementException {
 
         List<String> ancestorOrganizationIds = new ArrayList<>();
         ancestorOrganizationIds.add(CHILD_ORG_ID);
@@ -431,6 +418,12 @@ public class UIBrandingPreferenceResolverImplTest {
         ancestorOrganizationIds.add(ROOT_ORG_ID);
         when(organizationManager.getAncestorOrganizationIds(CHILD_ORG_ID)).thenReturn(
                 ancestorOrganizationIds);
+
+        Map<String, String> ancestorAppIds = new HashMap<>();
+        ancestorAppIds.put(CHILD_ORG_ID, CHILD_APP_ID);
+        ancestorAppIds.put(PARENT_ORG_ID, PARENT_APP_ID);
+        ancestorAppIds.put(ROOT_ORG_ID, ROOT_APP_ID);
+        when(orgApplicationManager.getAncestorAppIds(CHILD_APP_ID, CHILD_ORG_ID)).thenReturn(ancestorAppIds);
     }
 
     private void setCarbonContextForTenant(String tenantDomain, int tenantId, String organizationId)

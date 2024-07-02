@@ -291,11 +291,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
             OrgApplicationManager orgApplicationManager =
                     BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
+            Map<String, String> ancestorAppIds = orgApplicationManager.getAncestorAppIds(appId, orgId);
             int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
-            String childAppId = appId;
-            String childOrgId = orgId;
             for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
-                String ancestorAppId = orgApplicationManager.getParentAppId(childAppId, childOrgId);
+                String ancestorAppId = ancestorAppIds.get(ancestorOrgId);
                 String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
                 int ancestorDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
 
@@ -306,8 +305,6 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     if (brandingPreference.isPresent()) {
                         return brandingPreference.get();
                     }
-                    childAppId = ancestorAppId;
-                    childOrgId = ancestorOrgId;
                 } else {
                     break;
                 }
