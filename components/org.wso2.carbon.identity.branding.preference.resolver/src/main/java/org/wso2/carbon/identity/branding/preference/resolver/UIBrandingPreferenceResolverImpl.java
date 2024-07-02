@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,7 +168,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         brandingResolvedTenantDomain);
 
                 if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
-                    // Since Branding is inherited from Parent org, removing the Parent org displayName.
+                    // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
                     removeOrgDisplayNameFromBrandingPreference(resolvedBrandingPreference);
                 }
                 return resolvedBrandingPreference;
@@ -204,7 +205,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                             brandingPreference =
                                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, ancestorTenantDomain);
                             if (brandingPreference.isPresent()) {
-                                // Since Branding is inherited from Parent org, removing the Parent org displayName.
+                                /*Since Branding is inherited from an ancestor org,
+                                  removing the ancestor org displayName.*/
                                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
                                 addToCache(organizationId, currentTenantDomain, ancestorTenantDomain);
                                 return brandingPreference.get();
@@ -250,7 +252,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                                 brandingResolvedTenantDomain);
             }
             if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
-                // Since Branding is inherited from the parent org, removing the parent org displayName.
+                // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
                 removeOrgDisplayNameFromBrandingPreference(resolvedBrandingPreference);
             }
             return resolvedBrandingPreference;
@@ -390,7 +392,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     clearBrandingResolverCacheHierarchy(type, name, organizationManager, currentOrgId,
                             currentTenantDomain, usernameInContext);
                 } catch (BrandingPreferenceMgtServerException e) {
-                    LOG.error("An error occurred while clearing org-level branding preference cache hierarchy", e);
+                    LOG.error("An error occurred while clearing branding preference cache hierarchy", e);
                 }
             }, executorService);
         }
@@ -423,7 +425,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 try {
                     List<BasicOrganization> organizations =
                             organizationManager.getOrganizations(pageSize, cursor, null, "DESC", "", true);
-                    Map<String, String> childAppIds = new LinkedHashMap<>();
+                    Map<String, String> childAppIds = new HashMap<>();
                     if (APPLICATION_TYPE.equals(type)) {
                         OrgApplicationManager orgApplicationManager =
                                 BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
