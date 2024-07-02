@@ -1,0 +1,28 @@
+{
+  "organizationDetails": {
+    "displayName": "XYZ Bank",
+    "siteTitle": "Login - XYZ Bank HR Mgt App",
+    "copyrightText": "© 2021 XYZ Bank",
+    "supportEmail": "support@xyzbank.com"
+  },
+  "colors": {
+    "primary": "#FF0000"
+  },
+  "images": {
+    "logo": {
+      "imgURL": "https://image/upload/q_auto,f_auto/kentcdodds.com/illustrations/kody_profile_white_mgt_app",
+      "altText": "XYZ BANK Logo HR Mgt App"
+    },
+    "favicon": {
+      "imgURL": "https://favicons/favicon-16x16.png"
+    }
+  },
+  "urls": {
+    "privacyPolicyURL": "https://coalasports.com/privacy-policy",
+    "termsOfUseURL": "https://coalasports.com/terms-of-service/",
+    "cookiePolicyURL": "https://coalasports.com/privacy-policy/#cookie-policy"
+  },
+  "configs": {
+    "isBrandingEnabled": true
+  }
+}

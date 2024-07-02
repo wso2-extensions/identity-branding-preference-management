@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -69,7 +69,9 @@ public interface BrandingPreferenceManager {
      * @param locale     Language preference of the branding.
      * @return The resolved branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
+     * @deprecated Use {@link #resolveBrandingPreference(String, String, String)}} instead.
      */
+    @Deprecated
     default BrandingPreference resolveApplicationBrandingPreference(String identifier, String locale)
             throws BrandingPreferenceMgtException {
 

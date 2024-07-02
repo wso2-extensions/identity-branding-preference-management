@@ -108,7 +108,7 @@ public class BrandingPreferenceManagerComponent {
     @Reference(
             name = "ui.branding.preference.resolver",
             service = UIBrandingPreferenceResolver.class,
-            cardinality = ReferenceCardinality.OPTIONAL,
+            cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
             unbind = "unUIBrandingResolveService"
     )
