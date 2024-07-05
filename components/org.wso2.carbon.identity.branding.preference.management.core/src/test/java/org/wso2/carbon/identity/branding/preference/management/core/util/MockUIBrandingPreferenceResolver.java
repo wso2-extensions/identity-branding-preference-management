@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -34,6 +34,13 @@ public class MockUIBrandingPreferenceResolver implements UIBrandingPreferenceRes
             throws BrandingPreferenceMgtException {
 
         return brandingPreference;
+    }
+
+    @Override
+    public void clearBrandingResolverCacheHierarchy(String type, String name, String currentTenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        setBranding(null);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -40,12 +40,30 @@ public interface UIBrandingPreferenceResolver {
     BrandingPreference resolveBranding(String type, String name, String locale) throws BrandingPreferenceMgtException;
 
     /**
+     * This method is used to clear the branding preference resolver caches, down
+     * the organization hierarchy.
+     *
+     * @param type                Branding preference type.
+     * @param name                Branding preference name.
+     * @param currentTenantDomain Tenant domain where the cache needs to be cleared.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    default void clearBrandingResolverCacheHierarchy(String type, String name, String currentTenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException(
+                "clearBrandingResolverCacheHierarchy method is not implemented in " + this.getClass().getName());
+    }
+
+    /**
      * This method is used to clear the branding preference resolver caches of
      * the organization and all its children down the tree.
      *
-     * @param currentTenantDomain   Tenant domain where the cache needs to be cleared.
+     * @param currentTenantDomain Tenant domain where the cache needs to be cleared.
      * @throws BrandingPreferenceMgtException if any error occurred.
+     * @deprecated Use {@link #clearBrandingResolverCacheHierarchy(String, String, String)}} instead.
      */
+    @Deprecated
     void clearBrandingResolverCacheHierarchy(String currentTenantDomain) throws BrandingPreferenceMgtException;
 
     /**
@@ -68,9 +86,9 @@ public interface UIBrandingPreferenceResolver {
      * This method is used to clear the custom text preference resolver caches of
      * the organization and all its children down the tree.
      *
-     * @param currentTenantDomain   Tenant domain where the cache needs to be cleared.
-     * @param screen                Screen param of the custom text.
-     * @param locale                Locale param of the custom text.
+     * @param currentTenantDomain Tenant domain where the cache needs to be cleared.
+     * @param screen              Screen param of the custom text.
+     * @param locale              Locale param of the custom text.
      * @throws BrandingPreferenceMgtException if any error occurred.
      */
     default void clearCustomTextResolverCacheHierarchy(String currentTenantDomain, String screen, String locale)

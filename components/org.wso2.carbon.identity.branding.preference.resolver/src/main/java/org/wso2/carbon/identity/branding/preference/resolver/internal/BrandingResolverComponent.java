@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -28,9 +28,11 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.resolver.UIBrandingPreferenceResolverImpl;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.organization.management.application.OrgApplicationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 
 /**
@@ -51,7 +53,7 @@ public class BrandingResolverComponent {
         try {
             context.getBundleContext().registerService(UIBrandingPreferenceResolver.class,
                     new UIBrandingPreferenceResolverImpl(BrandedOrgCache.getInstance(),
-                            TextCustomizedOrgCache.getInstance()), null);
+                            BrandedAppCache.getInstance(), TextCustomizedOrgCache.getInstance()), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BrandingResolver Component is activated.");
             }
@@ -96,5 +98,22 @@ public class BrandingResolverComponent {
     protected void unsetOrganizationManager(OrganizationManager organizationManager) {
 
         BrandingResolverComponentDataHolder.getInstance().setOrganizationManager(null);
+    }
+
+    @Reference(
+            name = "identity.organization.application.management.component",
+            service = OrgApplicationManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetOrgApplicationManager"
+    )
+    protected void setOrgApplicationManager(OrgApplicationManager orgApplicationManager) {
+
+        BrandingResolverComponentDataHolder.getInstance().setOrgApplicationManager(orgApplicationManager);
+    }
+
+    protected void unsetOrgApplicationManager(OrgApplicationManager orgApplicationManager) {
+
+        BrandingResolverComponentDataHolder.getInstance().setOrgApplicationManager(null);
     }
 }

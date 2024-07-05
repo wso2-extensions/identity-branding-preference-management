@@ -1,5 +1,5 @@
 /*
- * Copyright (c) (2022-2023), WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -280,30 +280,6 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
 
-        // Adding new branding preference.
-        brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
-
-        //  Retrieving added branding preference.
-        BrandingPreference retrievedBP =
-                brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
-                        inputBP.getLocale());
-        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
-        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
-        Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
-        Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
-
-        // Deleting added branding preference.
-        brandingPreferenceManagerImpl.deleteBrandingPreference
-                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
-    }
-
-    @Test(dataProvider = "brandingPreferenceDataProvider")
-    public void testResolveBrandingPreferenceWithResolver(Object brandingPreference, String tenantDomain, int tenantId)
-            throws Exception {
-
-        setCarbonContextForTenant(tenantDomain, tenantId);
-        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-
         MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
         resolver.setBranding(inputBP);
         BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
@@ -326,20 +302,18 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
 
-        // Adding new branding preference.
-        brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+        // Initiate Branding Resolver
+        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
+        resolver.setBranding(inputBP);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
 
         //  Retrieving added branding preference.
-        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveApplicationBrandingPreference
-                (inputBP.getName(), inputBP.getLocale());
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveBrandingPreference
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
         Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
         Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
-
-        // Deleting added branding preference.
-        brandingPreferenceManagerImpl.deleteBrandingPreference
-                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
     }
 
     @DataProvider(name = "notExistingBrandingPreferenceDataProvider")

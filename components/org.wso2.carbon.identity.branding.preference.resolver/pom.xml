@@ -58,6 +58,10 @@
             <artifactId>org.wso2.carbon.identity.configuration.mgt.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.organization.management</groupId>
+            <artifactId>org.wso2.carbon.identity.organization.management.application</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.core</artifactId>
         </dependency>
@@ -74,6 +78,10 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections.wso2</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.json.wso2</groupId>
             <artifactId>json</artifactId>
         </dependency>
@@ -86,6 +94,29 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Testing related dependencies -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <classifier>runtime</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -111,6 +142,7 @@
                             org.osgi.framework;version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component;version="${osgi.service.component.imp.pkg.version.range}",
 
+                            org.apache.commons.collections; version="${commons-collections.wso2.osgi.version.range}",
                             org.apache.commons.io; version="${commons.io.wso2.osgi.version.range}",
                             org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
                             org.apache.commons.logging;version="${commons-logging.osgi.version.range}",
@@ -122,6 +154,7 @@
                             org.wso2.carbon.identity.core.*; version="${carbon.identity.package.import.version.range}",
                             org.json; version="${json.wso2.version.range}",
 
+                            org.wso2.carbon.identity.organization.management.application; version="${org.wso2.identity.branding.preference.mgt.imp.pkg.version.range}",
                             org.wso2.carbon.identity.branding.preference.management.core.*; version="${org.wso2.identity.branding.preference.mgt.imp.pkg.version.range}",
 
                             org.wso2.carbon.identity.organization.management.service; version="${identity.organization.management.core.imp.pkg.version.range}",
