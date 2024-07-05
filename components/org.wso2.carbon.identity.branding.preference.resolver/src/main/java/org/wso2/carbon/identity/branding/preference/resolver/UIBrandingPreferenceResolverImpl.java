@@ -102,11 +102,24 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private final TextCustomizedOrgCache textCustomizedOrgCache;
 
     /**
-     * UI branding preference resolver implementation constructor.
+     * UI branding preference resolver implementation constructor
+     * without application branding resolver cache param.
      *
      * @param brandedOrgCache        Cache instance for branded org.
      * @param textCustomizedOrgCache Cache instance for custom text.
+     */
+    public UIBrandingPreferenceResolverImpl(BrandedOrgCache brandedOrgCache,
+                                            TextCustomizedOrgCache textCustomizedOrgCache) {
+
+        this(brandedOrgCache, BrandedAppCache.getInstance(), textCustomizedOrgCache);
+    }
+
+    /**
+     * UI branding preference resolver implementation constructor.
+     *
+     * @param brandedOrgCache        Cache instance for branded org.
      * @param brandedAppCache        Cache instance for branded app.
+     * @param textCustomizedOrgCache Cache instance for custom text.
      */
     public UIBrandingPreferenceResolverImpl(BrandedOrgCache brandedOrgCache, BrandedAppCache brandedAppCache,
                                             TextCustomizedOrgCache textCustomizedOrgCache) {
@@ -135,19 +148,19 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         if (APPLICATION_TYPE.equals(type)) {
-            return resolveApplicationBranding(name, locale, organizationManager, organizationId, currentTenantDomain);
+            return resolveApplicationBranding(name, locale, organizationId, currentTenantDomain);
         } else if (ORGANIZATION_TYPE.equals(type)) {
-            return resolveOrganizationBranding(name, locale, organizationManager, organizationId, currentTenantDomain);
-        } else {
-            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE, type, currentTenantDomain);
+            return resolveOrganizationBranding(name, locale, organizationId, currentTenantDomain);
         }
+        throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE, type, currentTenantDomain);
     }
 
     private BrandingPreference resolveOrganizationBranding(String name, String locale,
-                                                           OrganizationManager organizationManager,
                                                            String organizationId, String currentTenantDomain)
             throws BrandingPreferenceMgtException {
 
+        OrganizationManager organizationManager =
+                BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
          /* Tenant domain will always be carbon.super for SaaS apps (ex. myaccount). Hence, need to resolve
           tenant domain from the name parameter. */
         if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
@@ -231,7 +244,6 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     }
 
     private BrandingPreference resolveApplicationBranding(String appId, String locale,
-                                                          OrganizationManager organizationManager,
                                                           String orgId, String currentTenantDomain)
             throws BrandingPreferenceMgtException {
 
@@ -283,6 +295,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         try {
+            OrganizationManager organizationManager =
+                    BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
             List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(orgId);
             if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
                 // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
@@ -383,6 +397,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         if (organizationId != null) {
             if (ORGANIZATION_TYPE.equals(type)) {
                 clearOrgBrandingResolverCache(currentTenantDomain, organizationId);
+                brandedAppCache.clear(currentTenantDomain);
             }
             String usernameInContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
             String currentOrgId = organizationId;
