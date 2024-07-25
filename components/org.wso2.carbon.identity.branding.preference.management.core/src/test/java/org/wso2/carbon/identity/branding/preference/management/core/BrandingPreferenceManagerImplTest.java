@@ -44,6 +44,9 @@ import java.nio.file.Paths;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.testng.Assert.assertThrows;
@@ -153,6 +156,8 @@ public class BrandingPreferenceManagerImplTest {
         BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
         Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(addedBP.getName(), inputBP.getName());
+        // Verify that clearBrandingResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         //  Retrieving added branding preference.
         BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
@@ -176,10 +181,14 @@ public class BrandingPreferenceManagerImplTest {
         BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
         Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(addedBP.getName(), inputBP.getName());
+        // Verify that clearBrandingResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         //  Adding conflicting branding preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .addBrandingPreference(inputBP));
+        // Verify that clearBrandingResolverCacheHierarchy is not called after second conflicting addition.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         // Deleting added branding preference.
         brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
@@ -215,13 +224,15 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "invalidBrandingPreferenceDataProvider")
-    public void testAddInvalidBrandingPreference(Object brandingPreference) {
+    public void testAddInvalidBrandingPreference(Object brandingPreference) throws Exception {
 
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
 
         // Adding new branding preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .addBrandingPreference(inputBP));
+        // Verify that clearBrandingResolverCacheHierarchy is never called.
+        verify(resolver, never()).clearBrandingResolverCacheHierarchy(any(), any(), any());
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
@@ -325,27 +336,9 @@ public class BrandingPreferenceManagerImplTest {
         newBrandingPreference2.setLocale(DEFAULT_LOCALE);
         newBrandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
-        BrandingPreference unpublishedBrandingPreference1 = new BrandingPreference();
-        unpublishedBrandingPreference1.setType(ORGANIZATION_TYPE);
-        unpublishedBrandingPreference1.setName(SUPER_TENANT_DOMAIN_NAME);
-        unpublishedBrandingPreference1.setLocale(DEFAULT_LOCALE);
-        unpublishedBrandingPreference1.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
-
-        BrandingPreference unpublishedBrandingPreference2 = new BrandingPreference();
-        unpublishedBrandingPreference2.setType(ORGANIZATION_TYPE);
-        unpublishedBrandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
-        unpublishedBrandingPreference2.setLocale(DEFAULT_LOCALE);
-        unpublishedBrandingPreference2.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
-
         return new Object[][]{
                 {brandingPreference1, newBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
                 {brandingPreference2, newBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
-                {brandingPreference1, unpublishedBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
-                {brandingPreference2, unpublishedBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
-                        SAMPLE_TENANT_ID_ABC},
-                {unpublishedBrandingPreference1, brandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
-                {unpublishedBrandingPreference2, brandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
-                        SAMPLE_TENANT_ID_ABC},
         };
     }
 
@@ -360,9 +353,84 @@ public class BrandingPreferenceManagerImplTest {
         // Adding new branding preference.
         BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
         Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
+        // Verify that clearBrandingResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         BrandingPreference updatedBP = brandingPreferenceManagerImpl.replaceBrandingPreference(newBP);
         Assert.assertEquals(updatedBP.getPreference(), newBP.getPreference());
+         /* Since published state is not changed, verify that clearBrandingResolverCacheHierarchy is not called again
+           after the update. */
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
+
+        //  Retrieving updated branding preference.
+        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
+                (newBP.getType(), newBP.getName(), newBP.getLocale());
+        Assert.assertEquals(retrievedBP.getPreference(), newBP.getPreference());
+        Assert.assertEquals(retrievedBP.getName(), newBP.getName());
+        Assert.assertEquals(retrievedBP.getType(), newBP.getType());
+        Assert.assertEquals(retrievedBP.getLocale(), newBP.getLocale());
+
+        // Deleting added branding preference.
+        brandingPreferenceManagerImpl.deleteBrandingPreference
+                (newBP.getType(), newBP.getName(), newBP.getLocale());
+    }
+
+    @DataProvider(name = "updateBrandingPreferencePublishedStateDataProvider")
+    public Object[][] updateBrandingPreferencePublishedStateDataProvider() throws Exception {
+
+        BrandingPreference brandingPreference1 = new BrandingPreference();
+        brandingPreference1.setType(ORGANIZATION_TYPE);
+        brandingPreference1.setName(SUPER_TENANT_DOMAIN_NAME);
+        brandingPreference1.setLocale(DEFAULT_LOCALE);
+        brandingPreference1.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        BrandingPreference brandingPreference2 = new BrandingPreference();
+        brandingPreference2.setType(ORGANIZATION_TYPE);
+        brandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        brandingPreference2.setLocale(DEFAULT_LOCALE);
+        brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        BrandingPreference unpublishedBrandingPreference1 = new BrandingPreference();
+        unpublishedBrandingPreference1.setType(ORGANIZATION_TYPE);
+        unpublishedBrandingPreference1.setName(SUPER_TENANT_DOMAIN_NAME);
+        unpublishedBrandingPreference1.setLocale(DEFAULT_LOCALE);
+        unpublishedBrandingPreference1.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
+
+        BrandingPreference unpublishedBrandingPreference2 = new BrandingPreference();
+        unpublishedBrandingPreference2.setType(ORGANIZATION_TYPE);
+        unpublishedBrandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        unpublishedBrandingPreference2.setLocale(DEFAULT_LOCALE);
+        unpublishedBrandingPreference2.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
+
+        return new Object[][]{
+                {brandingPreference1, unpublishedBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {brandingPreference2, unpublishedBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
+                        SAMPLE_TENANT_ID_ABC},
+                {unpublishedBrandingPreference1, brandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {unpublishedBrandingPreference2, brandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
+                        SAMPLE_TENANT_ID_ABC},
+        };
+    }
+
+    @Test(dataProvider = "updateBrandingPreferencePublishedStateDataProvider")
+    public void testUpdateBrandingPreferencePublishedState(Object brandingPreference, Object newBrandingPreference,
+                                              String tenantDomain, int tenantId) throws Exception {
+
+        setCarbonContextForTenant(tenantDomain, tenantId);
+        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
+        BrandingPreference newBP = (BrandingPreference) newBrandingPreference;
+
+        // Adding new branding preference.
+        BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
+        Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
+        // Verify that clearBrandingResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
+
+        BrandingPreference updatedBP = brandingPreferenceManagerImpl.replaceBrandingPreference(newBP);
+        Assert.assertEquals(updatedBP.getPreference(), newBP.getPreference());
+         /* Since published state is changed, verify that clearBrandingResolverCacheHierarchy is called again
+           after the update. */
+        verify(resolver, times(2)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         //  Retrieving updated branding preference.
         BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
@@ -399,10 +467,14 @@ public class BrandingPreferenceManagerImplTest {
         BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
         Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(addedBP.getName(), inputBP.getName());
+        // Verify that clearBrandingResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         // Deleting added branding preference.
         brandingPreferenceManagerImpl.deleteBrandingPreference
                 (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+        // Verify that clearBrandingResolverCacheHierarchy is called again after the deletion.
+        verify(resolver, times(2)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         // Retrieving deleted branding preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
@@ -415,6 +487,8 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(tenantDomain, tenantId);
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .deleteBrandingPreference(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
+        // Verify that clearBrandingResolverCacheHierarchy is never called.
+        verify(resolver, never()).clearBrandingResolverCacheHierarchy(any(), any(), any());
     }
 
     @DataProvider(name = "customTextPreferenceDataProvider")
@@ -453,6 +527,8 @@ public class BrandingPreferenceManagerImplTest {
         Assert.assertEquals(addedCT.getName(), inputCT.getName());
         Assert.assertEquals(addedCT.getLocale(), inputCT.getLocale());
         Assert.assertEquals(addedCT.getScreen(), inputCT.getScreen());
+        // Verify that clearCustomTextResolverCacheHierarchy is called once and only once.
+        verify(resolver, times(1)).clearCustomTextResolverCacheHierarchy(any(), any(), any());
 
         // Retrieving added custom text preference.
         CustomText retrievedCT = brandingPreferenceManagerImpl.getCustomText
@@ -504,13 +580,15 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "invalidCustomTextPreferenceDataProvider")
-    public void testAddInvaliCustomTextPreference(Object customText) {
+    public void testAddInvaliCustomTextPreference(Object customText) throws Exception {
 
         CustomText inputCT = (CustomText) customText;
 
         // Adding new custom text preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .addCustomText(inputCT));
+        // Verify that clearCustomTextResolverCacheHierarchy is never called.
+        verify(resolver, never()).clearCustomTextResolverCacheHierarchy(any(), any(), any());
     }
 
     @Test(dataProvider = "customTextPreferenceDataProvider")
@@ -631,6 +709,8 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonContextForTenant(tenantDomain, tenantId);
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .deleteCustomText(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN, DEFAULT_LOCALE));
+        // Verify that clearCustomTextResolverCacheHierarchy is never called.
+        verify(resolver, never()).clearCustomTextResolverCacheHierarchy(any(), any(), any());
     }
 
     @DataProvider(name = "multipleCustomTextDataProvider")
@@ -666,6 +746,8 @@ public class BrandingPreferenceManagerImplTest {
         // Adding new custom text preference.
         brandingPreferenceManagerImpl.addCustomText(inputCT1);
         brandingPreferenceManagerImpl.addCustomText(inputCT2);
+        // Verify that clearCustomTextResolverCacheHierarchy is called twice.
+        verify(resolver, times(2)).clearCustomTextResolverCacheHierarchy(any(), any(), any());
 
         // Retrieving added custom text preference.
         CustomText retrievedCT1 = brandingPreferenceManagerImpl.getCustomText
@@ -684,6 +766,8 @@ public class BrandingPreferenceManagerImplTest {
 
         // Bulk Deleting added custom text preferences.
         brandingPreferenceManagerImpl.deleteAllCustomText();
+        // Verify that clearCustomTextResolverCacheHierarchy is called again once after deletion.
+        verify(resolver, times(3)).clearCustomTextResolverCacheHierarchy(any(), any(), any());
 
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .getCustomText(inputCT1.getType(), inputCT1.getName(), inputCT1.getScreen(), inputCT1.getLocale()));
