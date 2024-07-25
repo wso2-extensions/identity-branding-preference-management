@@ -187,7 +187,7 @@ public class BrandingPreferenceManagerImplTest {
         //  Adding conflicting branding preference.
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .addBrandingPreference(inputBP));
-        // Verify that clearBrandingResolverCacheHierarchy is not called after second conflicting addition.
+        // Verify that clearBrandingResolverCacheHierarchy is not called after the conflicting addition.
         verify(resolver, times(1)).clearBrandingResolverCacheHierarchy(any(), any(), any());
 
         // Deleting added branding preference.
