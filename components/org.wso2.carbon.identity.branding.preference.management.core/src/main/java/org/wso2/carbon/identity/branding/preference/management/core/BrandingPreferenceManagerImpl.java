@@ -707,8 +707,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
      * Clear the branding resolver cache if the branding preference enabled config is updated.
      *
      * @param previousBrandingPreference Previous branding preference.
-     * @param updatedBrandingPreference Updated branding preference.
-     * @param tenantDomain          Tenant domain.
+     * @param updatedBrandingPreference  Updated branding preference.
+     * @param tenantDomain               Tenant domain.
      * @throws BrandingPreferenceMgtException If an error occurs while clearing branding resolver cache hierarchy.
      */
     private void clearBrandingResolverCacheIfRequired(BrandingPreference previousBrandingPreference,
@@ -718,7 +718,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         JSONObject previousPreference = new JSONObject((LinkedHashMap) previousBrandingPreference.getPreference());
         JSONObject updatedPreference = new JSONObject((LinkedHashMap) updatedBrandingPreference.getPreference());
 
-        // If configs.isBrandingEnabled is not found in preferences,  it is assumed that branding is enabled by default.
+        // If configs.isBrandingEnabled is not found in preferences, it is assumed that branding is enabled by default.
         boolean isPreviousPreferencesPublished = !previousPreference.has(CONFIGS) ||
                 previousPreference.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
         boolean isUpdatedPreferencesPublished = !updatedPreference.has(CONFIGS) ||
@@ -729,7 +729,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
 
         getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(updatedBrandingPreference.getType(),
-                        updatedBrandingPreference.getName(), tenantDomain);
+                updatedBrandingPreference.getName(), tenantDomain);
     }
 
     /**
