@@ -31,7 +31,6 @@ import org.wso2.carbon.identity.branding.preference.management.core.internal.Bra
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.ConfigurationManagementUtils;
-import org.wso2.carbon.identity.branding.preference.management.core.util.MockUIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -45,6 +44,7 @@ import java.nio.file.Paths;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -69,6 +69,9 @@ public class BrandingPreferenceManagerImplTest {
 
     @Mock
     IdentityEventService identityEventService;
+    @Mock
+    UIBrandingPreferenceResolver resolver;
+
     private BrandingPreferenceManagerImpl brandingPreferenceManagerImpl;
 
     @BeforeMethod
@@ -78,6 +81,10 @@ public class BrandingPreferenceManagerImplTest {
         setCarbonHome();
         setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
         brandingPreferenceManagerImpl = new BrandingPreferenceManagerImpl();
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+        doNothing().when(resolver).clearBrandingResolverCacheHierarchy(any(), any(), any());
+        doNothing().when(resolver).clearCustomTextResolverCacheHierarchy(any(), any(), any());
 
         ConfigurationManager configurationManager = ConfigurationManagementUtils.getConfigurationManager();
         BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
@@ -156,39 +163,6 @@ public class BrandingPreferenceManagerImplTest {
         // Deleting added branding preference.
         brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
                 inputBP.getLocale());
-    }
-
-    @Test(dataProvider = "brandingPreferenceDataProvider")
-    public void testAddBrandingPreferenceWithBrandingResolver(
-            Object brandingPreference, String tenantDomain, int tenantId) throws Exception {
-
-        setCarbonContextForTenant(tenantDomain, tenantId);
-        BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-
-        // Initiate Branding Resolver
-        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
-        resolver.setBranding(inputBP);
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
-
-        // Adding new branding preference.
-        BrandingPreference addedBP = brandingPreferenceManagerImpl.addBrandingPreference(inputBP);
-        Assert.assertEquals(addedBP.getPreference(), inputBP.getPreference());
-        Assert.assertEquals(addedBP.getName(), inputBP.getName());
-        Assert.assertNull(
-                resolver.resolveBranding(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
-
-        //  Retrieving added branding preference.
-        BrandingPreference retrievedBP = brandingPreferenceManagerImpl.getBrandingPreference
-                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
-        Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
-        Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
-
-        // Deleting added branding preference.
-        brandingPreferenceManagerImpl.deleteBrandingPreference(inputBP.getType(), inputBP.getName(),
-                inputBP.getLocale());
-
-        // Remove Branding Resolver
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
@@ -279,10 +253,7 @@ public class BrandingPreferenceManagerImplTest {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-
-        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
-        resolver.setBranding(inputBP);
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale())).thenReturn(inputBP);
 
         BrandingPreference retrievedBP =
                 brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
@@ -291,8 +262,6 @@ public class BrandingPreferenceManagerImplTest {
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
         Assert.assertEquals(retrievedBP.getLocale(), inputBP.getLocale());
-
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
     }
 
     @Test(dataProvider = "applicationBrandingPreferenceDataProvider")
@@ -301,11 +270,7 @@ public class BrandingPreferenceManagerImplTest {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-
-        // Initiate Branding Resolver
-        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
-        resolver.setBranding(inputBP);
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale())).thenReturn(inputBP);
 
         //  Retrieving added branding preference.
         BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveBrandingPreference
@@ -346,23 +311,41 @@ public class BrandingPreferenceManagerImplTest {
         newBrandingPreference1.setType(ORGANIZATION_TYPE);
         newBrandingPreference1.setName(SUPER_TENANT_DOMAIN_NAME);
         newBrandingPreference1.setLocale(DEFAULT_LOCALE);
-        newBrandingPreference1.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+        newBrandingPreference1.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
         BrandingPreference brandingPreference2 = new BrandingPreference();
         brandingPreference2.setType(ORGANIZATION_TYPE);
         brandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
         brandingPreference2.setLocale(DEFAULT_LOCALE);
-        brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+        brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-1.json"));
 
         BrandingPreference newBrandingPreference2 = new BrandingPreference();
         newBrandingPreference2.setType(ORGANIZATION_TYPE);
         newBrandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
         newBrandingPreference2.setLocale(DEFAULT_LOCALE);
-        newBrandingPreference2.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+        newBrandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        BrandingPreference unpublishedBrandingPreference1 = new BrandingPreference();
+        unpublishedBrandingPreference1.setType(ORGANIZATION_TYPE);
+        unpublishedBrandingPreference1.setName(SUPER_TENANT_DOMAIN_NAME);
+        unpublishedBrandingPreference1.setLocale(DEFAULT_LOCALE);
+        unpublishedBrandingPreference1.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
+
+        BrandingPreference unpublishedBrandingPreference2 = new BrandingPreference();
+        unpublishedBrandingPreference2.setType(ORGANIZATION_TYPE);
+        unpublishedBrandingPreference2.setName(SAMPLE_TENANT_DOMAIN_NAME_ABC);
+        unpublishedBrandingPreference2.setLocale(DEFAULT_LOCALE);
+        unpublishedBrandingPreference2.setPreference(getPreferenceFromFile("sample-unpublished-preference.json"));
 
         return new Object[][]{
                 {brandingPreference1, newBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
                 {brandingPreference2, newBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+                {brandingPreference1, unpublishedBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {brandingPreference2, unpublishedBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
+                        SAMPLE_TENANT_ID_ABC},
+                {unpublishedBrandingPreference1, brandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
+                {unpublishedBrandingPreference2, brandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC,
+                        SAMPLE_TENANT_ID_ABC},
         };
     }
 
@@ -531,40 +514,13 @@ public class BrandingPreferenceManagerImplTest {
     }
 
     @Test(dataProvider = "customTextPreferenceDataProvider")
-    public void testResolveCustomTextPreference(Object customText, String tenantDomain, int tenantId)
+    public void testResolveCustomText(Object customText, String tenantDomain, int tenantId)
             throws Exception {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
         CustomText inputCT = (CustomText) customText;
-
-        // Adding new custom text preference.
-        brandingPreferenceManagerImpl.addCustomText(inputCT);
-
-        // Retrieving added custom text preference.
-        CustomText retrievedCT =
-                brandingPreferenceManagerImpl.resolveCustomText(inputCT.getType(), inputCT.getName(),
-                        inputCT.getScreen(), inputCT.getLocale());
-        Assert.assertEquals(retrievedCT.getPreference(), inputCT.getPreference());
-        Assert.assertEquals(retrievedCT.getName(), inputCT.getName());
-        Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
-        Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
-        Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
-
-        // Deleting added custom text preference.
-        brandingPreferenceManagerImpl.deleteCustomText
-                (inputCT.getType(), inputCT.getName(), inputCT.getScreen(), inputCT.getLocale());
-    }
-
-    @Test(dataProvider = "customTextPreferenceDataProvider")
-    public void testResolveCustomTextWithResolver(Object customText, String tenantDomain, int tenantId)
-            throws Exception {
-
-        setCarbonContextForTenant(tenantDomain, tenantId);
-        CustomText inputCT = (CustomText) customText;
-
-        MockUIBrandingPreferenceResolver resolver = new MockUIBrandingPreferenceResolver();
-        resolver.setCustomText(inputCT);
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(resolver);
+        when(resolver.resolveCustomText(inputCT.getType(), inputCT.getName(), inputCT.getScreen(),
+                inputCT.getLocale())).thenReturn(inputCT);
 
         CustomText retrievedCT =
                 brandingPreferenceManagerImpl.resolveCustomText(inputCT.getType(), inputCT.getName(),
@@ -574,8 +530,6 @@ public class BrandingPreferenceManagerImplTest {
         Assert.assertEquals(retrievedCT.getType(), inputCT.getType());
         Assert.assertEquals(retrievedCT.getScreen(), inputCT.getScreen());
         Assert.assertEquals(retrievedCT.getLocale(), inputCT.getLocale());
-
-        BrandingPreferenceManagerComponentDataHolder.getInstance().setUiBrandingPreferenceResolver(null);
     }
 
     @DataProvider(name = "notExistingCustomTextDataProvider")

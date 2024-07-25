@@ -614,7 +614,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 return;
             }
         }
-        String resourceName = getResourceNameForCustomText(screen, locale);
+        String resourceName = (StringUtils.isNotBlank(screen) && StringUtils.isNotBlank(locale)) ?
+                getResourceNameForCustomText(screen, locale) : StringUtils.EMPTY;
         if (organizationId != null) {
             clearCustomTextResolverCache(currentTenantDomain, organizationId, resourceName);
             String usernameInContext = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
@@ -666,6 +667,11 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
     private void clearCustomTextResolverCache(String tenantDomain, String organizationId, String resourceName) {
 
+        // If resourceName is empty, clear all the custom text cache entries for the current tenant domain.
+        if (StringUtils.isBlank(resourceName)) {
+            textCustomizedOrgCache.clear(tenantDomain);
+            return;
+        }
         TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(organizationId, resourceName);
         TextCustomizedOrgCacheEntry valueFromCache =
                 textCustomizedOrgCache.getValueFromCache(cacheKey, tenantDomain);
