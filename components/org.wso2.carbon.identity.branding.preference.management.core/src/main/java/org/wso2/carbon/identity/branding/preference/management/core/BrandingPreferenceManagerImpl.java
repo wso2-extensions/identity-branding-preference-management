@@ -419,8 +419,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             getConfigurationManager().deleteResourcesByType(CUSTOM_TEXT_RESOURCE_TYPE);
             /* Custom text resolver cache for all resources in current tenant domain should be cleared.
-              Therefore, the specific screen and locale params needed to find the exact resource name are passed as
-              empty strings implying that all text resources need to be cleared. */
+              Therefore, the specific screen and locale params that are needed to find the exact resource name,
+              are passed as empty strings, implying that all text resources need to be cleared. */
             BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
                     .clearCustomTextResolverCacheHierarchy(tenantDomain, StringUtils.EMPTY, StringUtils.EMPTY);
         } catch (ConfigurationManagementException e) {
