@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
@@ -57,6 +58,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
@@ -79,6 +81,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.IS_BRANDING_ENABLED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
@@ -133,11 +136,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
-            if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
-                BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
-                        .clearBrandingResolverCacheHierarchy(brandingPreference.getType(), brandingPreference.getName(),
-                                tenantDomain);
-            }
+            getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
+                    brandingPreference.getName(), tenantDomain);
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -198,8 +198,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     public BrandingPreference resolveBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
 
-        return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
-                .resolveBranding(type, name, locale);
+        return getUIBrandingPreferenceResolver().resolveBranding(type, name, locale);
     }
 
     /**
@@ -241,6 +240,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
+            clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
         } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
@@ -264,6 +264,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
+            getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
@@ -289,11 +290,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource customTextPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(CUSTOM_TEXT_RESOURCE_TYPE, customTextPreferenceResource);
-            if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
-                BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
-                        .clearCustomTextResolverCacheHierarchy
-                                (tenantDomain, customText.getScreen(), customText.getLocale());
-            }
+            getUIBrandingPreferenceResolver().clearCustomTextResolverCacheHierarchy(tenantDomain,
+                    customText.getScreen(), customText.getLocale());
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -353,11 +351,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     public CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
-        if (BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver() != null) {
-            return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver()
-                    .resolveCustomText(type, name, screen, locale);
-        }
-        return getCustomText(type, name, screen, locale);
+        return getUIBrandingPreferenceResolver().resolveCustomText(type, name, screen, locale);
     }
 
     @Override
@@ -401,6 +395,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         try {
             getConfigurationManager().deleteResource(CUSTOM_TEXT_RESOURCE_TYPE, resourceName);
+            getUIBrandingPreferenceResolver().clearCustomTextResolverCacheHierarchy(tenantDomain, screen, locale);
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE, tenantDomain);
         }
@@ -415,6 +410,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         String tenantDomain = getTenantDomain();
         try {
             getConfigurationManager().deleteResourcesByType(CUSTOM_TEXT_RESOURCE_TYPE);
+            /* Custom text resolver cache for all resources in current tenant domain should be cleared.
+              Therefore, the specific screen and locale params that are needed to find the exact resource name,
+              are passed as empty strings, implying that all text resources need to be cleared. */
+            getUIBrandingPreferenceResolver().clearCustomTextResolverCacheHierarchy(tenantDomain, StringUtils.EMPTY,
+                    StringUtils.EMPTY);
         } catch (ConfigurationManagementException e) {
             if (RESOURCES_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -701,5 +701,44 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                 }
             }
         }
+    }
+
+    /**
+     * Clear the branding resolver cache if the branding preference enabled config is updated.
+     *
+     * @param previousBrandingPreference Previous branding preference.
+     * @param updatedBrandingPreference  Updated branding preference.
+     * @param tenantDomain               Tenant domain.
+     * @throws BrandingPreferenceMgtException If an error occurs while clearing branding resolver cache hierarchy.
+     */
+    private void clearBrandingResolverCacheIfRequired(BrandingPreference previousBrandingPreference,
+                                                      BrandingPreference updatedBrandingPreference, String tenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        JSONObject previousPreference = new JSONObject((LinkedHashMap) previousBrandingPreference.getPreference());
+        JSONObject updatedPreference = new JSONObject((LinkedHashMap) updatedBrandingPreference.getPreference());
+
+        // If configs.isBrandingEnabled is not found in preferences, it is assumed that branding is enabled by default.
+        boolean isPreviousPreferencesPublished = !previousPreference.has(CONFIGS) ||
+                previousPreference.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
+        boolean isUpdatedPreferencesPublished = !updatedPreference.has(CONFIGS) ||
+                updatedPreference.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
+
+        if (isPreviousPreferencesPublished == isUpdatedPreferencesPublished) {
+            return;
+        }
+
+        getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(updatedBrandingPreference.getType(),
+                updatedBrandingPreference.getName(), tenantDomain);
+    }
+
+    /**
+     * Get UI branding preference resolver stored in the data holder.
+     *
+     * @return UI branding preference resolver instance.
+     */
+    private UIBrandingPreferenceResolver getUIBrandingPreferenceResolver() {
+
+        return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver();
     }
 }
