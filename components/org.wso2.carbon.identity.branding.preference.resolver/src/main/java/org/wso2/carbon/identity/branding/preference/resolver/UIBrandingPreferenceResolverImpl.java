@@ -86,6 +86,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.getFormattedLocale;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
+import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.isBrandingPublished;
 
 /**
  * UI Branding Preference Resolver Implementation.
@@ -96,6 +97,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private final ExecutorService executorService = ThreadLocalAwareExecutors.newFixedThreadPool(1);
     private static final String ORGANIZATION_DETAILS = "organizationDetails";
     private static final String DISPLAY_NAME = "displayName";
+    private static final String PUBLISHED_BRANDING_CACHE_KEY_SUFFIX = "_published";
 
     private final BrandedOrgCache brandedOrgCache;
     private final BrandedAppCache brandedAppCache;
@@ -129,8 +131,19 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         this.textCustomizedOrgCache = textCustomizedOrgCache;
     }
 
+    /**
+     * @deprecated Use {@link #resolveBranding(String, String, String, boolean)}} instead.
+     */
     @Override
+    @Deprecated
     public BrandingPreference resolveBranding(String type, String name, String locale)
+            throws BrandingPreferenceMgtException {
+
+        return resolveBranding(type, name, locale, false);
+    }
+
+    @Override
+    public BrandingPreference resolveBranding(String type, String name, String locale, boolean restrictToPublished)
             throws BrandingPreferenceMgtException {
 
         String organizationId = getOrganizationId();
@@ -148,15 +161,15 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         if (APPLICATION_TYPE.equals(type)) {
-            return resolveApplicationBranding(name, locale, organizationId, currentTenantDomain);
+            return resolveApplicationBranding(name, locale, organizationId, currentTenantDomain, restrictToPublished);
         } else if (ORGANIZATION_TYPE.equals(type)) {
-            return resolveOrganizationBranding(name, locale, organizationId, currentTenantDomain);
+            return resolveOrganizationBranding(name, locale, organizationId, currentTenantDomain, restrictToPublished);
         }
         throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE, type, currentTenantDomain);
     }
 
-    private BrandingPreference resolveOrganizationBranding(String name, String locale,
-                                                           String organizationId, String currentTenantDomain)
+    private BrandingPreference resolveOrganizationBranding(String name, String locale, String organizationId,
+                                                           String currentTenantDomain, boolean restrictToPublished)
             throws BrandingPreferenceMgtException {
 
         OrganizationManager organizationManager =
@@ -173,24 +186,27 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         if (organizationId != null) {
-            BrandedOrgCacheEntry valueFromCache =
-                    brandedOrgCache.getValueFromCache(new BrandedOrgCacheKey(organizationId), currentTenantDomain);
-            if (valueFromCache != null) {
-                String brandingResolvedTenantDomain = valueFromCache.getBrandingResolvedTenant();
-                BrandingPreference resolvedBrandingPreference = getPreference(ORGANIZATION_TYPE, name, locale,
-                        brandingResolvedTenantDomain);
-
-                if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
-                    // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
-                    removeOrgDisplayNameFromBrandingPreference(resolvedBrandingPreference);
+            Optional<BrandingPreference> resolvedBrandingPreference;
+            if (restrictToPublished) {
+                resolvedBrandingPreference = getOrganizationBrandingFromCache(name, locale,
+                        organizationId + PUBLISHED_BRANDING_CACHE_KEY_SUFFIX, currentTenantDomain);
+                if (resolvedBrandingPreference.isPresent()) {
+                    return resolvedBrandingPreference.get();
                 }
-                return resolvedBrandingPreference;
+            }
+            resolvedBrandingPreference =
+                    getOrganizationBrandingFromCache(name, locale, organizationId, currentTenantDomain);
+            if (resolvedBrandingPreference.isPresent() &&
+                    (!restrictToPublished || isBrandingPublished(resolvedBrandingPreference.get()))) {
+                return resolvedBrandingPreference.get();
             }
 
             // No cache found. Start with current organization.
             Optional<BrandingPreference> brandingPreference =
                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
-            if (brandingPreference.isPresent()) {
+            if (brandingPreference.isPresent() &&
+                    (!restrictToPublished ||
+                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
                 return brandingPreference.get();
             }
 
@@ -202,7 +218,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
                         /*  No branding found. Adding the same tenant domain to cache
                           to avoid the resolving in the next run. */
-                        addToCache(organizationId, currentTenantDomain, currentTenantDomain);
+                        addOrgBrandingToCache(organizationId, currentTenantDomain, currentTenantDomain,
+                                restrictToPublished);
                         throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                                 ORGANIZATION_TYPE, name, currentTenantDomain);
                     }
@@ -217,11 +234,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         if (ancestorDepthInHierarchy >= minHierarchyDepth) {
                             brandingPreference =
                                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, ancestorTenantDomain);
-                            if (brandingPreference.isPresent()) {
+                            if (brandingPreference.isPresent() && (!restrictToPublished ||
+                                    BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
                                 /*Since Branding is inherited from an ancestor org,
                                   removing the ancestor org displayName.*/
                                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                                addToCache(organizationId, currentTenantDomain, ancestorTenantDomain);
+                                addOrgBrandingToCache(organizationId, currentTenantDomain, ancestorTenantDomain,
+                                        restrictToPublished);
                                 return brandingPreference.get();
                             }
                         } else {
@@ -234,21 +253,142 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             // No branding found. Adding the same tenant domain to cache to avoid the resolving in the next run.
-            addToCache(organizationId, currentTenantDomain, currentTenantDomain);
+            addOrgBrandingToCache(organizationId, currentTenantDomain, currentTenantDomain, restrictToPublished);
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                     ORGANIZATION_TYPE, name, currentTenantDomain);
         } else {
             // No need to resolve the branding preference. Try to fetch the config from the same org.
-            return getPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
+            Optional<BrandingPreference> brandingPreference =
+                    getBrandingPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
+            if (brandingPreference.isPresent() &&
+                    (!restrictToPublished ||
+                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+                return brandingPreference.get();
+            }
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    ORGANIZATION_TYPE, name, currentTenantDomain);
         }
     }
 
-    private BrandingPreference resolveApplicationBranding(String appId, String locale,
-                                                          String orgId, String currentTenantDomain)
+    private BrandingPreference resolveApplicationBranding(String appId, String locale, String orgId,
+                                                          String currentTenantDomain, boolean restrictToPublished)
+            throws BrandingPreferenceMgtException {
+
+        Optional<BrandingPreference> resolvedBrandingPreference;
+        if (restrictToPublished) {
+            resolvedBrandingPreference = getApplicationBrandingFromCache(appId + PUBLISHED_BRANDING_CACHE_KEY_SUFFIX,
+                    locale, currentTenantDomain);
+            if (resolvedBrandingPreference.isPresent()) {
+                return resolvedBrandingPreference.get();
+            }
+        }
+
+        resolvedBrandingPreference = getApplicationBrandingFromCache(appId, locale, currentTenantDomain);
+        if (resolvedBrandingPreference.isPresent() && (!restrictToPublished ||
+                BrandingPreferenceMgtUtils.isBrandingPublished(resolvedBrandingPreference.get()))) {
+            return resolvedBrandingPreference.get();
+        }
+
+        // No cache found. Start with current organization application branding.
+        Optional<BrandingPreference> brandingPreference =
+                getBrandingPreference(APPLICATION_TYPE, appId, locale, currentTenantDomain);
+        if (brandingPreference.isPresent() &&
+                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+            return brandingPreference.get();
+        }
+
+        // No application branding found. Check current organization branding.
+        brandingPreference = getBrandingPreference(ORGANIZATION_TYPE, currentTenantDomain, locale,
+                currentTenantDomain);
+        if (brandingPreference.isPresent() &&
+                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+            addAppBrandingToCache(appId, currentTenantDomain, null, currentTenantDomain, ORGANIZATION_TYPE,
+                    restrictToPublished);
+            return brandingPreference.get();
+        }
+
+        /* It is not possible to resolve application branding further if the organization ID is null or
+          if the current tenant domain is super tenant since it is the root organization. */
+        if (orgId == null || MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
+            // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
+            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+                    restrictToPublished);
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    APPLICATION_TYPE, appId, currentTenantDomain);
+        }
+
+        try {
+            OrganizationManager organizationManager =
+                    BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+            List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(orgId);
+            if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
+                // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
+                addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+                        restrictToPublished);
+                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                        APPLICATION_TYPE, appId, currentTenantDomain);
+            }
+
+            OrgApplicationManager orgApplicationManager =
+                    BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
+            Map<String, String> ancestorAppIds = orgApplicationManager.getAncestorAppIds(appId, orgId);
+            int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
+            for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
+                String ancestorAppId = ancestorAppIds.get(ancestorOrgId);
+                String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
+                int ancestorDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
+
+                if (ancestorDepthInHierarchy >= minHierarchyDepth) {
+                    brandingPreference =
+                            getAppBrandingPreferenceFromAncestor(appId, locale, currentTenantDomain, ancestorAppId,
+                                    ancestorTenantDomain, restrictToPublished);
+                    if (brandingPreference.isPresent()) {
+                        return brandingPreference.get();
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
+            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+                    restrictToPublished);
+            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
+                    APPLICATION_TYPE, appId, currentTenantDomain);
+        } catch (OrganizationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE,
+                    appId, currentTenantDomain);
+        }
+    }
+
+    private Optional<BrandingPreference> getOrganizationBrandingFromCache(String name, String locale, String cacheKeyId,
+                                                                          String currentTenantDomain)
+            throws BrandingPreferenceMgtException {
+
+        BrandedOrgCacheEntry valueFromCache;
+        valueFromCache =
+                brandedOrgCache.getValueFromCache(new BrandedOrgCacheKey(cacheKeyId),
+                        currentTenantDomain);
+        if (valueFromCache != null) {
+            String brandingResolvedTenantDomain = valueFromCache.getBrandingResolvedTenant();
+            BrandingPreference resolvedBrandingPreference = getPreference(ORGANIZATION_TYPE, name, locale,
+                    brandingResolvedTenantDomain);
+
+            if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
+                // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
+                removeOrgDisplayNameFromBrandingPreference(resolvedBrandingPreference);
+            }
+            return Optional.of(resolvedBrandingPreference);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<BrandingPreference> getApplicationBrandingFromCache(String cacheKeyId, String locale,
+                                                                         String currentTenantDomain)
             throws BrandingPreferenceMgtException {
 
         BrandedAppCacheEntry valueFromCache =
-                brandedAppCache.getValueFromCache(new BrandedAppCacheKey(appId), currentTenantDomain);
+                brandedAppCache.getValueFromCache(new BrandedAppCacheKey(cacheKeyId), currentTenantDomain);
         if (valueFromCache != null) {
             String brandingResolvedAppId = valueFromCache.getBrandingResolvedAppId();
             String brandingResolvedTenantDomain = valueFromCache.getBrandingResolvedTenant();
@@ -267,78 +407,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
                 removeOrgDisplayNameFromBrandingPreference(resolvedBrandingPreference);
             }
-            return resolvedBrandingPreference;
+            return Optional.of(resolvedBrandingPreference);
         }
-
-        // No cache found. Start with current organization application branding.
-        Optional<BrandingPreference> brandingPreference =
-                getBrandingPreference(APPLICATION_TYPE, appId, locale, currentTenantDomain);
-        if (brandingPreference.isPresent()) {
-            return brandingPreference.get();
-        }
-
-        // No application branding found. Check current organization branding.
-        brandingPreference = getBrandingPreference(ORGANIZATION_TYPE, currentTenantDomain, locale,
-                currentTenantDomain);
-        if (brandingPreference.isPresent()) {
-            addAppBrandingToCache(appId, currentTenantDomain, null, currentTenantDomain, ORGANIZATION_TYPE);
-            return brandingPreference.get();
-        }
-
-        /* It is not possible to resolve application branding further if the organization ID is null or
-          if the current tenant domain is super tenant since it is the root organization. */
-        if (orgId == null || MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
-            // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
-                    APPLICATION_TYPE, appId, currentTenantDomain);
-        }
-
-        try {
-            OrganizationManager organizationManager =
-                    BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
-            List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(orgId);
-            if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
-                // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-                addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
-                        APPLICATION_TYPE, appId, currentTenantDomain);
-            }
-
-            OrgApplicationManager orgApplicationManager =
-                    BrandingResolverComponentDataHolder.getInstance().getOrgApplicationManager();
-            Map<String, String> ancestorAppIds = orgApplicationManager.getAncestorAppIds(appId, orgId);
-            int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
-            for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
-                String ancestorAppId = ancestorAppIds.get(ancestorOrgId);
-                String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
-                int ancestorDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
-
-                if (ancestorDepthInHierarchy >= minHierarchyDepth) {
-                    brandingPreference =
-                            getAppBrandingPreferenceFromAncestor(appId, locale, currentTenantDomain, ancestorAppId,
-                                    ancestorTenantDomain);
-                    if (brandingPreference.isPresent()) {
-                        return brandingPreference.get();
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE);
-            throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
-                    APPLICATION_TYPE, appId, currentTenantDomain);
-        } catch (OrganizationManagementException e) {
-            throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE,
-                    appId, currentTenantDomain);
-        }
+        return Optional.empty();
     }
 
     private Optional<BrandingPreference> getAppBrandingPreferenceFromAncestor(
             String appId, String locale, String currentTenantDomain, String ancestorAppId,
-            String ancestorTenantDomain) throws BrandingPreferenceMgtException {
+            String ancestorTenantDomain, Boolean restrictToPublished) throws BrandingPreferenceMgtException {
 
         Optional<BrandingPreference> brandingPreference;
         // If the app is selectively not shared with the ancestor org, ancestor app id can be empty.
@@ -346,12 +422,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             // Check ancestor organization app-level branding.
             brandingPreference = getBrandingPreference(APPLICATION_TYPE, ancestorAppId, locale,
                     ancestorTenantDomain);
-            if (brandingPreference.isPresent()) {
+            if (brandingPreference.isPresent() &&
+                    (!restrictToPublished ||
+                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
                 /* Since Branding is inherited from app-level branding of the ancestor org,
                   removing the ancestor org displayName. */
                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
                 addAppBrandingToCache(appId, currentTenantDomain, ancestorAppId, ancestorTenantDomain,
-                        APPLICATION_TYPE);
+                        APPLICATION_TYPE, restrictToPublished);
                 return brandingPreference;
             }
         }
@@ -359,12 +437,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference =
                 getBrandingPreference(ORGANIZATION_TYPE, ancestorTenantDomain, locale,
                         ancestorTenantDomain);
-        if (brandingPreference.isPresent()) {
+        if (brandingPreference.isPresent() &&
+                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
             /* Since Branding is inherited from org-level branding of the parent org,
               removing the ancestor org displayName. */
             removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
             addAppBrandingToCache(appId, currentTenantDomain, null, ancestorTenantDomain,
-                    ORGANIZATION_TYPE);
+                    ORGANIZATION_TYPE, restrictToPublished);
             return brandingPreference;
         }
         return Optional.empty();
@@ -485,6 +564,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
     private void clearOrgBrandingResolverCache(String tenantDomain, String organizationId) {
 
+        clearOrgBrandingResolverCacheWithKeyId(tenantDomain, organizationId);
+        clearOrgBrandingResolverCacheWithKeyId(tenantDomain, organizationId + PUBLISHED_BRANDING_CACHE_KEY_SUFFIX);
+    }
+
+    private void clearOrgBrandingResolverCacheWithKeyId(String tenantDomain, String organizationId) {
+
         BrandedOrgCacheKey brandedOrgCacheKey = new BrandedOrgCacheKey(organizationId);
         BrandedOrgCacheEntry valueFromCache =
                 brandedOrgCache.getValueFromCache(brandedOrgCacheKey, tenantDomain);
@@ -496,7 +581,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
     private void clearAppBrandingResolverCache(String tenantDomain, String appId) {
 
-        BrandedAppCacheKey brandedAppCacheKey = new BrandedAppCacheKey(appId);
+        clearAppBrandingResolverCacheWithKeyId(tenantDomain, appId);
+        clearAppBrandingResolverCacheWithKeyId(tenantDomain, appId + PUBLISHED_BRANDING_CACHE_KEY_SUFFIX);
+    }
+
+    private void clearAppBrandingResolverCacheWithKeyId(String tenantDomain, String cacheKeyId) {
+
+        BrandedAppCacheKey brandedAppCacheKey = new BrandedAppCacheKey(cacheKeyId);
         BrandedAppCacheEntry valueFromCache =
                 brandedAppCache.getValueFromCache(brandedAppCacheKey, tenantDomain);
         if (valueFromCache != null) {
@@ -704,17 +795,27 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
     }
 
-    private void addToCache(String brandedOrgId, String brandedTenantDomain, String brandingInheritedTenantDomain) {
+    private void addOrgBrandingToCache(String brandedOrgId, String brandedTenantDomain,
+                                       String brandingInheritedTenantDomain, boolean restrictToPublished) {
 
-        BrandedOrgCacheKey cacheKey = new BrandedOrgCacheKey(brandedOrgId);
+        String cacheKeyId = brandedOrgId;
+        if (restrictToPublished) {
+            cacheKeyId += PUBLISHED_BRANDING_CACHE_KEY_SUFFIX;
+        }
+        BrandedOrgCacheKey cacheKey = new BrandedOrgCacheKey(cacheKeyId);
         BrandedOrgCacheEntry cacheEntry = new BrandedOrgCacheEntry(brandingInheritedTenantDomain);
         brandedOrgCache.addToCache(cacheKey, cacheEntry, brandedTenantDomain);
     }
 
     private void addAppBrandingToCache(String appId, String tenantDomain, String brandingInheritedAppId,
-                                       String brandingInheritedTenantDomain, String resolvedBrandingType) {
+                                       String brandingInheritedTenantDomain, String resolvedBrandingType,
+                                       boolean restrictToPublished) {
 
-        BrandedAppCacheKey cacheKey = new BrandedAppCacheKey(appId);
+        String cacheKeyId = appId;
+        if (restrictToPublished) {
+            cacheKeyId += PUBLISHED_BRANDING_CACHE_KEY_SUFFIX;
+        }
+        BrandedAppCacheKey cacheKey = new BrandedAppCacheKey(cacheKeyId);
         BrandedAppCacheEntry cacheEntry =
                 new BrandedAppCacheEntry(brandingInheritedTenantDomain, brandingInheritedAppId,
                         resolvedBrandingType);

@@ -36,8 +36,27 @@ public interface UIBrandingPreferenceResolver {
      * @param locale Language preference of the branding.
      * @return The requested branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
+     * @deprecated Use {@link #resolveBranding(String, String, String, boolean)}} instead.
      */
+    @Deprecated
     BrandingPreference resolveBranding(String type, String name, String locale) throws BrandingPreferenceMgtException;
+
+    /**
+     * This method is used to retrieve a resolved branding preference.
+     *
+     * @param type                Type of the branding preference.
+     * @param name                Name of the tenant/application.
+     * @param locale              Language preference of the branding.
+     * @param restrictToPublished Whether to resolve using only published branding preferences.
+     * @return The requested branding preference. If not exists return the default branding preference.
+     * @throws BrandingPreferenceMgtException if any error occurred while resolving branding preferences.
+     */
+    default BrandingPreference resolveBranding(String type, String name, String locale, boolean restrictToPublished)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException(
+                "resolveBranding method is not implemented in " + this.getClass().getName());
+    }
 
     /**
      * This method is used to clear the branding preference resolver caches, down

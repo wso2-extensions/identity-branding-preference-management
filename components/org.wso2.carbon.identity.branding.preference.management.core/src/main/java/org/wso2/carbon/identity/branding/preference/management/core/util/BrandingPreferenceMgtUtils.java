@@ -26,7 +26,12 @@ import org.json.JSONObject;
 import org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
+import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 
+import java.util.LinkedHashMap;
+
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.IS_BRANDING_ENABLED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LOCAL_CODE_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 
@@ -127,6 +132,21 @@ public class BrandingPreferenceMgtUtils {
             formattedLocale = locale.replace(RESOURCE_NAME_SEPARATOR, LOCAL_CODE_SEPARATOR);
         }
         return formattedLocale;
+    }
+
+    /**
+     * Check whether the given branding preference is published or not.
+     *
+     * @param brandingPreference Branding preference that needs to be checked.
+     * @return True if the branding preference is published.
+     */
+    public static boolean isBrandingPublished(BrandingPreference brandingPreference) {
+
+        JSONObject preferences = new JSONObject((LinkedHashMap) brandingPreference.getPreference());
+
+        // If configs.isBrandingEnabled is not found in preferences, it is assumed that branding is enabled by default.
+        return !preferences.has(CONFIGS) ||
+                preferences.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
     }
 
     private static String populateMessageWithData(BrandingPreferenceMgtConstants.ErrorMessages error, String... data) {

@@ -144,7 +144,7 @@ public class UIBrandingPreferenceResolverImplTest {
                     resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -168,7 +168,7 @@ public class UIBrandingPreferenceResolverImplTest {
             mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -197,7 +197,7 @@ public class UIBrandingPreferenceResolverImplTest {
                     resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -226,7 +226,7 @@ public class UIBrandingPreferenceResolverImplTest {
             mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -258,7 +258,7 @@ public class UIBrandingPreferenceResolverImplTest {
                     resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), ROOT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -281,7 +281,6 @@ public class UIBrandingPreferenceResolverImplTest {
 
             mockAncestorOrgIdAndAppIdRetrieval();
 
-
             when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
             when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
 
@@ -291,13 +290,150 @@ public class UIBrandingPreferenceResolverImplTest {
             mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), ROOT_TENANT_DOMAIN);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-root-org-branding-preference-without-display-name.json"));
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingRestrictedToPublishedWithPublishedCurrentAppBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-app-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, true);
+
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_APP_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingRestrictedToPublishedWithUnpublishedCurrentAppBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-app-unpublished-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                BrandingPreference resolvedBrandingPreference =
+                        brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE,
+                                true);
+
+            });
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingWithUnpublishedCurrentAppBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-app-unpublished-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+
+            /* Even the current app branding is unpublished, resolver should return it
+              since restrictToPublished param is set to false. */
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_APP_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingRestrictedToPublishedWithPublishedCurrentOrgBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String appResourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String appResourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String appResourceFileName = "sample-child-app-unpublished-branding-preference.json";
+
+            // Mock unpublished current app branding.
+            mockBrandingPreferenceRetrieval(appResourceName, appResourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    appResourceFileName);
+
+            String orgResourceName =
+                    String.valueOf(CHILD_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String orgResourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String orgResourceFileName = "sample-child-org-branding-preference.json";
+
+            // Mock published current org branding.
+            mockBrandingPreferenceRetrieval(orgResourceName, orgResourceId, BRANDING_RESOURCE_TYPE,
+                    orgResourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, true);
+
+            // Resolver should return published org branding since restrictToPublished param is set to true.
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(orgResourceFileName));
+        }
+    }
+
+    @Test
+    public void testResolveAppBrandingRestrictedToPublishedWithNoPublishedBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+            String resourceName =
+                    String.valueOf(ROOT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "11356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-root-org-unpublished-branding-preference.json";
+
+            mockAncestorOrgIdAndAppIdRetrieval();
+
+            when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
+            when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
+
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                BrandingPreference resolvedBrandingPreference =
+                        brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE,
+                                true);
+            });
         }
     }
 
@@ -318,7 +454,8 @@ public class UIBrandingPreferenceResolverImplTest {
 
             assertThrows(BrandingPreferenceMgtClientException.class, () -> {
                 BrandingPreference resolvedBrandingPreference =
-                        brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                        brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE,
+                                false);
             });
         }
     }
@@ -342,7 +479,7 @@ public class UIBrandingPreferenceResolverImplTest {
                     resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
@@ -371,13 +508,156 @@ public class UIBrandingPreferenceResolverImplTest {
             mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
 
             BrandingPreference resolvedBrandingPreference =
-                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE);
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
 
             Assert.assertEquals(resolvedBrandingPreference.getName(), PARENT_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
+        }
+    }
+
+    @Test
+    public void testResolveOrgBrandingRestrictedToPublishedWithPublishedCurrentOrgBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName =
+                    String.valueOf(CHILD_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-org-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE, true);
+
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
+    }
+
+    @Test
+    public void testResolveOrgBrandingRestrictedToPublishedWithUnpublishedCurrentOrgBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName =
+                    String.valueOf(CHILD_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-org-unpublished-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                BrandingPreference resolvedBrandingPreference =
+                        brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE,
+                                true);
+            });
+        }
+    }
+
+    @Test
+    public void testResolveOrgBrandingWithUnpublishedCurrentOrgBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName =
+                    String.valueOf(CHILD_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-org-unpublished-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE, false);
+
+            /* Even the current org branding is unpublished, resolver should return it
+              since restrictToPublished param is set to false. */
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
+    }
+
+    @Test
+    public void testResolveOrgBrandingRestrictedToPublishedWithPublishedParentOrgBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            // Mock unpublished current org branding.
+            String currentOrgResourceName =
+                    String.valueOf(CHILD_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String currentOrgResourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String currentOrgResourceFileName = "sample-child-org-unpublished-branding-preference.json";
+
+            mockBrandingPreferenceRetrieval(currentOrgResourceName,
+                    currentOrgResourceId, BRANDING_RESOURCE_TYPE, currentOrgResourceFileName);
+
+            mockAncestorOrgIdAndAppIdRetrieval();
+
+            // Mock published parent org branding.
+            String parentOrdResourceName =
+                    String.valueOf(PARENT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String parentOrdResourceId = "81356f5e-e10b-49f2-87a6-f7f48e164374";
+            String parentOrdResourceFileName = "sample-parent-org-branding-preference.json";
+
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+
+            mockBrandingPreferenceRetrieval(parentOrdResourceName, parentOrdResourceId, BRANDING_RESOURCE_TYPE,
+                    parentOrdResourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE, true);
+
+            // Resolver should return published parent org branding since restrictToPublished param is set to true.
+            Assert.assertEquals(resolvedBrandingPreference.getName(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(),
+                    getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
+        }
+    }
+
+    @Test
+    public void testResolveOrgBrandingRestrictedToPublishedWithNoPublishedBranding() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+            String resourceName =
+                    String.valueOf(ROOT_TENANT_ID).toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "11356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-root-org-unpublished-branding-preference.json";
+
+            mockAncestorOrgIdAndAppIdRetrieval();
+
+            when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
+            when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
+
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                BrandingPreference resolvedBrandingPreference =
+                        brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE,
+                                true);
+            });
         }
     }
 
