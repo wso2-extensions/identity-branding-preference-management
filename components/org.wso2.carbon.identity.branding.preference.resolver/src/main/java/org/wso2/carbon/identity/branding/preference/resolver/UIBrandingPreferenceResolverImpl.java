@@ -617,8 +617,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         String resourceName = (StringUtils.isNotBlank(screen) && StringUtils.isNotBlank(locale)) ?
                 getResourceNameForCustomText(screen, locale) : StringUtils.EMPTY;
         if (organizationId != null) {
-            // If resourceName is empty, clear all the custom text cache entries for the current tenant domain.
             if (StringUtils.isBlank(resourceName)) {
+                // If resourceName is empty, clear all the custom text cache entries for the current tenant domain.
                 clearCustomTextResolverCache(currentTenantDomain);
             } else {
                 clearCustomTextResolverCache(currentTenantDomain, organizationId, resourceName);
@@ -655,6 +655,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         String childTenantDomain = organizationManager.resolveTenantDomain(childOrganization.getId());
                         if (StringUtils.isNotBlank(childTenantDomain)) {
                             if (StringUtils.isBlank(resourceName)) {
+                                // If resourceName is empty, clear all the custom text cache entries for the child org.
                                 clearCustomTextResolverCache(childTenantDomain);
                             } else {
                                 clearCustomTextResolverCache(childTenantDomain, childOrganization.getId(),
