@@ -1,0 +1,25 @@
+{
+  "organizationDetails": {
+    "displayName": "Coala Sports",
+    "siteTitle": "Login - Coala Sports",
+    "copyrightText": "© 2021 Coala Sports Inc.",
+    "supportEmail": "support@coalasports.com"
+  },
+  "colors": {
+    "primary": "#FF0000"
+  },
+  "images": {
+    "logo": {
+      "imgURL": "https://image/upload/q_auto,f_auto/kentcdodds.com/illustrations/kody_profile_white",
+      "altText": "Coala Sports Logo"
+    },
+    "favicon": {
+      "imgURL": "https://favicons/favicon-16x16.png"
+    }
+  },
+  "urls": {
+    "privacyPolicyURL": "https://coalasports.com/privacy-policy",
+    "termsOfUseURL": "https://coalasports.com/terms-of-service/",
+    "cookiePolicyURL": "https://coalasports.com/privacy-policy/#cookie-policy"
+  }
+}

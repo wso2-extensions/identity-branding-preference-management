@@ -264,11 +264,12 @@ public class BrandingPreferenceManagerImplTest {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale())).thenReturn(inputBP);
+        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale(), false))
+                .thenReturn(inputBP);
 
         BrandingPreference retrievedBP =
                 brandingPreferenceManagerImpl.resolveBrandingPreference(inputBP.getType(), inputBP.getName(),
-                        inputBP.getLocale());
+                        inputBP.getLocale(), false);
         Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
@@ -281,11 +282,12 @@ public class BrandingPreferenceManagerImplTest {
 
         setCarbonContextForTenant(tenantDomain, tenantId);
         BrandingPreference inputBP = (BrandingPreference) brandingPreference;
-        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale())).thenReturn(inputBP);
+        when(resolver.resolveBranding(inputBP.getType(), inputBP.getName(), inputBP.getLocale(), false))
+                .thenReturn(inputBP);
 
         //  Retrieving added branding preference.
         BrandingPreference retrievedBP = brandingPreferenceManagerImpl.resolveBrandingPreference
-                (inputBP.getType(), inputBP.getName(), inputBP.getLocale());
+                (inputBP.getType(), inputBP.getName(), inputBP.getLocale(), false);
         Assert.assertEquals(retrievedBP.getPreference(), inputBP.getPreference());
         Assert.assertEquals(retrievedBP.getName(), inputBP.getName());
         Assert.assertEquals(retrievedBP.getType(), inputBP.getType());
