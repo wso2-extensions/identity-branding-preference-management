@@ -58,9 +58,29 @@ public interface BrandingPreferenceManager {
      * @param locale Language preference of the branding.
      * @return The resolved branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
+     * @deprecated Use {@link #resolveBrandingPreference(String, String, String, boolean)}} instead.
      */
+    @Deprecated
     BrandingPreference resolveBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException;
+
+    /**
+     * This service method is used to retrieve resolved branding preferences.
+     *
+     * @param type                Type of the branding preference.
+     * @param name                Name of the tenant/application.
+     * @param locale              Language preference of the branding.
+     * @param restrictToPublished Whether to resolve using only published branding preferences only.
+     * @return The resolved branding preference. If not exists return the default branding preference.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    default BrandingPreference resolveBrandingPreference(String type, String name, String locale,
+                                                         boolean restrictToPublished)
+            throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException(
+                "resolveApplicationBrandingPreference method is not implemented in " + this.getClass().getName());
+    }
 
     /**
      * This API is used to retrieve a resolved branding preference for an application.
@@ -69,7 +89,7 @@ public interface BrandingPreferenceManager {
      * @param locale     Language preference of the branding.
      * @return The resolved branding preference. If not exists return the default branding preference.
      * @throws BrandingPreferenceMgtException if any error occurred.
-     * @deprecated Use {@link #resolveBrandingPreference(String, String, String)}} instead.
+     * @deprecated Use {@link #resolveBrandingPreference(String, String, String, boolean)}} instead.
      */
     @Deprecated
     default BrandingPreference resolveApplicationBrandingPreference(String identifier, String locale)

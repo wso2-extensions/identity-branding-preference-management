@@ -25,7 +25,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
@@ -58,7 +57,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
@@ -81,7 +79,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.IS_BRANDING_ENABLED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
@@ -194,22 +191,34 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
     }
 
+    /**
+     * @deprecated Use {@link #resolveBrandingPreference(String, String, String, boolean)} instead.
+     */
     @Override
+    @Deprecated
     public BrandingPreference resolveBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
 
-        return getUIBrandingPreferenceResolver().resolveBranding(type, name, locale);
+        return resolveBrandingPreference(type, name, locale, false);
+    }
+
+    @Override
+    public BrandingPreference resolveBrandingPreference(String type, String name, String locale,
+                                                        boolean restrictToPublished)
+            throws BrandingPreferenceMgtException {
+
+        return getUIBrandingPreferenceResolver().resolveBranding(type, name, locale, restrictToPublished);
     }
 
     /**
-     * @deprecated Use {@link #resolveBrandingPreference(String, String, String)} instead.
+     * @deprecated Use {@link #resolveBrandingPreference(String, String, String, boolean)} instead.
      */
     @Override
     @Deprecated
     public BrandingPreference resolveApplicationBrandingPreference(String identifier, String locale)
             throws BrandingPreferenceMgtException {
 
-        return resolveBrandingPreference(APPLICATION_TYPE, identifier, locale);
+        return resolveBrandingPreference(APPLICATION_TYPE, identifier, locale, false);
     }
 
     @Override
@@ -715,14 +724,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                                                       BrandingPreference updatedBrandingPreference, String tenantDomain)
             throws BrandingPreferenceMgtException {
 
-        JSONObject previousPreference = new JSONObject((LinkedHashMap) previousBrandingPreference.getPreference());
-        JSONObject updatedPreference = new JSONObject((LinkedHashMap) updatedBrandingPreference.getPreference());
-
         // If configs.isBrandingEnabled is not found in preferences, it is assumed that branding is enabled by default.
-        boolean isPreviousPreferencesPublished = !previousPreference.has(CONFIGS) ||
-                previousPreference.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
-        boolean isUpdatedPreferencesPublished = !updatedPreference.has(CONFIGS) ||
-                updatedPreference.getJSONObject(CONFIGS).optBoolean(IS_BRANDING_ENABLED, true);
+        boolean isPreviousPreferencesPublished =
+                BrandingPreferenceMgtUtils.isBrandingPublished(previousBrandingPreference);
+        boolean isUpdatedPreferencesPublished =
+                BrandingPreferenceMgtUtils.isBrandingPublished(updatedBrandingPreference);
 
         if (isPreviousPreferencesPublished == isUpdatedPreferencesPublished) {
             return;
