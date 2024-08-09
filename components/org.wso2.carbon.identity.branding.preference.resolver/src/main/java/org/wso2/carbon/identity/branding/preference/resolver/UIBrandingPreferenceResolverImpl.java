@@ -196,17 +196,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
             resolvedBrandingPreference =
                     getOrganizationBrandingFromCache(name, locale, organizationId, currentTenantDomain);
-            if (resolvedBrandingPreference.isPresent() &&
-                    (!restrictToPublished || isBrandingPublished(resolvedBrandingPreference.get()))) {
+            if (isBrandingAvailable(restrictToPublished, resolvedBrandingPreference)) {
                 return resolvedBrandingPreference.get();
             }
 
             // No cache found. Start with current organization.
             Optional<BrandingPreference> brandingPreference =
                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
-            if (brandingPreference.isPresent() &&
-                    (!restrictToPublished ||
-                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+            if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
                 return brandingPreference.get();
             }
 
@@ -234,8 +231,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         if (ancestorDepthInHierarchy >= minHierarchyDepth) {
                             brandingPreference =
                                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, ancestorTenantDomain);
-                            if (brandingPreference.isPresent() && (!restrictToPublished ||
-                                    BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+                            if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
                                 /*Since Branding is inherited from an ancestor org,
                                   removing the ancestor org displayName.*/
                                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
@@ -260,9 +256,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             // No need to resolve the branding preference. Try to fetch the config from the same org.
             Optional<BrandingPreference> brandingPreference =
                     getBrandingPreference(ORGANIZATION_TYPE, name, locale, currentTenantDomain);
-            if (brandingPreference.isPresent() &&
-                    (!restrictToPublished ||
-                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+            if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
                 return brandingPreference.get();
             }
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
@@ -284,24 +278,21 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         resolvedBrandingPreference = getApplicationBrandingFromCache(appId, locale, currentTenantDomain);
-        if (resolvedBrandingPreference.isPresent() && (!restrictToPublished ||
-                BrandingPreferenceMgtUtils.isBrandingPublished(resolvedBrandingPreference.get()))) {
+        if (isBrandingAvailable(restrictToPublished, resolvedBrandingPreference)) {
             return resolvedBrandingPreference.get();
         }
 
         // No cache found. Start with current organization application branding.
         Optional<BrandingPreference> brandingPreference =
                 getBrandingPreference(APPLICATION_TYPE, appId, locale, currentTenantDomain);
-        if (brandingPreference.isPresent() &&
-                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+        if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
             return brandingPreference.get();
         }
 
         // No application branding found. Check current organization branding.
         brandingPreference = getBrandingPreference(ORGANIZATION_TYPE, currentTenantDomain, locale,
                 currentTenantDomain);
-        if (brandingPreference.isPresent() &&
-                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+        if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
             addAppBrandingToCache(appId, currentTenantDomain, null, currentTenantDomain, ORGANIZATION_TYPE,
                     restrictToPublished);
             return brandingPreference.get();
@@ -422,9 +413,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             // Check ancestor organization app-level branding.
             brandingPreference = getBrandingPreference(APPLICATION_TYPE, ancestorAppId, locale,
                     ancestorTenantDomain);
-            if (brandingPreference.isPresent() &&
-                    (!restrictToPublished ||
-                            BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+            if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
                 /* Since Branding is inherited from app-level branding of the ancestor org,
                   removing the ancestor org displayName. */
                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
@@ -437,8 +426,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference =
                 getBrandingPreference(ORGANIZATION_TYPE, ancestorTenantDomain, locale,
                         ancestorTenantDomain);
-        if (brandingPreference.isPresent() &&
-                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()))) {
+        if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
             /* Since Branding is inherited from org-level branding of the parent org,
               removing the ancestor org displayName. */
             removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
@@ -1059,5 +1047,18 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         ((LinkedHashMap) ((LinkedHashMap) brandingPreference.getPreference()).get(ORGANIZATION_DETAILS))
                 .replace(DISPLAY_NAME, StringUtils.EMPTY);
+    }
+
+    /**
+     * Check whether the retrieved branding preference is available.
+     *
+     * @param restrictToPublished Whether the branding preferences must be published in order to be available.
+     * @param brandingPreference  Retrieved branding preference object.
+     * @return True if branding preference is available.
+     */
+    private boolean isBrandingAvailable(boolean restrictToPublished, Optional<BrandingPreference> brandingPreference) {
+
+        return brandingPreference.isPresent() &&
+                (!restrictToPublished || BrandingPreferenceMgtUtils.isBrandingPublished(brandingPreference.get()));
     }
 }
