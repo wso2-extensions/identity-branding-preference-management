@@ -86,7 +86,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.getFormattedLocale;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
-import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.isBrandingPublished;
 
 /**
  * UI Branding Preference Resolver Implementation.
