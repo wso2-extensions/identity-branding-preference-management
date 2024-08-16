@@ -187,14 +187,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         if (organizationId != null) {
             Optional<BrandingPreference> resolvedBrandingPreference;
             if (restrictToPublished) {
-                resolvedBrandingPreference = getOrganizationBrandingFromCache(name, locale,
+                resolvedBrandingPreference = getOrganizationBrandingFromCache(locale,
                         organizationId + PUBLISHED_BRANDING_CACHE_KEY_SUFFIX, currentTenantDomain);
                 if (resolvedBrandingPreference.isPresent()) {
                     return resolvedBrandingPreference.get();
                 }
             }
-            resolvedBrandingPreference =
-                    getOrganizationBrandingFromCache(name, locale, organizationId, currentTenantDomain);
+            resolvedBrandingPreference = getOrganizationBrandingFromCache(locale, organizationId, currentTenantDomain);
             if (isBrandingAvailable(restrictToPublished, resolvedBrandingPreference)) {
                 return resolvedBrandingPreference.get();
             }
@@ -228,8 +227,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                                 organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
 
                         if (ancestorDepthInHierarchy >= minHierarchyDepth) {
-                            brandingPreference =
-                                    getBrandingPreference(ORGANIZATION_TYPE, name, locale, ancestorTenantDomain);
+                            brandingPreference = getBrandingPreference(ORGANIZATION_TYPE, ancestorTenantDomain, locale,
+                                    ancestorTenantDomain);
                             if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
                                 /*Since Branding is inherited from an ancestor org,
                                   removing the ancestor org displayName.*/
@@ -351,7 +350,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
     }
 
-    private Optional<BrandingPreference> getOrganizationBrandingFromCache(String name, String locale, String cacheKeyId,
+    private Optional<BrandingPreference> getOrganizationBrandingFromCache(String locale, String cacheKeyId,
                                                                           String currentTenantDomain)
             throws BrandingPreferenceMgtException {
 
@@ -361,8 +360,9 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         currentTenantDomain);
         if (valueFromCache != null) {
             String brandingResolvedTenantDomain = valueFromCache.getBrandingResolvedTenant();
-            BrandingPreference resolvedBrandingPreference = getPreference(ORGANIZATION_TYPE, name, locale,
-                    brandingResolvedTenantDomain);
+            BrandingPreference resolvedBrandingPreference =
+                    getPreference(ORGANIZATION_TYPE, brandingResolvedTenantDomain, locale,
+                            brandingResolvedTenantDomain);
 
             if (!currentTenantDomain.equals(brandingResolvedTenantDomain)) {
                 // Since Branding is inherited from an ancestor org, removing the ancestor org displayName.
