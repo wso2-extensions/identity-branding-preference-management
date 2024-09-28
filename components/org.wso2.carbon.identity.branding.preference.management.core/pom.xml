@@ -92,6 +92,16 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+
         <!-- Testing related dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -148,9 +158,21 @@
                             org.apache.commons.lang;version="${org.apache.commons.lang.imp.pkg.version.range}",
                             org.apache.commons.logging;version="${org.apache.commons.logging.imp.pkg.version.range}",
 
+                            org.apache.http; version="${httpcore.version.osgi.import.range}",
+                            org.apache.http.client; version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.http.client.methods; version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.http.entity; version="${httpcore.version.osgi.import.range}",
+                            org.apache.http.message; version="${httpcore.version.osgi.import.range}",
+                            org.apache.http.protocol; version="${httpcore.version.osgi.import.range}",
+                            org.apache.http.util; version="${httpcore.version.osgi.import.range}",
+                            org.apache.http.impl.client; version="${httpcomponents-httpclient.imp.pkg.version.range}",
+                            org.apache.http.impl.nio.client; version="${httpasyncclient.version.osgi.import.range}",
+                            org.apache.http.concurrent; version="${httpcore.version.osgi.import.range}",
+
                             org.wso2.carbon.context;version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.identity.event.*; version="${carbon.identity.package.import.version.range}",
+                            org.wso2.carbon.identity.core.util; version="${carbon.identity.package.import.version.range}",
 
                             org.json; version="${json.wso2.version.range}",
                         </Import-Package>

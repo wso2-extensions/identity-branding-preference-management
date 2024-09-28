@@ -29,6 +29,8 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
+import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManager;
+import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManagerImpl;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 
@@ -50,7 +52,9 @@ public class BrandingPreferenceManagerComponent {
         try {
             context.getBundleContext()
                     .registerService(BrandingPreferenceManager.class, new BrandingPreferenceManagerImpl(), null);
-
+            context.getBundleContext()
+                    .registerService(BrandingAIPreferenceManager.class.getName(), new BrandingAIPreferenceManagerImpl(),
+                            null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BrandingPreferenceMgt Service Component is activated.");
             }

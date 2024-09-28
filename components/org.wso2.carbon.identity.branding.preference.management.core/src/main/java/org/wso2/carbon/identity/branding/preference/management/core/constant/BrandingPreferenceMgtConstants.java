@@ -109,7 +109,18 @@ public class BrandingPreferenceMgtConstants {
                 "Invalid branding preference type: %s for tenant: %s."),
         ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE("BRANDINGM_00033",
                 "Error while getting app-level branding preference configurations for application id: %s " +
-                        "in tenant: %s.");
+                        "in tenant: %s."),
+        MAXIMUM_RETRIES_EXCEEDED("BRANDINGM_00031", "Maximum retries exceeded to retrieve the access token."),
+        UNABLE_TO_ACCESS_AI_SERVICE_WITH_RENEW_ACCESS_TOKEN("BRANDINGM_00032", "Unable to access the " +
+                "AI service with the renewed access token."),
+        REQUEST_TIMEOUT("BRANDINGM_00033", "Request to the AI service timed out."),
+        ERROR_WHILE_GENERATING_BRANDING_PREFERENCE("BRANDINGM_00034", "Error occurred while " +
+                "generating the branding preference."),
+        ERROR_WHILE_CONNECTING_TO_BRANDING_AI_SERVICE("BRANDINGM_00035", "Error occurred while" +
+                " connecting to the branding AI service."),
+        ERROR_RETRIEVING_ACCESS_TOKEN("BRANDINGM_00036", "Error occurred while retrieving the " +
+                "access token.");
+
 
         private final String code;
         private final String message;

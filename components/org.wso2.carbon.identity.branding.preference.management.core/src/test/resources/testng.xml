@@ -23,7 +23,9 @@
     <test name="BrandingPreferenceManagementTests" parallel="false">
         <classes>
             <class name="org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImplTest"/>
+            <class name="org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManagerImplTest"/>
             <class name="org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtilsTest"/>
+            <class name="org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIAccessTokenServiceTest"/>
         </classes>
     </test>
 </suite>
