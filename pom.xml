@@ -199,6 +199,19 @@
                 <artifactId>org.wso2.carbon.identity.testutil</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+                <artifactId>httpasyncclient</artifactId>
+                <version>${httpasyncclient.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.wso2.orbit.org.apache.httpcomponents/httpclient -->
+            <dependency>
+                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -409,6 +422,9 @@
         <commons.io.wso2.osgi.version.range>[2.4.0,3.0.0)</commons.io.wso2.osgi.version.range>
         <apache.common.collection.version>3.2.0.wso2v1</apache.common.collection.version>
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
+        <httpcore.version.osgi.import.range>[4.3.0, 5.0.0)</httpcore.version.osgi.import.range>
+        <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2, 5.0.0)</httpcomponents-httpclient.imp.pkg.version.range>
+        <httpasyncclient.version.osgi.import.range>[4.1.3.wso2v1,5.0)</httpasyncclient.version.osgi.import.range>
 
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
@@ -437,5 +453,8 @@
         <org.mockito.version>5.3.1</org.mockito.version>
         <h2database.version>1.4.199</h2database.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+
+        <httpclient.version>4.5.13.wso2v1</httpclient.version>
+        <httpasyncclient.version>4.1.3.wso2v1</httpasyncclient.version>
     </properties>
 </project>
