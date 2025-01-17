@@ -137,6 +137,11 @@
                 <artifactId>org.wso2.carbon.identity.core</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.ai.service.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!-- Org Management related dependencies -->
             <dependency>
@@ -200,12 +205,6 @@
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
-                <artifactId>httpasyncclient</artifactId>
-                <version>${httpasyncclient.version}</version>
-            </dependency>
-            <!-- https://mvnrepository.com/artifact/org.wso2.orbit.org.apache.httpcomponents/httpclient -->
             <dependency>
                 <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
@@ -402,7 +401,7 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>7.3.1</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.7.95</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
@@ -424,7 +423,6 @@
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
         <httpcore.version.osgi.import.range>[4.3.0, 5.0.0)</httpcore.version.osgi.import.range>
         <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2, 5.0.0)</httpcomponents-httpclient.imp.pkg.version.range>
-        <httpasyncclient.version.osgi.import.range>[4.1.3.wso2v1,5.0)</httpasyncclient.version.osgi.import.range>
 
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
@@ -455,6 +453,5 @@
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
 
         <httpclient.version>4.5.13.wso2v1</httpclient.version>
-        <httpasyncclient.version>4.1.3.wso2v1</httpasyncclient.version>
     </properties>
 </project>
