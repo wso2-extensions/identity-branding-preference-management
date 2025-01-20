@@ -137,6 +137,11 @@
                 <artifactId>org.wso2.carbon.identity.core</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.ai.service.mgt</artifactId>
+                <version>${carbon.identity.framework.version}</version>
+            </dependency>
 
             <!-- Org Management related dependencies -->
             <dependency>
@@ -199,6 +204,13 @@
                 <artifactId>org.wso2.carbon.identity.testutil</artifactId>
                 <version>${carbon.identity.framework.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -389,7 +401,7 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>7.3.1</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.7.95</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
         <!-- Org management dependency versions-->
@@ -409,6 +421,8 @@
         <commons.io.wso2.osgi.version.range>[2.4.0,3.0.0)</commons.io.wso2.osgi.version.range>
         <apache.common.collection.version>3.2.0.wso2v1</apache.common.collection.version>
         <commons-collections.wso2.osgi.version.range>[3.2.0,4.0.0)</commons-collections.wso2.osgi.version.range>
+        <httpcore.version.osgi.import.range>[4.3.0, 5.0.0)</httpcore.version.osgi.import.range>
+        <httpcomponents-httpclient.imp.pkg.version.range>[4.3.1.wso2v2, 5.0.0)</httpcomponents-httpclient.imp.pkg.version.range>
 
         <json.wso2.version>3.0.0.wso2v1</json.wso2.version>
         <json.wso2.version.range>[3.0.0.wso2v1, 4.0.0)</json.wso2.version.range>
@@ -437,5 +451,7 @@
         <org.mockito.version>5.3.1</org.mockito.version>
         <h2database.version>1.4.199</h2database.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+
+        <httpclient.version>4.5.13.wso2v1</httpclient.version>
     </properties>
 </project>
