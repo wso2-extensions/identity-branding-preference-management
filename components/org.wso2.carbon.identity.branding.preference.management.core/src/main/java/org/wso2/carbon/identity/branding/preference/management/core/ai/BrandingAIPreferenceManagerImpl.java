@@ -42,11 +42,11 @@ public class BrandingAIPreferenceManagerImpl implements BrandingAIPreferenceMana
     private static final String BRANDING_AI_ENDPOINT = IdentityUtil.getProperty(
             "AIServices.BrandingAI.BrandingAIEndpoint");
     private static final String BRANDING_AI_GENERATE_ENDPOINT = IdentityUtil.getProperty(
-            "AIServices.BrandingAI.LoginFlowAIGenerateRequestPath");
+            "AIServices.BrandingAI.BrandingAIGenerateRequestPath");
     private static final String BRANDING_AI_STATUS_ENDPOINT = IdentityUtil.getProperty(
-            "AIServices.BrandingAI.LoginFlowAIStatusRequestPath");
+            "AIServices.BrandingAI.BrandingAIStatusRequestPath");
     private static final String BRANDING_AI_RESULT_ENDPOINT = IdentityUtil.getProperty(
-            "AIServices.BrandingAI.LoginFlowAIResultRequestPath");
+            "AIServices.BrandingAI.BrandingAIResultRequestPath");
 
     private static final Log LOG = LogFactory.getLog(BrandingAIPreferenceManagerImpl.class);
 
