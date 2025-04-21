@@ -27,6 +27,7 @@ public class BrandingPreference {
     private String name;
     private String locale;
     private Object preference;
+    private ResolvedFrom resolvedFrom;
 
     public String getType() {
 
@@ -66,5 +67,34 @@ public class BrandingPreference {
     public void setPreference(Object preference) {
 
         this.preference = preference;
+    }
+
+    public ResolvedFrom getResolvedFrom() {
+        return resolvedFrom;
+    }
+
+    public void setResolvedFrom(String type, String name) {
+        this.resolvedFrom = new ResolvedFrom(type, name);
+    }
+
+    /**
+     * Inner class for the "resolvedFrom" object.
+     */
+    public static class ResolvedFrom {
+        private String type;
+        private String name;
+
+        public ResolvedFrom(String type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 }

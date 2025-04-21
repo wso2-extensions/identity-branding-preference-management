@@ -835,7 +835,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
             }
-            return Optional.of(buildBrandingPreferenceFromResource(inputStream, type, name, locale));
+            String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
+
+            return Optional.of(buildBrandingPreferenceFromResource(inputStream, type, name, locale,
+                    resolvedSourceName));
         } catch (ConfigurationManagementException e) {
             if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
@@ -857,6 +860,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                                                                    String name, String locale)
             throws IOException, BrandingPreferenceMgtException {
 
+        return buildBrandingPreferenceFromResource(inputStream, type, name, locale, null);
+
+    }
+
+    private BrandingPreference buildBrandingPreferenceFromResource(InputStream inputStream, String type, String name,
+                                                                   String locale, String resolvedSourceName)
+            throws IOException, BrandingPreferenceMgtException {
+
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, name);
@@ -869,6 +880,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference.setType(type);
         brandingPreference.setName(name);
         brandingPreference.setLocale(locale);
+        brandingPreference.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
         return brandingPreference;
     }
 
