@@ -837,8 +837,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
             String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
 
-            return Optional.of(buildBrandingPreferenceFromResource(inputStream, type, name, locale,
-                    resolvedSourceName));
+            return Optional.of(buildBrandingPreference(inputStream, type, name, locale, resolvedSourceName));
         } catch (ConfigurationManagementException e) {
             if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
@@ -856,16 +855,18 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
-    private BrandingPreference buildBrandingPreferenceFromResource(InputStream inputStream, String type,
-                                                                   String name, String locale)
-            throws IOException, BrandingPreferenceMgtException {
-
-        return buildBrandingPreferenceFromResource(inputStream, type, name, locale, null);
-
-    }
-
-    private BrandingPreference buildBrandingPreferenceFromResource(InputStream inputStream, String type, String name,
-                                                                   String locale, String resolvedSourceName)
+    /**
+     * Build a Branding Preference Model from branding preference file stream.
+     *
+     * @param inputStream Preference file stream.
+     * @param type Branding resource type.
+     * @param name Tenant/Application name.
+     * @param locale Language preference.
+     * @param resolvedSourceName Source Tenant/Application Name.
+     * @return Branding Preference.
+     */
+    private BrandingPreference buildBrandingPreference(InputStream inputStream, String type, String name,
+                                                       String locale, String resolvedSourceName)
             throws IOException, BrandingPreferenceMgtException {
 
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
@@ -974,7 +975,9 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Custom text preference for tenant: " + tenantDomain + " is retrieved successfully.");
             }
-            return Optional.of(buildCustomTextFromResource(inputStream, type, name, screen, locale));
+            String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
+
+            return Optional.of(buildCustomText(inputStream, type, name, screen, locale, resolvedSourceName));
         } catch (ConfigurationManagementException e) {
             if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
@@ -995,10 +998,11 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
      * @param name        Tenant/Application name.
      * @param screen      Screen Name.
      * @param locale      Language preference.
+     * @param resolvedSourceName Source Name.
      * @return Custom Text Preference.
      */
-    private CustomText buildCustomTextFromResource(InputStream inputStream, String type, String name,
-                                                   String screen, String locale)
+    private CustomText buildCustomText(InputStream inputStream, String type, String name,
+                                       String screen, String locale, String resolvedSourceName)
             throws IOException, BrandingPreferenceMgtException {
 
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
@@ -1014,6 +1018,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         customText.setName(name);
         customText.setLocale(locale);
         customText.setScreen(screen);
+        customText.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
         return customText;
     }
 
