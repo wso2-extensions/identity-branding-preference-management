@@ -27,6 +27,7 @@ public class BrandingPreference {
     private String name;
     private String locale;
     private Object preference;
+    private ResolvedFrom resolvedFrom;
 
     public String getType() {
 
@@ -66,5 +67,15 @@ public class BrandingPreference {
     public void setPreference(Object preference) {
 
         this.preference = preference;
+    }
+
+    public ResolvedFrom getResolvedFrom() {
+
+        return resolvedFrom;
+    }
+
+    public void setResolvedFrom(String type, String name) {
+
+        this.resolvedFrom = new ResolvedFrom(type, name);
     }
 }
