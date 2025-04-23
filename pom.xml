@@ -27,7 +27,7 @@
 
     <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
     <artifactId>identity-branding-preference-management</artifactId>
-    <version>1.1.21-SNAPSHOT</version>
+    <version>1.1.21</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Branding Preference Management</name>
@@ -38,7 +38,7 @@
         <url>https://github.com/wso2-extensions/identity-branding-preference-management.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/identity-branding-preference-management.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-extensions/identity-branding-preference-management.git</connection>
-        <tag>HEAD</tag>
+        <tag>v1.1.21</tag>
     </scm>
 
     <modules>
