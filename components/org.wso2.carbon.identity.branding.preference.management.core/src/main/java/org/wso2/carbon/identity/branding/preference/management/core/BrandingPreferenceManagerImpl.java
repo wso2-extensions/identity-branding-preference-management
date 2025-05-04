@@ -32,6 +32,8 @@ import org.wso2.carbon.identity.branding.preference.management.core.internal.Bra
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
@@ -52,12 +54,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.*;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
@@ -79,16 +76,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCES_NOT_EXISTS_ERROR_CODE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.TENANT_DOMAIN;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.getFormattedLocale;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
@@ -259,6 +246,19 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return brandingPreference;
     }
 
+    private int getResolvedSourceId(String resolvedSourceName) {
+        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
+    }
+
+    private void deleteCustomContent(String type, String name){
+        int resolvedSourceId = getResolvedSourceId(name);
+        if(type.equals(APPLICATION_TYPE)) {
+            AppCustomContentDAO.deleteAppCustomContent(resolvedSourceId);
+        }else if(type.equals(ORGANIZATION_TYPE)){
+            OrgCustomContentDAO.deleteOrgCustomContent(resolvedSourceId);
+        }
+    }
+
     @Override
     public void deleteBrandingPreference(String type, String name, String locale)
             throws BrandingPreferenceMgtException {
@@ -274,6 +274,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
+            deleteCustomContent(type, name);
+
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }

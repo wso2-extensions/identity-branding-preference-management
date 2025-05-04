@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.branding.preference.resolver.dao.constants;
+package org.wso2.carbon.identity.branding.preference.management.core.dao.constants;
 
 /**
  * DataBase Table Columns management related constants

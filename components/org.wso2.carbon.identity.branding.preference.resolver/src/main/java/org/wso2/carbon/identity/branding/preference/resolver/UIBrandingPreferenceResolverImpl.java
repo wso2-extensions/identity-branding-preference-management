@@ -18,7 +18,9 @@
 
 package org.wso2.carbon.identity.branding.preference.resolver;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -29,6 +31,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPr
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
@@ -40,6 +43,8 @@ import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCac
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheKey;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -56,20 +61,12 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.*;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
@@ -80,9 +77,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.getFormattedLocale;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
@@ -855,6 +849,43 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
+    private int getResolvedSourceId(String resolvedSourceName) {
+        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
+    }
+
+    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, int resolvedSourceId, String type) {
+        String activeLayout = root.path("layout").path("activeLayout").asText();
+        if (!CUSTOM_CONTENT_TYPE.equals(activeLayout)) {
+            objectRoot.remove("customContent");
+            return;
+        }
+
+        CustomContent customContent = null;
+
+        if (type.equals(APPLICATION_TYPE)) {
+            customContent = AppCustomContentDAO.getAppCustomContent(resolvedSourceId);
+        }
+        else if (type.equals(ORGANIZATION_TYPE)) {
+            customContent = OrgCustomContentDAO.getOrgCustomContent(resolvedSourceId);
+        }
+
+        ObjectNode customContentNode = objectRoot.objectNode();
+
+        if (customContent != null) {
+            customContentNode.put("htmlContent", customContent.getHtmlContent());
+            customContentNode.put("cssContent", customContent.getCssContent());
+            customContentNode.put("jsContent", customContent.getJsContent());
+        }
+        else {
+            System.err.println("Warning: customContent is null for: " + resolvedSourceId);
+            customContentNode.put("htmlContent", "");
+            customContentNode.put("cssContent", "");
+            customContentNode.put("jsContent", "");
+        }
+
+        objectRoot.set("customContent", customContentNode);
+    }
+
     /**
      * Build a Branding Preference Model from branding preference file stream.
      *
@@ -870,12 +901,22 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             throws IOException, BrandingPreferenceMgtException {
 
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+
         if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
             throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, name);
         }
 
+        int resolvedSourceID = getResolvedSourceId(resolvedSourceName);
         ObjectMapper mapper = new ObjectMapper();
-        Object preference = mapper.readValue(preferencesJSON, Object.class);
+        JsonNode root = mapper.readTree(preferencesJSON);
+
+        if (root.isObject()) {
+            ObjectNode objectRoot = (ObjectNode) root;
+            getCustomContentIfNeeded(objectRoot, root, resolvedSourceID, type);
+        }
+
+        Object preference = mapper.treeToValue(root, Object.class);
+
         BrandingPreference brandingPreference = new BrandingPreference();
         brandingPreference.setPreference(preference);
         brandingPreference.setType(type);

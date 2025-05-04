@@ -12,6 +12,7 @@ public class CustomContent {
         this.cssContent = cssContent;
         this.jsContent = jsContent;
     }
+    public CustomContent() {}
 
     public String getHtmlContent() {
 
@@ -24,6 +25,7 @@ public class CustomContent {
     }
 
     public String getJsContent() {
+
         return jsContent;
     }
 }
