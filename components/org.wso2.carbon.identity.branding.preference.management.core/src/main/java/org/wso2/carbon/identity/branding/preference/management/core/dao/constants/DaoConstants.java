@@ -33,5 +33,13 @@ public class DaoConstants {
         public static final String CONTENT = "CONTENT";
         public static final String CONTENT_TYPE = "CONTENT_TYPE";
         public static final String APP_ID = "APP_ID";
+        public static final String CREATED_AT = "CREATED_AT";
+        public static final String UPDATED_AT = "UPDATED_AT";
+    }
+
+    public static class CustomContentTypes{
+        public static final String CONTENT_TYPE_HTML = "html";
+        public static final String CONTENT_TYPE_CSS = "css";
+        public static final String CONTENT_TYPE_JS = "js";
     }
 }

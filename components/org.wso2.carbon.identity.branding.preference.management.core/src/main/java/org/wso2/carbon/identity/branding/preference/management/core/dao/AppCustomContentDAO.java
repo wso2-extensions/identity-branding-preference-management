@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core.dao;
 
-import com.google.gson.Gson;
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
@@ -26,9 +25,15 @@ import org.wso2.carbon.identity.core.util.JdbcUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTableColumns.*;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTableColumns.APP_ID;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_CSS;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_HTML;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.*;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.UPDATE_ORG_CUSTOM_CONTENT_SQL;
 
 /**
  * This class is to perform CRUD operations for Application vise Custom Content
@@ -36,36 +41,75 @@ import static org.wso2.carbon.identity.branding.preference.management.core.dao.c
 
 public class AppCustomContentDAO {
 
-    public static CustomContent addAppCustomContent(String customContent, String contentType, int appId, int tenantId) {
-        CustomContent result = null;
+    public static boolean isAppCustomContentAvailable(int appId) {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
-
-//        final String[] htmlContent = {"<div class=\"login-box\">\n  <h1>Welcome to {{ organization }}</h1>\n  <form action=\"/login\" method=\"POST\">\n    <input type=\"text\" placeholder=\"Username\" name=\"username\" required />\n    <input type=\"password\" placeholder=\"Password\" name=\"password\" required />\n    <button type=\"submit\">Login</button>\n  </form>\n</div>"};
-//        final String[] cssContent = {"body {\\n  background-color: #f7f7f7;\\n  font-family: Arial, sans-serif;\\n}\\n\\n.login-box {\\n  max-width: 400px;\\n  margin: 100px auto;\\n  padding: 2rem;\\n  background: white;\\n  border-radius: 8px;\\n  box-shadow: 0 2px 10px rgba(0,0,0,0.1);\\n}\\n\\nbutton {\\n  background-color: #007BFF;\\n  color: white;\\n  border: none;\\n  padding: 10px 20px;\\n  cursor: pointer;\\n  border-radius: 4px;\\n}\\n\\nbutton:hover {\\n  background-color: #0056b3;\\n}\",\n"};
-//        final String[] jsContent = {"document.addEventListener(\\\"DOMContentLoaded\\\", function () {\\n  const form = document.querySelector(\\\"form\\\");\\n  form.addEventListener(\\\"submit\\\", function (e) {\\n    const username = form.username.value.trim();\\n    if (!username) {\\n      e.preventDefault();\\n      alert(\\\"Username is required\\\");\\n    }\\n  });\\n});\",\n"};
-
-        String contentJson = new Gson().toJson(customContent);
-        byte[] contentByteArray = contentJson.getBytes(StandardCharsets.UTF_8);
-        int contentLength = contentByteArray.length;
-
-        try (InputStream contentStream = new ByteArrayInputStream(contentByteArray)){
-            template.executeInsert(INSERT_APP_CUSTOM_CONTENT_SQL,
-                    (namedPreparedStatement -> {
-                        namedPreparedStatement.setBinaryStream(CONTENT,contentStream,contentLength);
-                        namedPreparedStatement.setString(CONTENT_TYPE,contentType);
-                        namedPreparedStatement.setInt(APP_ID, appId);
-                        namedPreparedStatement.setInt(TENANT_ID,tenantId);
-                    }),customContent,false
-
-            );
-        }catch (DataAccessException e) {
-            String error =
-                    String.format("Error while adding custom content to application in %s tenant.",
-                            tenantId);
-        } catch (IOException e) {
+        try {
+            Integer count = template.fetchSingleRecord(GET_APP_CUSTOM_CONTENT_COUNT_SQL,
+                    (resultSet, rowNum) -> resultSet.getInt(1),
+                    namedPreparedStatement -> {
+                        namedPreparedStatement.setInt(1, appId);
+                    });
+            return count != null && count > 0;
+        } catch (DataAccessException e) {
+            System.err.println("Error checking if custom content exists for application " + appId);
+            e.printStackTrace();
+            return false;
         }
-        return result;
     }
+
+    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) {
+        try {
+            template.executeUpdate(INSERT_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
+                namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+                namedPreparedStatement.setString(2, contentType);
+                namedPreparedStatement.setInt(3, appId);
+                namedPreparedStatement.setTimestamp(4, timestamp);
+                namedPreparedStatement.setTimestamp(5, timestamp);
+            });
+        } catch (DataAccessException e){
+            String error = String.format("Error while adding custom content to organization in %s tenant.", appId);
+
+        }
+    }
+
+    public static void addAppCustomContent(CustomContent content, int appId) {
+        NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+
+        insertContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, appId, now);
+        insertContent(template, content.getCssContent(), CONTENT_TYPE_CSS, appId, now);
+        insertContent(template, content.getJsContent(), CONTENT_TYPE_JS, appId, now);
+
+    }
+
+    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws DataAccessException {
+        try{
+            template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
+                namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+                namedPreparedStatement.setTimestamp(5, timestamp);
+            });
+        } catch (DataAccessException e){
+            String error =
+                    String.format("Error while updating custom content to organization in %s tenant.",
+                            appId);
+        }
+    }
+
+    public static void updateAppCustomContent(CustomContent content, int appId) {
+        NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+
+        try {
+            updateContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, appId, now);
+            updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, appId, now);
+            updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, appId, now);
+        } catch (DataAccessException e) {
+            String error = String.format("Error while updating custom content for tenant %d.", appId);
+            System.err.println(error);
+            e.printStackTrace();
+        }
+    }
+
     /**
      * @param appId
      * @return CustomContent

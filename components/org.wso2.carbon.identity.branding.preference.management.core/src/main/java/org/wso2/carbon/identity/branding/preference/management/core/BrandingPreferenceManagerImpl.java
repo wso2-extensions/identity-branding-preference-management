@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
@@ -87,6 +88,23 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
     private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
 
+    private int getResolvedSourceId(String resolvedSourceName) {
+        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
+    }
+
+    private void addCustomContent(String type, String name, CustomContent customContent) {
+        int resolvedSourceId = getResolvedSourceId(name);
+        if(type.equals(APPLICATION_TYPE)) {
+            if(!AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)){
+                AppCustomContentDAO.addAppCustomContent(customContent,resolvedSourceId);
+            }
+        }else if(type.equals(ORGANIZATION_TYPE)){
+            if(!OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)){
+                OrgCustomContentDAO.addOrgCustomContent(customContent,resolvedSourceId);
+            }
+        }
+    }
+
     @Override
     public BrandingPreference addBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
@@ -117,11 +135,19 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
+        //Get custom content from preferences JSON
+        String htmlContent = "<html><head><title>Hi</title></head><body><div>Para</div></body></html>";
+        String cssContent = "body {background-color: red;}";
+        String jsContent = "console.log(\"Hello World\");";
+
+        CustomContent customContent = new CustomContent(htmlContent, cssContent, jsContent);
+
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
+            addCustomContent(brandingPreference.getType(), brandingPreference.getName(), customContent);
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -208,6 +234,21 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return resolveBrandingPreference(APPLICATION_TYPE, identifier, locale, false);
     }
 
+    private void updateCustomContent(String type, String name, CustomContent customContent) {
+        int resolvedSourceId = getResolvedSourceId(name);
+        if(type.equals(APPLICATION_TYPE)) {
+            if (AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)) {
+                AppCustomContentDAO.updateAppCustomContent(customContent,resolvedSourceId);
+            }
+        }else if(type.equals(ORGANIZATION_TYPE)){
+            if (OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)) {
+                OrgCustomContentDAO.updateOrgCustomContent(customContent,resolvedSourceId);
+            } else{
+                OrgCustomContentDAO.addOrgCustomContent(customContent,resolvedSourceId);
+            }
+        }
+    }
+
     @Override
     public BrandingPreference replaceBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
@@ -233,10 +274,18 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
+        //Get custom content from preferences JSON
+        String htmlContent = "<html><head><title>Hi</title></head><body><div>Updated Para</div></body></html>";
+        String cssContent = "body {background-color: red;}";
+        String jsContent = "console.log(\"Hello World\");";
+
+        CustomContent customContent = new CustomContent(htmlContent, cssContent, jsContent);
+
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
+            updateCustomContent(brandingPreference.getType(), brandingPreference.getName(), customContent);
         } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
@@ -244,10 +293,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             LOG.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
         }
         return brandingPreference;
-    }
-
-    private int getResolvedSourceId(String resolvedSourceName) {
-        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
     }
 
     private void deleteCustomContent(String type, String name){

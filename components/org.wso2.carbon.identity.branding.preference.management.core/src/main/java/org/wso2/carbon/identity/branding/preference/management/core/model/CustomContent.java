@@ -1,5 +1,7 @@
 package org.wso2.carbon.identity.branding.preference.management.core.model;
 
+import java.io.InputStream;
+
 public class CustomContent {
 
     private String htmlContent;

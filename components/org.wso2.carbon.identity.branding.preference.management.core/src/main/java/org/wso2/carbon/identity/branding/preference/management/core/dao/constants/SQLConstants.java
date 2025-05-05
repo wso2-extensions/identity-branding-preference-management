@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -29,18 +29,17 @@ public class SQLConstants {
     public static final String INSERT_ORG_CUSTOM_CONTENT_SQL =
             "INSERT INTO IDN_CUSTOM_CONTENT_ORG " +
                     "(CONTENT, CONTENT_TYPE, TENANT_ID, CREATED_AT, UPDATED_AT) " +
-                    "VALUES (:CONTENT;, :CONTENT_TYPE;, :TENANT_ID;, :CREATED_AT;, :UPDATED_AT;)";
+                    "VALUES (?, ?, ?, ?, ?)";
     public static final String GET_ORG_CUSTOM_CONTENT_SQL =
             "SELECT CONTENT, CONTENT_TYPE FROM IDN_CUSTOM_CONTENT_ORG " +
                     "WHERE TENANT_ID = :TENANT_ID;";
     public static final String UPDATE_ORG_CUSTOM_CONTENT_SQL =
-            "UPDATE IDN_CUSTOM_CONTENT_ORG SET CONTENT = :CONTENT;, CONTENT_TYPE = :CONTENT_TYPE;, " +
-                    "UPDATED_AT = :UPDATED_AT; WHERE TENANT_ID = :TENANT_ID;";
+            "UPDATE IDN_CUSTOM_CONTENT_ORG SET CONTENT = ?, " +
+                    "UPDATED_AT = ? WHERE TENANT_ID = :TENANT_ID; AND CONTENT_TYPE = :CONTENT_TYPE;";
     public static final String DELETE_ORG_CUSTOM_CONTENT_SQL =
             "DELETE FROM IDN_CUSTOM_CONTENT_ORG WHERE TENANT_ID = :TENANT_ID;";
-    public static final String LIST_ORG_CUSTOM_CONTENT_SQL =
-            "SELECT ID, CONTENT, CONTENT_TYPE FROM IDN_CUSTOM_CONTENT_ORG " +
-                    "WHERE TENANT_ID = :TENANT_ID;";
+    public static final String GET_ORG_CUSTOM_CONTENT_COUNT_SQL =
+            "SELECT COUNT(*) FROM IDN_CUSTOM_CONTENT_ORG WHERE TENANT_ID = ?";
 
     // --- APP CUSTOM CONTENT ---
 
@@ -52,11 +51,10 @@ public class SQLConstants {
             "SELECT CONTENT, CONTENT_TYPE FROM IDN_CUSTOM_CONTENT_APP " +
                     "WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
     public static final String UPDATE_APP_CUSTOM_CONTENT_SQL =
-            "UPDATE IDN_CUSTOM_CONTENT_APP SET CONTENT = :CONTENT;, CONTENT_TYPE = :CONTENT_TYPE;, " +
-                    "UPDATED_AT = :UPDATED_AT; WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
+            "UPDATE IDN_CUSTOM_CONTENT_APP SET CONTENT = :CONTENT;, " +
+                    "UPDATED_AT = :UPDATED_AT; WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID; AND CONTENT_TYPE = :CONTENT_TYPE;";
     public static final String DELETE_APP_CUSTOM_CONTENT_SQL =
             "DELETE FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
-    public static final String LIST_APP_CUSTOM_CONTENT_SQL =
-            "SELECT ID, CONTENT, CONTENT_TYPE FROM IDN_CUSTOM_CONTENT_APP " +
-                    "WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
+    public static final String GET_APP_CUSTOM_CONTENT_COUNT_SQL =
+            "SELECT COUNT(*) FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = ?";
 }

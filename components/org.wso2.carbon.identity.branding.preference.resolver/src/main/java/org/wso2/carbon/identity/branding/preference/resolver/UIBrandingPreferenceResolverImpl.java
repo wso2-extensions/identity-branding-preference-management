@@ -863,10 +863,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         CustomContent customContent = null;
 
         if (type.equals(APPLICATION_TYPE)) {
-            customContent = AppCustomContentDAO.getAppCustomContent(resolvedSourceId);
+            if (AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)) {
+                customContent = AppCustomContentDAO.getAppCustomContent(resolvedSourceId);
+            }
         }
         else if (type.equals(ORGANIZATION_TYPE)) {
-            customContent = OrgCustomContentDAO.getOrgCustomContent(resolvedSourceId);
+            if (OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)) {
+                customContent = OrgCustomContentDAO.getOrgCustomContent(resolvedSourceId);
+            }
         }
 
         ObjectNode customContentNode = objectRoot.objectNode();
