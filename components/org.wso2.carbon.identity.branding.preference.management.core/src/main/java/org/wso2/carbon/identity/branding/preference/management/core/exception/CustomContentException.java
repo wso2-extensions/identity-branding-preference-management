@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -16,11 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.branding.preference.resolver.dao;
+package org.wso2.carbon.identity.branding.preference.management.core.exception;
 
-/**
- * This class is to perform CRUD operations for Application vise Custom Content
- */
-
-public class AppCustomContentDAO {
+public class CustomContentException extends RuntimeException {
+  public CustomContentException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

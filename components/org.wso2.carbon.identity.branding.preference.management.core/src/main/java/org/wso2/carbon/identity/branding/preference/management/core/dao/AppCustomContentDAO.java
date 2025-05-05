@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao;
 
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.core.util.JdbcUtils;
 
@@ -41,7 +42,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.dao.c
 
 public class AppCustomContentDAO {
 
-    public static boolean isAppCustomContentAvailable(int appId) {
+    public static boolean isAppCustomContentAvailable(int appId) throws CustomContentException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         try {
             Integer count = template.fetchSingleRecord(GET_APP_CUSTOM_CONTENT_COUNT_SQL,
@@ -51,14 +52,12 @@ public class AppCustomContentDAO {
                     });
             return count != null && count > 0;
         } catch (DataAccessException e) {
-            System.err.println("Error checking if custom content exists for application " + appId);
-            e.printStackTrace();
-            return false;
+            throw new CustomContentException("Error checking if custom content exists for application " + appId, e);
         }
     }
 
-    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) {
-        try {
+    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws CustomContentException {
+        try{
             template.executeUpdate(INSERT_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
                 namedPreparedStatement.setString(2, contentType);
@@ -67,8 +66,7 @@ public class AppCustomContentDAO {
                 namedPreparedStatement.setTimestamp(5, timestamp);
             });
         } catch (DataAccessException e){
-            String error = String.format("Error while adding custom content to organization in %s tenant.", appId);
-
+            throw new CustomContentException("Error while adding custom content to organization in " + appId + " tenant.", e);
         }
     }
 
@@ -82,16 +80,14 @@ public class AppCustomContentDAO {
 
     }
 
-    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws DataAccessException {
+    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws DataAccessException,CustomContentException {
         try{
             template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
                 namedPreparedStatement.setTimestamp(5, timestamp);
             });
         } catch (DataAccessException e){
-            String error =
-                    String.format("Error while updating custom content to organization in %s tenant.",
-                            appId);
+            throw new CustomContentException("Error while updating custom content to organization in " + appId + " tenant.", e);
         }
     }
 
@@ -104,9 +100,7 @@ public class AppCustomContentDAO {
             updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, appId, now);
             updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, appId, now);
         } catch (DataAccessException e) {
-            String error = String.format("Error while updating custom content for tenant %d.", appId);
-            System.err.println(error);
-            e.printStackTrace();
+            throw new CustomContentException("Error while updating custom content for tenant " + appId, e);
         }
     }
 
@@ -114,7 +108,7 @@ public class AppCustomContentDAO {
      * @param appId
      * @return CustomContent
      */
-    public static CustomContent getAppCustomContent(int appId){
+    public static CustomContent getAppCustomContent(int appId) throws CustomContentException{
         CustomContent result = null;
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
 
@@ -141,14 +135,13 @@ public class AppCustomContentDAO {
                     }
             );
             result = new CustomContent(htmlContent[0], cssContent[0], jsContent[0]);
-        } catch (Exception e) {
-            System.err.println("Warning: Failed to fetch custom content for tenantId " + appId + ". Using empty content.");
-            e.printStackTrace();
+        } catch (DataAccessException e) {
+            throw new CustomContentException("Error while fetching custom content for tenant " + appId, e);
         }
         return result;
     }
 
-    public static void deleteAppCustomContent(int appId) {
+    public static void deleteAppCustomContent(int appId) throws CustomContentException{
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try{
             namedJdbcTemplate.executeUpdate(DELETE_APP_CUSTOM_CONTENT_SQL,
@@ -156,9 +149,7 @@ public class AppCustomContentDAO {
                         namedPreparedStatement.setInt(APP_ID, appId);
                     });
         } catch (DataAccessException e){
-            String error =
-                    String.format("Error while deleting the custom content in %s app.",
-                            appId);
+            throw new CustomContentException("Error while deleting the custom content in " + appId + " app.", e);
         }
     }
 
