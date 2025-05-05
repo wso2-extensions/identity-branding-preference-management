@@ -27,7 +27,7 @@
 
     <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
     <artifactId>identity-branding-preference-management</artifactId>
-    <version>1.1.23-SNAPSHOT</version>
+    <version>1.1.20</version>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <name>WSO2 Carbon - Branding Preference Management</name>
@@ -209,6 +209,12 @@
                 <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${httpclient.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wso2.carbon.utils</groupId>
+                <artifactId>org.wso2.carbon.database.utils</artifactId>
+                <version>${org.wso2.carbon.database.utils.version}</version>
             </dependency>
 
         </dependencies>
@@ -411,6 +417,10 @@
         <identity.organization.management.core.version>1.1.9</identity.organization.management.core.version>
         <identity.organization.management.core.imp.pkg.version.range>[1.0.0,2.0.0)
         </identity.organization.management.core.imp.pkg.version.range>
+
+        <!--Carbon Database Utils Version-->
+        <org.wso2.carbon.database.utils.version>2.2.2</org.wso2.carbon.database.utils.version>
+        <org.wso2.carbon.database.utils.version.range>[2.1.0,3.0.0)</org.wso2.carbon.database.utils.version.range>
 
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>

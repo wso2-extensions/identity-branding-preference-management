@@ -28,6 +28,7 @@ public class BrandingPreferenceMgtConstants {
     public static final String CUSTOM_TEXT_RESOURCE_TYPE = "CUSTOM_TEXT";
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
+    public static final String CUSTOM_CONTENT_TYPE = "custom";
     public static final String CUSTOM_TYPE = "CUSTOM";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";

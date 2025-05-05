@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.wso2.carbon.identity.branding.preference.management</groupId>
         <artifactId>identity-branding-preference-management</artifactId>
-        <version>1.1.23-SNAPSHOT</version>
+        <version>1.1.20</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -123,6 +123,10 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.utils</groupId>
+            <artifactId>org.wso2.carbon.database.utils</artifactId>
+        </dependency>
         <!-- Common test utility -->
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
@@ -163,6 +167,8 @@
                             org.apache.http.entity; version="${httpcore.version.osgi.import.range}",
                             org.apache.http.message; version="${httpcore.version.osgi.import.range}",
                             org.apache.http.protocol; version="${httpcore.version.osgi.import.range}",
+
+                            org.wso2.carbon.database.utils.*;version="${org.wso2.carbon.database.utils.version.range}",
 
                             org.wso2.carbon.context;version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.identity.configuration.mgt.core.*; version="${carbon.identity.package.import.version.range}",
