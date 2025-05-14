@@ -35,7 +35,7 @@ public class SQLConstants {
                     "WHERE TENANT_ID = :TENANT_ID;";
     public static final String UPDATE_ORG_CUSTOM_CONTENT_SQL =
             "UPDATE IDN_CUSTOM_CONTENT_ORG SET CONTENT = ?, " +
-                    "UPDATED_AT = ? WHERE TENANT_ID = :TENANT_ID; AND CONTENT_TYPE = :CONTENT_TYPE;";
+                    "UPDATED_AT = ? WHERE TENANT_ID = ? AND CONTENT_TYPE = ?";
     public static final String DELETE_ORG_CUSTOM_CONTENT_SQL =
             "DELETE FROM IDN_CUSTOM_CONTENT_ORG WHERE TENANT_ID = :TENANT_ID;";
     public static final String GET_ORG_CUSTOM_CONTENT_COUNT_SQL =
@@ -49,12 +49,12 @@ public class SQLConstants {
                     "VALUES (:CONTENT;, :CONTENT_TYPE;, :APP_ID;, :TENANT_ID;, :CREATED_AT;, :UPDATED_AT;)";
     public static final String GET_APP_CUSTOM_CONTENT_SQL =
             "SELECT CONTENT, CONTENT_TYPE FROM IDN_CUSTOM_CONTENT_APP " +
-                    "WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
+                    "WHERE APP_ID = :APP_ID;";
     public static final String UPDATE_APP_CUSTOM_CONTENT_SQL =
             "UPDATE IDN_CUSTOM_CONTENT_APP SET CONTENT = :CONTENT;, " +
-                    "UPDATED_AT = :UPDATED_AT; WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID; AND CONTENT_TYPE = :CONTENT_TYPE;";
+                    "UPDATED_AT = :UPDATED_AT; WHERE APP_ID = :APP_ID; AND CONTENT_TYPE = :CONTENT_TYPE;";
     public static final String DELETE_APP_CUSTOM_CONTENT_SQL =
-            "DELETE FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = :APP_ID; AND TENANT_ID = :TENANT_ID;";
+            "DELETE FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = :APP_ID;";
     public static final String GET_APP_CUSTOM_CONTENT_COUNT_SQL =
-            "SELECT COUNT(*) FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = ?";
+            "SELECT COUNT(*) FROM IDN_CUSTOM_CONTENT_APP WHERE APP_ID = ? AND TENANT_ID = ?";
 }
