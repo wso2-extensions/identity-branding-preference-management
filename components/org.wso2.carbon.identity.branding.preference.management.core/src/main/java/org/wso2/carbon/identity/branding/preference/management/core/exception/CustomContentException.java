@@ -18,8 +18,10 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core.exception;
 
-public class CustomContentException extends RuntimeException {
+public class CustomContentException extends BrandingPreferenceMgtException {
+
   public CustomContentException(String message, Throwable cause) {
-    super(message, cause);
+    super(message, "DEFAULT_ERROR_CODE", cause);
   }
+
 }

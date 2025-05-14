@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao;
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.core.util.JdbcUtils;
 
@@ -45,7 +46,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.dao.c
 
 public class OrgCustomContentDAO {
 
-    public static boolean isOrgCustomContentAvailable(int tenantId) throws CustomContentException {
+    public boolean isOrgCustomContentAvailable(int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         try {
             Integer count = template.fetchSingleRecord(GET_ORG_CUSTOM_CONTENT_COUNT_SQL,
@@ -55,11 +56,11 @@ public class OrgCustomContentDAO {
                     });
             return count != null && count > 0;
         } catch (DataAccessException e) {
-            throw  new CustomContentException("Error checking if custom content exists for tenant " + tenantId, e);
+            throw new CustomContentServerException("Error checking if custom content exists for tenant " + tenantId,"",e);
         }
     }
 
-    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) {
+    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) throws CustomContentServerException {
         try {
             template.executeUpdate(INSERT_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
@@ -69,11 +70,11 @@ public class OrgCustomContentDAO {
                 namedPreparedStatement.setTimestamp(5, timestamp);
             });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while adding custom content to organization in " + tenantId + " tenant.", e);
+            throw new CustomContentServerException("Error while adding custom content to organization in " + tenantId + " tenant.", "",e);
         }
     }
 
-    public static void addOrgCustomContent(CustomContent content, int tenantId) {
+    public void addOrgCustomContent(CustomContent content, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
@@ -83,19 +84,20 @@ public class OrgCustomContentDAO {
 
     }
 
-    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) throws DataAccessException {
+    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) throws DataAccessException, CustomContentServerException {
         try{
             template.executeUpdate(UPDATE_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setString(2, contentType);
-                namedPreparedStatement.setTimestamp(5, timestamp);
+                namedPreparedStatement.setInt(3, tenantId);
+                namedPreparedStatement.setString(4, contentType);
+                namedPreparedStatement.setTimestamp(2, timestamp);
             });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while updating custom content to organization in " + tenantId + " tenant.", e);
+            throw new CustomContentServerException("Error while updating custom content to organization in " + tenantId + " tenant.", "",e);
         }
     }
 
-    public static void updateOrgCustomContent(CustomContent content, int tenantId) throws CustomContentException{
+    public void updateOrgCustomContent(CustomContent content, int tenantId) throws CustomContentServerException{
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
@@ -104,7 +106,7 @@ public class OrgCustomContentDAO {
             updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, tenantId, now);
             updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, tenantId, now);
         } catch (DataAccessException e) {
-            throw new CustomContentException("Error while updating custom content for tenant " + tenantId, e);
+            throw new CustomContentServerException("Error while updating custom content for tenant " + tenantId, "",e);
         }
     }
 
@@ -112,7 +114,7 @@ public class OrgCustomContentDAO {
      * @param tenantId
      * @return CustomContent
      */
-    public static CustomContent getOrgCustomContent(int tenantId) throws CustomContentException{
+    public CustomContent getOrgCustomContent(int tenantId) throws CustomContentServerException{
         CustomContent result = null;
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
 
@@ -140,12 +142,12 @@ public class OrgCustomContentDAO {
             );
             result = new CustomContent(htmlContent[0], cssContent[0], jsContent[0]);
         } catch (DataAccessException e) {
-            throw new CustomContentException("Error while fetching custom content for tenant " + tenantId, e);
+            throw new CustomContentServerException("Error while fetching custom content for tenant " + tenantId,"", e);
         }
         return result;
     }
 
-    public static void deleteOrgCustomContent(int tenantId) throws CustomContentException {
+    public void deleteOrgCustomContent(int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try{
             namedJdbcTemplate.executeUpdate(DELETE_ORG_CUSTOM_CONTENT_SQL,
@@ -153,7 +155,7 @@ public class OrgCustomContentDAO {
                         namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while deleting the custom content in " + tenantId + " tenant.", e);
+            throw new CustomContentServerException("Error while deleting the custom content in " + tenantId + " tenant.", "",e);
         }
     }
 

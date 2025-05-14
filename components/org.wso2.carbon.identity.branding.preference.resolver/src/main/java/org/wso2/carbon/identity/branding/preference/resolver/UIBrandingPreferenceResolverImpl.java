@@ -28,8 +28,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
@@ -91,6 +93,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private static final String ORGANIZATION_DETAILS = "organizationDetails";
     private static final String DISPLAY_NAME = "displayName";
     private static final String PUBLISHED_BRANDING_CACHE_KEY_SUFFIX = "_published";
+    private static final CustomContentDAO CustomContentDAO = new CustomContentDAO();
 
     private final BrandedOrgCache brandedOrgCache;
     private final BrandedAppCache brandedAppCache;
@@ -849,11 +852,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
-    private int getResolvedSourceId(String resolvedSourceName) {
-        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
-    }
-
-    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, int resolvedSourceId, String type) {
+    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type) throws CustomContentServerException {
         String activeLayout = root.path("layout").path("activeLayout").asText();
         if (!CUSTOM_CONTENT_TYPE.equals(activeLayout)) {
             objectRoot.remove("customContent");
@@ -863,14 +862,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         CustomContent customContent = null;
 
         if (type.equals(APPLICATION_TYPE)) {
-            if (AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)) {
-                customContent = AppCustomContentDAO.getAppCustomContent(resolvedSourceId);
-            }
+            customContent = CustomContentDAO.getCustomContent(resolvedSourceName, getTenantDomain());
         }
         else if (type.equals(ORGANIZATION_TYPE)) {
-            if (OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)) {
-                customContent = OrgCustomContentDAO.getOrgCustomContent(resolvedSourceId);
-            }
+            customContent = CustomContentDAO.getCustomContent(null, resolvedSourceName);
         }
 
         ObjectNode customContentNode = objectRoot.objectNode();
@@ -881,7 +876,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             customContentNode.put("jsContent", customContent.getJsContent());
         }
         else {
-            System.err.println("Warning: customContent is null for: " + resolvedSourceId);
+            System.err.println("Warning: customContent is null for: " + resolvedSourceName);
             customContentNode.put("htmlContent", "");
             customContentNode.put("cssContent", "");
             customContentNode.put("jsContent", "");
@@ -910,13 +905,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, name);
         }
 
-        int resolvedSourceID = getResolvedSourceId(resolvedSourceName);
+//        int resolvedSourceID = getResolvedSourceId(resolvedSourceName);
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(preferencesJSON);
 
         if (root.isObject()) {
             ObjectNode objectRoot = (ObjectNode) root;
-            getCustomContentIfNeeded(objectRoot, root, resolvedSourceID, type);
+            getCustomContentIfNeeded(objectRoot, root, resolvedSourceName, type);
         }
 
         Object preference = mapper.treeToValue(root, Object.class);

@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao;
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.core.util.JdbcUtils;
 
@@ -29,86 +30,92 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTableColumns.APP_ID;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTableColumns.*;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.*;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.UPDATE_ORG_CUSTOM_CONTENT_SQL;
-
 /**
  * This class is to perform CRUD operations for Application vise Custom Content
  */
 
 public class AppCustomContentDAO {
 
-    public static boolean isAppCustomContentAvailable(int appId) throws CustomContentException {
+    public boolean isAppCustomContentAvailable(String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         try {
             Integer count = template.fetchSingleRecord(GET_APP_CUSTOM_CONTENT_COUNT_SQL,
                     (resultSet, rowNum) -> resultSet.getInt(1),
                     namedPreparedStatement -> {
-                        namedPreparedStatement.setInt(1, appId);
+                        namedPreparedStatement.setString(1, applicationUuid);
+                        namedPreparedStatement.setInt(2, tenantId);
                     });
             return count != null && count > 0;
         } catch (DataAccessException e) {
-            throw new CustomContentException("Error checking if custom content exists for application " + appId, e);
+            throw new CustomContentServerException("Error checking if custom content exists for application " + applicationUuid, "",e);
         }
     }
 
-    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws CustomContentException {
+    private static void insertContent(NamedJdbcTemplate template, String content, String contentType, String applicationUuid, int tenantId, Timestamp timestamp) throws CustomContentServerException {
         try{
             template.executeUpdate(INSERT_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
                 namedPreparedStatement.setString(2, contentType);
-                namedPreparedStatement.setInt(3, appId);
-                namedPreparedStatement.setTimestamp(4, timestamp);
+                namedPreparedStatement.setString(3, applicationUuid);
+                namedPreparedStatement.setInt(4, tenantId);
                 namedPreparedStatement.setTimestamp(5, timestamp);
+                namedPreparedStatement.setTimestamp(6, timestamp);
             });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while adding custom content to organization in " + appId + " tenant.", e);
+            throw new CustomContentServerException("Error while adding custom content to organization in " + applicationUuid + " tenant.", "",e);
         }
     }
 
-    public static void addAppCustomContent(CustomContent content, int appId) {
+    public void addAppCustomContent(CustomContent content, String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
-        insertContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, appId, now);
-        insertContent(template, content.getCssContent(), CONTENT_TYPE_CSS, appId, now);
-        insertContent(template, content.getJsContent(), CONTENT_TYPE_JS, appId, now);
+        insertContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, applicationUuid, tenantId, now);
+        insertContent(template, content.getCssContent(), CONTENT_TYPE_CSS, applicationUuid, tenantId, now);
+        insertContent(template, content.getJsContent(), CONTENT_TYPE_JS, applicationUuid, tenantId, now);
 
     }
 
-    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int appId, Timestamp timestamp) throws DataAccessException,CustomContentException {
+    private static void updateContent(NamedJdbcTemplate template, String content, String contentType, String applicationUuid, int tenantId, Timestamp timestamp) throws DataAccessException,CustomContentServerException {
         try{
             template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
                 namedPreparedStatement.setTimestamp(5, timestamp);
+                namedPreparedStatement.setString(CONTENT_TYPE, contentType);
+                namedPreparedStatement.setString(APP_ID, applicationUuid);
+                namedPreparedStatement.setInt(TENANT_ID, tenantId);
             });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while updating custom content to organization in " + appId + " tenant.", e);
+            throw new CustomContentServerException("Error while updating custom content to organization in " + applicationUuid + " tenant.", "", e);
         }
     }
 
-    public static void updateAppCustomContent(CustomContent content, int appId) {
+    public void updateAppCustomContent(CustomContent content, String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
         try {
-            updateContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, appId, now);
-            updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, appId, now);
-            updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, appId, now);
+            updateContent(template, content.getHtmlContent(), CONTENT_TYPE_HTML, applicationUuid, tenantId,now);
+            updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, applicationUuid, tenantId,now);
+            updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, applicationUuid, tenantId,now);
+        } catch (CustomContentServerException e) {
+            throw new CustomContentServerException("Error while updating custom content for tenant " + applicationUuid, "", e);
         } catch (DataAccessException e) {
-            throw new CustomContentException("Error while updating custom content for tenant " + appId, e);
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * @param appId
+     * @param applicationUuid
+     * @param tenantId
      * @return CustomContent
      */
-    public static CustomContent getAppCustomContent(int appId) throws CustomContentException{
+    public CustomContent getAppCustomContent(String applicationUuid, int tenantId) throws CustomContentServerException{
         CustomContent result = null;
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
 
@@ -131,25 +138,27 @@ public class AppCustomContentDAO {
                         return null;
                     },
                     namedPreparedStatement -> {
-                        namedPreparedStatement.setInt(APP_ID, appId);
+                        namedPreparedStatement.setString(APP_ID, applicationUuid);
+                        namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     }
             );
             result = new CustomContent(htmlContent[0], cssContent[0], jsContent[0]);
         } catch (DataAccessException e) {
-            throw new CustomContentException("Error while fetching custom content for tenant " + appId, e);
+            throw new CustomContentServerException("Error while fetching custom content for tenant " + applicationUuid, "", e);
         }
         return result;
     }
 
-    public static void deleteAppCustomContent(int appId) throws CustomContentException{
+    public void deleteAppCustomContent(String applicationUuid, int tenantId) throws CustomContentServerException{
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try{
             namedJdbcTemplate.executeUpdate(DELETE_APP_CUSTOM_CONTENT_SQL,
                     namedPreparedStatement -> {
-                        namedPreparedStatement.setInt(APP_ID, appId);
+                        namedPreparedStatement.setString(APP_ID, applicationUuid);
+                        namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
         } catch (DataAccessException e){
-            throw new CustomContentException("Error while deleting the custom content in " + appId + " app.", e);
+            throw new CustomContentServerException("Error while deleting the custom content in " + applicationUuid + " app.", "", e);
         }
     }
 
