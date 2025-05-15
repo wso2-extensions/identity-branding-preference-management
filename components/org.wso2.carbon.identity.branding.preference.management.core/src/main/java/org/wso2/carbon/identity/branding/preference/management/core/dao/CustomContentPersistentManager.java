@@ -1,14 +1,18 @@
 package org.wso2.carbon.identity.branding.preference.management.core.dao;
 
-import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 
+/**
+ * Interface defining the operations for managing custom content persistence.
+ * Provides methods to add, update, retrieve, check existence, and delete custom content.
+ */
 public interface CustomContentPersistentManager {
 
     /**
-     * Update the custom content if exists or add a new template if not exists.
+     * Update the custom content if exists or add a new custom content if not exists.
      *
+     * @param customContent         The Custom Content Object to be persisted
      * @param applicationUuid       Application UUID.
      * @param tenantDomain          Tenant domain.
      * @throws CustomContentServerException If an error occurred while adding or updating the content.
@@ -31,7 +35,7 @@ public interface CustomContentPersistentManager {
      *
      * @param applicationUuid       Application UUID.
      * @param tenantDomain          Tenant domain.
-     * @return Custom Content.
+     * @return Custom Content for a particular APP or ORG
      * @throws CustomContentServerException If an error occurred while retrieving the content.
      */
     CustomContent getCustomContent(String applicationUuid, String tenantDomain) throws CustomContentServerException;

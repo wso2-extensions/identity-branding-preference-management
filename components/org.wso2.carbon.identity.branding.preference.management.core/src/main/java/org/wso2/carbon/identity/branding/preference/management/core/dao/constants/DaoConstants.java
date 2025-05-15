@@ -37,6 +37,12 @@ public class DaoConstants {
         public static final String UPDATED_AT = "UPDATED_AT";
     }
 
+    /**
+     * Defines constants for custom content types.
+     * - CONTENT_TYPE_HTML: Represents HTML content.
+     * - CONTENT_TYPE_CSS: Represents CSS content.
+     * - CONTENT_TYPE_JS: Represents JavaScript content.
+     */
     public static class CustomContentTypes{
         public static final String CONTENT_TYPE_HTML = "html";
         public static final String CONTENT_TYPE_CSS = "css";

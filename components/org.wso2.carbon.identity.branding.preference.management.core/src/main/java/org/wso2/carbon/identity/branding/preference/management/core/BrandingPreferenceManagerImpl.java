@@ -92,23 +92,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
     private static final CustomContentDAO CustomContentDAO = new CustomContentDAO();
 
-//    private int getResolvedSourceId(String resolvedSourceName) {
-//        return "carbon.super".equals(resolvedSourceName) ? -1234 : resolvedSourceName.hashCode();
-//    }
-
-//    private void addCustomContent(String type, String name, CustomContent customContent) {
-//        int resolvedSourceId = getResolvedSourceId(name);
-//        if(type.equals(APPLICATION_TYPE)) {
-//            if(!AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)){
-//                AppCustomContentDAO.addAppCustomContent(customContent,resolvedSourceId);
-//            }
-//        }else if(type.equals(ORGANIZATION_TYPE)){
-//            if(!OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)){
-//                OrgCustomContentDAO.addOrgCustomContent(customContent,resolvedSourceId);
-//            }
-//        }
-//    }
-
     private CustomContent extractCustomContent(String preferencesJson) {
         JSONObject jsonObject = new JSONObject(preferencesJson);
         JSONObject customContent = jsonObject.optJSONObject("customContent");
@@ -150,12 +133,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        //Get custom content from preferences JSON
-//        String htmlContent = "<html><head><title>Hi</title></head><body><div>Para</div></body></html>";
-//        String cssContent = "body {background-color: red;}";
-//        String jsContent = "console.log(\"Hello World\");";
-//        CustomContent customContent = new CustomContent(htmlContent, cssContent, jsContent);
-
         CustomContent customContent = extractCustomContent(preferencesJSON);
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
@@ -163,11 +140,10 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
-            //addCustomContent(brandingPreference.getType(), brandingPreference.getName(), customContent);
 
-            if (resourceType.equals(APPLICATION_TYPE)){
+            if (brandingPreference.getType().equals(APPLICATION_TYPE)){
                 CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
-            } else if(resourceType.equals(ORGANIZATION_TYPE)){
+            } else if(brandingPreference.getType().equals(ORGANIZATION_TYPE)){
                 CustomContentDAO.addOrUpdateCustomContent(customContent, null, tenantDomain);
             }
 
@@ -257,21 +233,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         return resolveBrandingPreference(APPLICATION_TYPE, identifier, locale, false);
     }
 
-//    private void updateCustomContent(String type, String name, CustomContent customContent) {
-//        int resolvedSourceId = getResolvedSourceId(name);
-//        if(type.equals(APPLICATION_TYPE)) {
-//            if (AppCustomContentDAO.isAppCustomContentAvailable(resolvedSourceId)) {
-//                AppCustomContentDAO.updateAppCustomContent(customContent,resolvedSourceId);
-//            }
-//        }else if(type.equals(ORGANIZATION_TYPE)){
-//            if (OrgCustomContentDAO.isOrgCustomContentAvailable(resolvedSourceId)) {
-//                OrgCustomContentDAO.updateOrgCustomContent(customContent,resolvedSourceId);
-//            } else{
-//                OrgCustomContentDAO.addOrgCustomContent(customContent,resolvedSourceId);
-//            }
-//        }
-//    }
-
     @Override
     public BrandingPreference replaceBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
@@ -297,19 +258,12 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        //Get custom content from preferences JSON
-//        String htmlContent = "<html><head><title>Hi</title></head><body><div>Updated Para</div></body></html>";
-//        String cssContent = "body {background-color: red;}";
-//        String jsContent = "console.log(\"Hello World\");";
-//        CustomContent customContent = new CustomContent(htmlContent, cssContent, jsContent);
-
         CustomContent customContent = extractCustomContent(preferencesJSON);
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
-//            updateCustomContent(brandingPreference.getType(), brandingPreference.getName(), customContent);
 
             if (brandingPreference.getType().equals(APPLICATION_TYPE)){
                 CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
@@ -325,15 +279,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
         return brandingPreference;
     }
-
-//    private void deleteCustomContent(String type, String name){
-//        int resolvedSourceId = getResolvedSourceId(name);
-//        if(type.equals(APPLICATION_TYPE)) {
-//            AppCustomContentDAO.deleteAppCustomContent(resolvedSourceId);
-//        }else if(type.equals(ORGANIZATION_TYPE)){
-//            OrgCustomContentDAO.deleteOrgCustomContent(resolvedSourceId);
-//        }
-//    }
 
     @Override
     public void deleteBrandingPreference(String type, String name, String locale)
@@ -355,7 +300,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             } else if(type.equals(ORGANIZATION_TYPE)){
                 CustomContentDAO.deleteCustomContent(null, tenantDomain);
             }
-//            deleteCustomContent(type, name);
 
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);

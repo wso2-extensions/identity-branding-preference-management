@@ -18,6 +18,11 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core.exception;
 
+/**
+ * Exception to handle custom content specific errors in the branding preference management feature.
+ * This exception extends {@link BrandingPreferenceMgtException} and is intended for scenarios requiring
+ * custom-defined content-related error handling.
+ */
 public class CustomContentException extends BrandingPreferenceMgtException {
 
   public CustomContentException(String message, Throwable cause) {

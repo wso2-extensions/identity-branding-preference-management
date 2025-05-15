@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao;
 
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
-import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.core.util.JdbcUtils;
@@ -41,11 +40,17 @@ import static org.wso2.carbon.identity.branding.preference.management.core.dao.c
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.UPDATE_ORG_CUSTOM_CONTENT_SQL;
 
 /**
- * This class is to perform CRUD operations for Application vise Custom Content
+ * This class is to perform CRUD operations for Organization vise Custom Content
  */
-
 public class OrgCustomContentDAO {
 
+    /**
+     * Checks whether custom content exists for the given ORG.
+     *
+     * @param tenantId Tenant ID.
+     * @return {@code true} if custom content exists for the tenant, {@code false} otherwise.
+     * @throws CustomContentServerException if an error occurs during the database access.
+     */
     public boolean isOrgCustomContentAvailable(int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         try {
@@ -60,6 +65,16 @@ public class OrgCustomContentDAO {
         }
     }
 
+    /**
+     * Inserts custom content for a specific ORG.
+     *
+     * @param template The JDBC template to use for database operations.
+     * @param content The content to insert.
+     * @param contentType The type of the content (e.g., "html", "css", "js").
+     * @param tenantId Tenant ID.
+     * @param timestamp The timestamp to be used for creation and update time.
+     * @throws CustomContentServerException if an error occurs during content insertion.
+     */
     private static void insertContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) throws CustomContentServerException {
         try {
             template.executeUpdate(INSERT_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -74,6 +89,13 @@ public class OrgCustomContentDAO {
         }
     }
 
+    /**
+     * Adds new custom content (HTML, CSS, JS) for a given ORG.
+     *
+     * @param content The {@link CustomContent} object containing HTML, CSS, and JS content.
+     * @param tenantId Tenant ID.
+     * @throws CustomContentServerException if an error occurs during insertion of any content.
+     */
     public void addOrgCustomContent(CustomContent content, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
@@ -84,6 +106,16 @@ public class OrgCustomContentDAO {
 
     }
 
+    /**
+     * Updates the custom content of a specific type for the given ORG.
+     *
+     * @param template The JDBC template to use.
+     * @param content The new content to be updated.
+     * @param contentType The type of the content (e.g., "html", "css", "js").
+     * @param tenantId The tenant ID to which the content belongs.
+     * @param timestamp The timestamp to set as the update time.
+     * @throws CustomContentServerException if a database error occurs during the update.
+     */
     private static void updateContent(NamedJdbcTemplate template, String content, String contentType, int tenantId, Timestamp timestamp) throws DataAccessException, CustomContentServerException {
         try{
             template.executeUpdate(UPDATE_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -97,6 +129,13 @@ public class OrgCustomContentDAO {
         }
     }
 
+    /**
+     * Updates the custom content (HTML, CSS, JS) for the given ORG.
+     *
+     * @param content The {@link CustomContent} object containing updated content.
+     * @param tenantId Tenant ID.
+     * @throws CustomContentServerException if an error occurs during update.
+     */
     public void updateOrgCustomContent(CustomContent content, int tenantId) throws CustomContentServerException{
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
@@ -111,8 +150,11 @@ public class OrgCustomContentDAO {
     }
 
     /**
-     * @param tenantId
-     * @return CustomContent
+     * Retrieves the custom content (HTML, CSS, JS) for the specified ORG.
+     *
+     * @param tenantId Tenant ID.
+     * @return A {@link CustomContent} object containing the tenant's custom content.
+     * @throws CustomContentServerException if an error occurs while fetching the content.
      */
     public CustomContent getOrgCustomContent(int tenantId) throws CustomContentServerException{
         CustomContent result = null;
@@ -147,6 +189,12 @@ public class OrgCustomContentDAO {
         return result;
     }
 
+    /**
+     * Deletes all custom content (HTML, CSS, JS) for the specified ORG.
+     *
+     * @param tenantId The ID of the tenant whose content is to be deleted.
+     * @throws CustomContentServerException if an error occurs during deletion.
+     */
     public void deleteOrgCustomContent(int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try{

@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.management.core.dao.constants;
 
 /**
- * SQL constants used for branding preference resolver DAO operations.
+ * SQL constants used for custom content managing DAO operations.
  */
 
 public class SQLConstants {

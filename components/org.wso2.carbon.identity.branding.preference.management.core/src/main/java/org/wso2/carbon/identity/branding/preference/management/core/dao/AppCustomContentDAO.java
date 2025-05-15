@@ -35,12 +35,21 @@ import static org.wso2.carbon.identity.branding.preference.management.core.dao.c
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DaoConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.*;
+
 /**
  * This class is to perform CRUD operations for Application vise Custom Content
  */
 
 public class AppCustomContentDAO {
 
+    /**
+     * Checks whether custom content exists for the given APP.
+     *
+     * @param applicationUuid   Application UUID.
+     * @param tenantId          Tenant ID.
+     * @return                  {@code true} if custom content exists for the tenant, {@code false} otherwise.
+     * @throws CustomContentServerException if an error occurs during the database access.
+     */
     public boolean isAppCustomContentAvailable(String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         try {
@@ -56,6 +65,17 @@ public class AppCustomContentDAO {
         }
     }
 
+    /**
+     * Inserts custom content for a specific APP.
+     *
+     * @param template The JDBC template to use for database operations.
+     * @param content The content to insert.
+     * @param contentType The type of the content (e.g., "html", "css", "js").
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @param timestamp The timestamp to be used for creation and update time.
+     * @throws CustomContentServerException if an error occurs during content insertion.
+     */
     private static void insertContent(NamedJdbcTemplate template, String content, String contentType, String applicationUuid, int tenantId, Timestamp timestamp) throws CustomContentServerException {
         try{
             template.executeUpdate(INSERT_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -67,10 +87,18 @@ public class AppCustomContentDAO {
                 namedPreparedStatement.setTimestamp(6, timestamp);
             });
         } catch (DataAccessException e){
-            throw new CustomContentServerException("Error while adding custom content to organization in " + applicationUuid + " tenant.", "",e);
+            throw new CustomContentServerException("Error while adding custom content to application " + applicationUuid , "",e);
         }
     }
 
+    /**
+     * Adds new custom content (HTML, CSS, JS) for a given APP.
+     *
+     * @param content The {@link CustomContent} object containing HTML, CSS, and JS content.
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @throws CustomContentServerException if an error occurs during insertion of any content.
+     */
     public void addAppCustomContent(CustomContent content, String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
@@ -81,6 +109,17 @@ public class AppCustomContentDAO {
 
     }
 
+    /**
+     * Updates the custom content of a specific type for the given APP.
+     *
+     * @param template The JDBC template to use.
+     * @param content The new content to be updated.
+     * @param contentType The type of the content (e.g., "html", "css", "js").
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @param timestamp The timestamp to set as the update time.
+     * @throws CustomContentServerException if a database error occurs during the update.
+     */
     private static void updateContent(NamedJdbcTemplate template, String content, String contentType, String applicationUuid, int tenantId, Timestamp timestamp) throws DataAccessException,CustomContentServerException {
         try{
             template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -91,10 +130,18 @@ public class AppCustomContentDAO {
                 namedPreparedStatement.setInt(TENANT_ID, tenantId);
             });
         } catch (DataAccessException e){
-            throw new CustomContentServerException("Error while updating custom content to organization in " + applicationUuid + " tenant.", "", e);
+            throw new CustomContentServerException("Error while updating custom content in application " + applicationUuid, "", e);
         }
     }
 
+    /**
+     * Updates the custom content (HTML, CSS, JS) for the given APP.
+     *
+     * @param content The {@link CustomContent} object containing updated content.
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @throws CustomContentServerException if an error occurs during update.
+     */
     public void updateAppCustomContent(CustomContent content, String applicationUuid, int tenantId) throws CustomContentServerException {
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
@@ -104,16 +151,19 @@ public class AppCustomContentDAO {
             updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, applicationUuid, tenantId,now);
             updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, applicationUuid, tenantId,now);
         } catch (CustomContentServerException e) {
-            throw new CustomContentServerException("Error while updating custom content for tenant " + applicationUuid, "", e);
+            throw new CustomContentServerException("Error while updating custom content in application " + applicationUuid, "", e);
         } catch (DataAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * @param applicationUuid
-     * @param tenantId
-     * @return CustomContent
+     * Retrieves the custom content (HTML, CSS, JS) for the specified APP.
+     *
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @return A {@link CustomContent} object containing the APP's custom content.
+     * @throws CustomContentServerException if an error occurs while fetching the content.
      */
     public CustomContent getAppCustomContent(String applicationUuid, int tenantId) throws CustomContentServerException{
         CustomContent result = null;
@@ -144,11 +194,18 @@ public class AppCustomContentDAO {
             );
             result = new CustomContent(htmlContent[0], cssContent[0], jsContent[0]);
         } catch (DataAccessException e) {
-            throw new CustomContentServerException("Error while fetching custom content for tenant " + applicationUuid, "", e);
+            throw new CustomContentServerException("Error while fetching custom content for application " + applicationUuid, "", e);
         }
         return result;
     }
 
+    /**
+     * Deletes all custom content (HTML, CSS, JS) for the specified APP.
+     *
+     * @param applicationUuid Application UUID.
+     * @param tenantId Tenant ID.
+     * @throws CustomContentServerException if an error occurs during deletion.
+     */
     public void deleteAppCustomContent(String applicationUuid, int tenantId) throws CustomContentServerException{
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try{
@@ -158,7 +215,7 @@ public class AppCustomContentDAO {
                         namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
         } catch (DataAccessException e){
-            throw new CustomContentServerException("Error while deleting the custom content in " + applicationUuid + " app.", "", e);
+            throw new CustomContentServerException("Error while deleting the custom content in " + applicationUuid, "", e);
         }
     }
 

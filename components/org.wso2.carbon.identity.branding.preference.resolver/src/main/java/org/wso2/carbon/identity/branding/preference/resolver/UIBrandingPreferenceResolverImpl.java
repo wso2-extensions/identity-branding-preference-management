@@ -874,6 +874,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             customContentNode.put("htmlContent", customContent.getHtmlContent());
             customContentNode.put("cssContent", customContent.getCssContent());
             customContentNode.put("jsContent", customContent.getJsContent());
+            objectRoot.set("customContent", customContentNode);
         }
         else {
             System.err.println("Warning: customContent is null for: " + resolvedSourceName);
@@ -882,7 +883,6 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             customContentNode.put("jsContent", "");
         }
 
-        objectRoot.set("customContent", customContentNode);
     }
 
     /**

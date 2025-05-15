@@ -1,5 +1,10 @@
 package org.wso2.carbon.identity.branding.preference.management.core.exception;
 
+/**
+ * Represents a custom exception specific to content-related server-side errors in the branding preference
+ * management feature. This exception extends the {@link BrandingPreferenceMgtServerException} class to handle
+ * scenarios requiring custom server-side error definitions.
+ */
 public class CustomContentServerException extends BrandingPreferenceMgtServerException {
 
     public CustomContentServerException() {
