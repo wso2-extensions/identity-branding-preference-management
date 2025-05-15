@@ -35,8 +35,6 @@ import org.wso2.carbon.identity.branding.preference.management.core.model.Brandi
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
@@ -57,7 +55,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.*;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_APPLICATION_NOT_FOUND;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
@@ -79,6 +84,19 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JAVASCRIPT;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.NEW_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.OLD_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_ADD_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.PRE_UPDATE_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCES_NOT_EXISTS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.TENANT_DOMAIN;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.getFormattedLocale;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleClientException;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
@@ -93,12 +111,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     private static final CustomContentDAO CustomContentDAO = new CustomContentDAO();
 
     private CustomContent extractCustomContent(String preferencesJson) {
-        JSONObject jsonObject = new JSONObject(preferencesJson);
-        JSONObject customContent = jsonObject.optJSONObject("customContent");
 
-        String html = customContent != null ? customContent.optString("htmlContent", "") : "";
-        String css = customContent != null ? customContent.optString("cssContent", "") : "";
-        String js = customContent != null ? customContent.optString("jsContent", "") : "";
+        JSONObject jsonObject = new JSONObject(preferencesJson);
+        JSONObject customContent = jsonObject.optJSONObject(CUSTOM_CONTENT_KEY);
+
+        String html = customContent != null ? customContent.optString(HTML_CONTENT_KEY, "") : "";
+        String css = customContent != null ? customContent.optString(CSS_CONTENT_KEY, "") : "";
+        String js = customContent != null ? customContent.optString(JS_CONTENT_KEY, "") : "";
 
         return new CustomContent(html, css, js);
     }
@@ -141,9 +160,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
 
-            if (brandingPreference.getType().equals(APPLICATION_TYPE)){
+            if (APPLICATION_TYPE.equals(brandingPreference.getType())) {
                 CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
-            } else if(brandingPreference.getType().equals(ORGANIZATION_TYPE)){
+            } else if (ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
                 CustomContentDAO.addOrUpdateCustomContent(customContent, null, tenantDomain);
             }
 
@@ -265,9 +284,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
 
-            if (brandingPreference.getType().equals(APPLICATION_TYPE)){
+            if (APPLICATION_TYPE.equals(brandingPreference.getType())) {
                 CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
-            } else if(brandingPreference.getType().equals(ORGANIZATION_TYPE)){
+            } else if (ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
                 CustomContentDAO.addOrUpdateCustomContent(customContent, null, tenantDomain);
             }
 
@@ -295,9 +314,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
-            if ( type.equals(APPLICATION_TYPE)) {
+            if (APPLICATION_TYPE.equals(type)) {
                 CustomContentDAO.deleteCustomContent(name, tenantDomain);
-            } else if(type.equals(ORGANIZATION_TYPE)){
+            } else if (ORGANIZATION_TYPE.equals(type)) {
                 CustomContentDAO.deleteCustomContent(null, tenantDomain);
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -28,8 +28,17 @@ public class BrandingPreferenceMgtConstants {
     public static final String CUSTOM_TEXT_RESOURCE_TYPE = "CUSTOM_TEXT";
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
-    public static final String CUSTOM_CONTENT_TYPE = "custom";
     public static final String CUSTOM_TYPE = "CUSTOM";
+    public static final String CUSTOM_CONTENT_TYPE = "custom";
+    public static final String LAYOUT_KEY = "layout";
+    public static final String ACTIVE_LAYOUT_KEY = "activeLayout";
+    public static final String CUSTOM_CONTENT_KEY = "customContent";
+    public static final String HTML_CONTENT_KEY = "htmlContent";
+    public static final String CSS_CONTENT_KEY = "cssContent";
+    public static final String JS_CONTENT_KEY = "jsContent";
+    public static final String HTML = "html";
+    public static final String CSS = "css";
+    public static final String JS = "js";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
     public static final String LOCAL_CODE_SEPARATOR = "-";

@@ -19,10 +19,10 @@
 package org.wso2.carbon.identity.branding.preference.management.core.dao;
 
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
-import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.CustomContentServerException;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
 
 import static org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId;
 
@@ -33,26 +33,20 @@ import static org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId;
  * This class implements the CustomContentPersistentManager interface.
  */
 
-public class CustomContentDAO implements CustomContentPersistentManager{
+public class CustomContentDAO implements CustomContentPersistentManager {
 
     private static final Log log = LogFactory.getLog(CustomContentDAO.class);
 
     private final OrgCustomContentDAO orgCustomContentDAO = new OrgCustomContentDAO();
     private final AppCustomContentDAO appCustomContentDAO = new AppCustomContentDAO();
 
-    /**
-     *
-     * @param customContent         The Custom Content Object to be persisted
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @throws CustomContentServerException  If an error occurred while adding or updating the content.
-     */
-
     @Override
-    public void addOrUpdateCustomContent(CustomContent customContent, String applicationUuid, String tenantDomain) throws CustomContentServerException {
+    public void addOrUpdateCustomContent(CustomContent customContent, String applicationUuid, String tenantDomain)
+            throws CustomContentServerException {
+
         int tenantId = getTenantId(tenantDomain);
 
-        try{
+        try {
             if (!isCustomContentExists(applicationUuid, tenantDomain)) {
                 // DAO impl adds the content if not exists
                 if (StringUtils.isBlank(applicationUuid)) {
@@ -90,21 +84,15 @@ public class CustomContentDAO implements CustomContentPersistentManager{
                     }
                 }
             }
-        }catch (CustomContentServerException e){
+        } catch (CustomContentServerException e) {
             throw new CustomContentServerException(e);
         }
     }
 
-    /**
-     *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @return True if the custom content exists, false otherwise.
-     * @throws CustomContentServerException If an error occurred while checking the existence.
-     */
-
     @Override
-    public boolean isCustomContentExists(String applicationUuid, String tenantDomain) throws CustomContentServerException {
+    public boolean isCustomContentExists(String applicationUuid, String tenantDomain)
+            throws CustomContentServerException {
+
         int tenantId = getTenantId(tenantDomain);
 
         if (StringUtils.isBlank(applicationUuid)) {
@@ -123,16 +111,10 @@ public class CustomContentDAO implements CustomContentPersistentManager{
         }
     }
 
-    /**
-     *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @return Custom Content for a particular APP or ORG
-     * @throws CustomContentServerException If an error occurred while retrieving the content.
-     */
-
     @Override
-    public CustomContent getCustomContent(String applicationUuid, String tenantDomain) throws CustomContentServerException {
+    public CustomContent getCustomContent(String applicationUuid, String tenantDomain)
+            throws CustomContentServerException {
+
         int tenantId = getTenantId(tenantDomain);
 
         if (StringUtils.isBlank(applicationUuid)) {
@@ -151,15 +133,9 @@ public class CustomContentDAO implements CustomContentPersistentManager{
         }
     }
 
-    /**
-     *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @throws CustomContentServerException If an error occurred while deleting the content.
-     */
-
     @Override
     public void deleteCustomContent(String applicationUuid, String tenantDomain) throws CustomContentServerException {
+
         int tenantId = getTenantId(tenantDomain);
 
         if (StringUtils.isBlank(applicationUuid)) {

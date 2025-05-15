@@ -43,7 +43,8 @@ public class DaoConstants {
      * - CONTENT_TYPE_CSS: Represents CSS content.
      * - CONTENT_TYPE_JS: Represents JavaScript content.
      */
-    public static class CustomContentTypes{
+    public static class CustomContentTypes {
+
         public static final String CONTENT_TYPE_HTML = "html";
         public static final String CONTENT_TYPE_CSS = "css";
         public static final String CONTENT_TYPE_JS = "js";

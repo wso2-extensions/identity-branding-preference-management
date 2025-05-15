@@ -45,8 +45,6 @@ import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCac
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheKey;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
@@ -68,7 +66,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.*;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LAYOUT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ACTIVE_LAYOUT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
@@ -852,10 +863,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
-    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type) throws CustomContentServerException {
-        String activeLayout = root.path("layout").path("activeLayout").asText();
+    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type)
+            throws CustomContentServerException {
+
+        String activeLayout = root.path(LAYOUT_KEY).path(ACTIVE_LAYOUT_KEY).asText();
         if (!CUSTOM_CONTENT_TYPE.equals(activeLayout)) {
-            objectRoot.remove("customContent");
+            objectRoot.remove(CUSTOM_CONTENT_KEY);
             return;
         }
 
@@ -871,16 +884,16 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         ObjectNode customContentNode = objectRoot.objectNode();
 
         if (customContent != null) {
-            customContentNode.put("htmlContent", customContent.getHtmlContent());
-            customContentNode.put("cssContent", customContent.getCssContent());
-            customContentNode.put("jsContent", customContent.getJsContent());
-            objectRoot.set("customContent", customContentNode);
+            customContentNode.put(HTML_CONTENT_KEY, customContent.getHtmlContent());
+            customContentNode.put(CSS_CONTENT_KEY, customContent.getCssContent());
+            customContentNode.put(JS_CONTENT_KEY, customContent.getJsContent());
+            objectRoot.set(CUSTOM_CONTENT_KEY, customContentNode);
         }
         else {
             System.err.println("Warning: customContent is null for: " + resolvedSourceName);
-            customContentNode.put("htmlContent", "");
-            customContentNode.put("cssContent", "");
-            customContentNode.put("jsContent", "");
+            customContentNode.put(HTML_CONTENT_KEY, "");
+            customContentNode.put(CSS_CONTENT_KEY, "");
+            customContentNode.put(JS_CONTENT_KEY, "");
         }
 
     }
