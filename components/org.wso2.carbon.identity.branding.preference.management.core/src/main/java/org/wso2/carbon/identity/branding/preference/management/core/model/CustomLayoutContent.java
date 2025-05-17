@@ -19,22 +19,22 @@
 package org.wso2.carbon.identity.branding.preference.management.core.model;
 
 /**
- * A model class representing custom content that includes HTML, CSS, and JS contents for a Custom Layout Defining.
+ * Model class representing the layout content that includes HTML, CSS, and JS contents for a Custom Layout Defining.
  */
-public class CustomContent {
+public class CustomLayoutContent {
 
     private String htmlContent;
     private String cssContent;
     private String jsContent;
 
     /**
-     * Constructor to initialize a CustomContent object with HTML, CSS, and JS contents.
+     * Constructor to initialize a CustomLayoutContent object with HTML, CSS, and JS contents.
      *
      * @param htmlContent The HTML content as a string.
      * @param cssContent The CSS content as a string.
      * @param jsContent The JavaScript content as a string.
      */
-    public CustomContent(String htmlContent, String cssContent, String jsContent) {
+    public CustomLayoutContent(String htmlContent, String cssContent, String jsContent) {
 
         this.htmlContent = htmlContent;
         this.cssContent = cssContent;

@@ -27,12 +27,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAOImpl;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
-import org.wso2.carbon.identity.branding.preference.management.core.model.CustomContent;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -71,16 +72,19 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BUILDING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_BULK_DELETING_CUSTOM_TEXT_PREFERENCES;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CHECKING_BRANDING_PREFERENCE_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
@@ -108,19 +112,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
     private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
 
-    private static final CustomContentDAO CustomContentDAO = new CustomContentDAO();
-
-    private CustomContent extractCustomContent(String preferencesJson) {
-
-        JSONObject jsonObject = new JSONObject(preferencesJson);
-        JSONObject customContent = jsonObject.optJSONObject(CUSTOM_CONTENT_KEY);
-
-        String html = customContent != null ? customContent.optString(HTML_CONTENT_KEY, "") : "";
-        String css = customContent != null ? customContent.optString(CSS_CONTENT_KEY, "") : "";
-        String js = customContent != null ? customContent.optString(JS_CONTENT_KEY, "") : "";
-
-        return new CustomContent(html, css, js);
-    }
+    private static final CustomContentPersistentDAOImpl CustomContentDAO = new CustomContentPersistentDAOImpl();
 
     @Override
     public BrandingPreference addBrandingPreference(BrandingPreference brandingPreference)
@@ -152,20 +144,14 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        CustomContent customContent = extractCustomContent(preferencesJSON);
+        CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
-
-            if (APPLICATION_TYPE.equals(brandingPreference.getType())) {
-                CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
-            } else if (ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
-                CustomContentDAO.addOrUpdateCustomContent(customContent, null, tenantDomain);
-            }
-
+            persistCustomLayoutContent(brandingPreference, tenantDomain, customLayoutContent);
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -277,19 +263,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         triggerPreUpdateBrandingPreferenceEvents(oldBrandingPreference, brandingPreference, tenantDomain);
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
-        CustomContent customContent = extractCustomContent(preferencesJSON);
+        CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
-
-            if (APPLICATION_TYPE.equals(brandingPreference.getType())) {
-                CustomContentDAO.addOrUpdateCustomContent(customContent, brandingPreference.getName(), tenantDomain);
-            } else if (ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
-                CustomContentDAO.addOrUpdateCustomContent(customContent, null, tenantDomain);
-            }
-
+            persistCustomLayoutContent(brandingPreference, tenantDomain, customLayoutContent);
         } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
@@ -314,17 +294,68 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
-            if (APPLICATION_TYPE.equals(type)) {
-                CustomContentDAO.deleteCustomContent(name, tenantDomain);
-            } else if (ORGANIZATION_TYPE.equals(type)) {
-                CustomContentDAO.deleteCustomContent(null, tenantDomain);
+            if (APPLICATION_TYPE.equals(type) || ORGANIZATION_TYPE.equals(type)) {
+                String appName = APPLICATION_TYPE.equals(type) ? name : null;
+                try {
+                    CustomContentDAO.deleteCustomContent(appName, tenantDomain);
+                } catch (BrandingPreferenceMgtServerException e) {
+                    throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, e);
+                }
             }
-
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Branding preference for tenant: " + tenantDomain + " replaced successfully.");
+        }
+    }
+
+    /**
+     * Extracts and returns custom layout content from the given Preference JSON string.
+     *
+     * @param preferencesJson The JSON string from Branding Preference Object.
+     * @return A {@link CustomLayoutContent} custom layout content,
+     * or default - an empty object if the respective content is not found in the input JSON.
+     */
+    private CustomLayoutContent extractCustomLayoutContent(String preferencesJson)
+            throws BrandingPreferenceMgtException {
+
+        JSONObject jsonObject = new JSONObject(preferencesJson);
+        JSONObject customContent = jsonObject.optJSONObject(CUSTOM_CONTENT_KEY);
+        String html = "", css = "", js = "";
+
+        if (customContent != null) {
+            html = customContent.optString(HTML_CONTENT_KEY, "");
+            css = customContent.optString(CSS_CONTENT_KEY, "");
+            js = customContent.optString(JS_CONTENT_KEY, "");
+        } else {
+            throw handleServerException(ERROR_CODE_ERROR_VALIDATING_CUSTOM_LAYOUT_CONTENT);
+        }
+        return new CustomLayoutContent(html, css, js);
+    }
+
+    /**
+     * Persists custom layout content for the specified branding preference in the given tenant domain.
+     * Updates or adds custom content based on the application or organization branding type.
+     *
+     * @param brandingPreference The branding preference object.
+     * @param tenantDomain        The tenant domain to which the custom content should be persisted.
+     * @param customLayoutContent       The custom content to be persisted or updated.
+     * @throws BrandingPreferenceMgtException If an error occurs while persisting the custom layout content.
+     */
+    private void persistCustomLayoutContent(BrandingPreference brandingPreference, String tenantDomain,
+                                            CustomLayoutContent customLayoutContent)
+            throws BrandingPreferenceMgtException {
+
+        if (APPLICATION_TYPE.equals(brandingPreference.getType()) ||
+                ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
+            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                    brandingPreference.getName() : null;
+            try {
+                CustomContentDAO.addOrUpdateCustomContent(customLayoutContent, appName, tenantDomain);
+            } catch (BrandingPreferenceMgtServerException e) {
+                throw handleServerException(ERROR_CODE_ERROR_BUILDING_CUSTOM_LAYOUT_CONTENT, e);
+            }
         }
     }
 

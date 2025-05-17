@@ -119,7 +119,32 @@ public class BrandingPreferenceMgtConstants {
                 "Invalid branding preference type: %s for tenant: %s."),
         ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE("BRANDINGM_00033",
                 "Error while getting app-level branding preference configurations for application id: %s " +
-                        "in tenant: %s.");
+                        "in tenant: %s."),
+        // Error messages related to custom layout content configurations.
+        ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00034",
+                "Invalid custom layout content for tenant: %s."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS("BRANDINGM_00035",
+                "Custom layout content is not configured for tenant: %s."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_CONFIGURED("BRANDINGM_00036",
+                "Custom layout content is not configured for type: %s, name: %s in tenant: %s."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_ALREADY_EXISTS("BRANDINGM_00037",
+                "Custom layout content already exists for tenant: %s."),
+        ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00038",
+                "Error while retrieving custom layout content configurations for tenant: %s."),
+        ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00039",
+                "Unable to add custom layout content configurations for tenant: %s."),
+        ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00040",
+                "Unable to delete custom layout content configurations for tenant: %s."),
+        ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00041",
+                "Unable to update custom layout content configurations."),
+        ERROR_CODE_ERROR_BUILDING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00042",
+                "Unable to build custom layout content from configurations for tenant: %s."),
+        ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS("BRANDINGM_00043",
+                "Error while checking existence of custom layout content configurations."),
+        ERROR_CODE_ERROR_VALIDATING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00044",
+                "Error while validating custom layout content configurations for organization: %s."),
+        ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00045",
+                "Error while getting app-level custom layout content for application id: %s in tenant: %s.");
 
         private final String code;
         private final String message;

@@ -21,8 +21,8 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao.constan
 /**
  * DataBase Table Columns management related constants
  */
+public class DAOConstants {
 
-public class DaoConstants {
     /**
      * Grouping of constants related to database table names.
      */
@@ -39,9 +39,6 @@ public class DaoConstants {
 
     /**
      * Defines constants for custom content types.
-     * - CONTENT_TYPE_HTML: Represents HTML content.
-     * - CONTENT_TYPE_CSS: Represents CSS content.
-     * - CONTENT_TYPE_JS: Represents JavaScript content.
      */
     public static class CustomContentTypes {
 
