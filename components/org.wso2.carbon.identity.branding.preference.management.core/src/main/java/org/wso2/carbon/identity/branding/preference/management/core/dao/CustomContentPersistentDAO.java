@@ -28,15 +28,26 @@ import org.wso2.carbon.identity.branding.preference.management.core.model.Custom
 public interface CustomContentPersistentDAO {
 
     /**
-     * Update the custom layout content if exists or add a new custom content if not exists.
+     * Adds custom layout content (HTML, CSS, JS).
      *
-     * @param customLayoutContent   The Custom Layout Content Object to be persisted
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @throws BrandingPreferenceMgtException If an error occurred while adding or updating the content.
+     * @param customLayoutContent The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
+     * @param applicationUuid   Application UUID.
+     * @param tenantDomain      Tenant domain.
+     * @throws BrandingPreferenceMgtException If an error occurs while adding the custom layout content.
      */
-    void addOrUpdateCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
-                                  String tenantDomain) throws BrandingPreferenceMgtException;
+    void addCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
+                          String tenantDomain) throws BrandingPreferenceMgtException;
+
+    /**
+     * Updates the existing custom layout content.
+     *
+     * @param customLayoutContent The {@link CustomLayoutContent} object containing updated HTML, CSS, and JS content.
+     * @param applicationUuid   Application UUID.
+     * @param tenantDomain      Tenant domain.
+     * @throws BrandingPreferenceMgtException If an error occurs while updating the custom layout content.
+     */
+    void updateCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
+                             String tenantDomain) throws BrandingPreferenceMgtException;
 
     /**
      * Check whether the specified custom layout content exists.
@@ -56,7 +67,8 @@ public interface CustomContentPersistentDAO {
      * @return Custom Layout Content for a particular APP or ORG
      * @throws BrandingPreferenceMgtException If an error occurred while retrieving the content.
      */
-    CustomLayoutContent getCustomContent(String applicationUuid, String tenantDomain) throws BrandingPreferenceMgtException;
+    CustomLayoutContent getCustomContent(String applicationUuid, String tenantDomain)
+            throws BrandingPreferenceMgtException;
 
     /**
      * Delete specified custom layout content.

@@ -52,7 +52,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 /**
  * This class is to perform CRUD operations for Application vise Custom Layout Content
  */
-public class AppCustomContentDAOImpl implements AppCustomContentDAO{
+public class AppCustomContentDAOImpl implements AppCustomContentDAO {
 
     @Override
     public boolean isAppCustomContentAvailable(String applicationUuid, int tenantId)
@@ -67,11 +67,11 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
                         namedPreparedStatement.setInt(2, tenantId);
                     });
             if (count == 0) {
-                throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS);
+                throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS, applicationUuid);
             }
             return count > 0;
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS, e);
+            throw handleServerException(ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS, applicationUuid, e);
         }
     }
 
@@ -101,7 +101,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
                 namedPreparedStatement.setTimestamp(6, timestamp);
             });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
     }
 
@@ -142,7 +142,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
                 namedPreparedStatement.setInt(TENANT_ID, tenantId);
             });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
     }
 
@@ -159,7 +159,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
             updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, applicationUuid, tenantId, currentTime);
             updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, applicationUuid, tenantId, currentTime);
         } catch (BrandingPreferenceMgtException e) {
-            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
     }
 
@@ -169,15 +169,15 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
 
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
 
-        final String[] htmlContent = { "" };
-        final String[] cssContent = { "" };
-        final String[] jsContent = { "" };
+        final String[] htmlContent = {""};
+        final String[] cssContent = {""};
+        final String[] jsContent = {""};
 
         try {
             template.executeQuery(GET_APP_CUSTOM_CONTENT_SQL,
                     (resultSet, rowNum) -> {
                         String type = resultSet.getString(CONTENT_TYPE);
-                        String content = new String(resultSet.getBytes(CONTENT));
+                        String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
 
                         switch (type) {
                             case CONTENT_TYPE_HTML: htmlContent[0] = content;
@@ -196,7 +196,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
             );
             return new CustomLayoutContent(htmlContent[0], cssContent[0], jsContent[0]);
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
     }
 
@@ -211,7 +211,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
                         namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
     }
 }

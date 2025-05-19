@@ -923,11 +923,12 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(preferencesJSON);
 
-        if (root.isObject()) {
-            ObjectNode objectRoot = (ObjectNode) root;
-            getCustomContentIfNeeded(objectRoot, root, resolvedSourceName, type);
+        if (checkCustomLayoutContentModeEnabled(preferencesJSON)) {
+            if (root.isObject()) {
+                ObjectNode objectRoot = (ObjectNode) root;
+                getCustomContentIfNeeded(objectRoot, root, resolvedSourceName, type);
+            }
         }
-
         Object preference = mapper.treeToValue(root, Object.class);
 
         BrandingPreference brandingPreference = new BrandingPreference();
@@ -937,6 +938,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference.setLocale(locale);
         brandingPreference.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
         return brandingPreference;
+    }
+
+    private boolean checkCustomLayoutContentModeEnabled(String preferencesJson)  {
+        if (StringUtils.isNotBlank(preferencesJson)) {
+            return preferencesJson.contains("customContent");
+        } else {
+            return false;
+        }
     }
 
     private String getTenantDomain() {

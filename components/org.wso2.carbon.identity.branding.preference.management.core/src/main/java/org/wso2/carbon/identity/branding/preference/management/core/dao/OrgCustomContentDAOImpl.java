@@ -51,7 +51,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 /**
  * This class is to perform CRUD operations for Organization vise Custom Layout Content
  */
-public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
+public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
 
     @Override
     public boolean isOrgCustomContentAvailable(int tenantId) throws BrandingPreferenceMgtException {
@@ -65,11 +65,12 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
                         namedPreparedStatement.setInt(1, tenantId);
                     });
             if (count == 0) {
-                throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS);
+                throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS, String.valueOf(tenantId));
             }
             return count > 0;
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS, e);
+            throw handleServerException(ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS,
+                    String.valueOf(tenantId), e);
         }
     }
 
@@ -96,7 +97,7 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
                 namedPreparedStatement.setTimestamp(5, timestamp);
             });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
 
@@ -133,7 +134,7 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
                 namedPreparedStatement.setTimestamp(2, timestamp);
             });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
 
@@ -149,14 +150,14 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
             updateContent(template, content.getCssContent(), CONTENT_TYPE_CSS, tenantId, currentTime);
             updateContent(template, content.getJsContent(), CONTENT_TYPE_JS, tenantId, currentTime);
         } catch (BrandingPreferenceMgtException e) {
-            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
 
     @Override
     public CustomLayoutContent getOrgCustomContent(int tenantId) throws BrandingPreferenceMgtException {
 
-        CustomLayoutContent result = null;
+        CustomLayoutContent result;
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
 
         final String[] htmlContent = {""};
@@ -168,7 +169,7 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
                     GET_ORG_CUSTOM_CONTENT_SQL,
                     (resultSet, rowNum) -> {
                         String type = resultSet.getString(CONTENT_TYPE);
-                        String content = new String(resultSet.getBytes(CONTENT));
+                        String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
 
                         switch (type) {
                             case CONTENT_TYPE_HTML: htmlContent[0] = content;
@@ -186,7 +187,7 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
             );
             result = new CustomLayoutContent(htmlContent[0], cssContent[0], jsContent[0]);
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
         return result;
     }
@@ -196,11 +197,11 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO{
 
         NamedJdbcTemplate namedJdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try {
-            namedJdbcTemplate.executeUpdate(DELETE_ORG_CUSTOM_CONTENT_SQL,
-                    namedPreparedStatement -> {namedPreparedStatement.setInt(TENANT_ID, tenantId);
+            namedJdbcTemplate.executeUpdate(DELETE_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
+                namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
         } catch (DataAccessException e) {
-            throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, e);
+            throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
 }
