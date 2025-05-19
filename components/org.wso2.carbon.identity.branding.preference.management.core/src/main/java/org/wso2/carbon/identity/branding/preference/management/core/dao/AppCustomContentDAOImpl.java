@@ -29,15 +29,12 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.APP_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT_TYPE;
@@ -139,7 +136,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
             template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
                 namedPreparedStatement.setBinaryStream(1,
                         new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setTimestamp(5, timestamp);
+                namedPreparedStatement.setTimestamp(2, timestamp);
                 namedPreparedStatement.setString(CONTENT_TYPE, contentType);
                 namedPreparedStatement.setString(APP_ID, applicationUuid);
                 namedPreparedStatement.setInt(TENANT_ID, tenantId);
@@ -183,11 +180,11 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO{
                         String content = new String(resultSet.getBytes(CONTENT));
 
                         switch (type) {
-                            case HTML: htmlContent[0] = content;
+                            case CONTENT_TYPE_HTML: htmlContent[0] = content;
                             break;
-                            case CSS: cssContent[0] = content;
+                            case CONTENT_TYPE_CSS: cssContent[0] = content;
                             break;
-                            case JS: jsContent[0] = content;
+                            case CONTENT_TYPE_JS: jsContent[0] = content;
                             break;
                         }
                         return null;

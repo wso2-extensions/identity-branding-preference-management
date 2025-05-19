@@ -36,9 +36,6 @@ public class BrandingPreferenceMgtConstants {
     public static final String HTML_CONTENT_KEY = "htmlContent";
     public static final String CSS_CONTENT_KEY = "cssContent";
     public static final String JS_CONTENT_KEY = "jsContent";
-    public static final String HTML = "html";
-    public static final String CSS = "css";
-    public static final String JS = "js";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
     public static final String LOCAL_CODE_SEPARATOR = "-";

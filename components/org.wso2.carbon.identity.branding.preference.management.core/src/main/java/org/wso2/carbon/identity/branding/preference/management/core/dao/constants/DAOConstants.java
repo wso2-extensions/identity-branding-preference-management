@@ -38,7 +38,7 @@ public class DAOConstants {
     }
 
     /**
-     * Defines constants for custom content types.
+     * Defines constants for custom layout content types.
      */
     public static class CustomContentTypes {
 
