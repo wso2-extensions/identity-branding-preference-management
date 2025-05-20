@@ -38,7 +38,9 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.APP_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CREATED_AT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.TENANT_ID;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.UPDATED_AT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_JS;
@@ -63,8 +65,8 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
             Integer count = template.fetchSingleRecord(GET_APP_CUSTOM_CONTENT_COUNT_SQL,
                     (resultSet, rowNum) -> resultSet.getInt(1),
                     namedPreparedStatement -> {
-                        namedPreparedStatement.setString(1, applicationUuid);
-                        namedPreparedStatement.setInt(2, tenantId);
+                        namedPreparedStatement.setString(APP_ID, applicationUuid);
+                        namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
             if (count == 0) {
                 throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS, applicationUuid);
@@ -92,13 +94,13 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
 
         try {
             template.executeUpdate(INSERT_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
-                namedPreparedStatement.setBinaryStream(1,
-                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setString(2, contentType);
-                namedPreparedStatement.setString(3, applicationUuid);
-                namedPreparedStatement.setInt(4, tenantId);
-                namedPreparedStatement.setTimestamp(5, timestamp);
-                namedPreparedStatement.setTimestamp(6, timestamp);
+                namedPreparedStatement.setBinaryStream(CONTENT,
+                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), content.length());
+                namedPreparedStatement.setString(CONTENT_TYPE, contentType);
+                namedPreparedStatement.setString(APP_ID, applicationUuid);
+                namedPreparedStatement.setInt(TENANT_ID, tenantId);
+                namedPreparedStatement.setTimeStamp(CREATED_AT, timestamp, null);
+                namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
             });
         } catch (DataAccessException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
@@ -134,9 +136,9 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
 
         try {
             template.executeUpdate(UPDATE_APP_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
-                namedPreparedStatement.setBinaryStream(1,
-                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setTimestamp(2, timestamp);
+                namedPreparedStatement.setBinaryStream(CONTENT,
+                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), content.length());
+                namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
                 namedPreparedStatement.setString(CONTENT_TYPE, contentType);
                 namedPreparedStatement.setString(APP_ID, applicationUuid);
                 namedPreparedStatement.setInt(TENANT_ID, tenantId);

@@ -84,6 +84,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_NOT_ALLOWED_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
@@ -333,11 +334,12 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         JSONObject jsonObject = new JSONObject(preferencesJson);
         JSONObject customContent = jsonObject.optJSONObject(CUSTOM_CONTENT_KEY);
-        String html = "", css = "", js = "";
-
-        html = customContent.optString(HTML_CONTENT_KEY, "");
-        css = customContent.optString(CSS_CONTENT_KEY, "");
-        js = customContent.optString(JS_CONTENT_KEY, "");
+        if (customContent == null) {
+            throw handleServerException(ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT);
+        }
+        String html = customContent.optString(HTML_CONTENT_KEY, "");
+        String css = customContent.optString(CSS_CONTENT_KEY, "");
+        String js = customContent.optString(JS_CONTENT_KEY, "");
 
         return new CustomLayoutContent(html, css, js);
     }

@@ -37,7 +37,9 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CREATED_AT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.TENANT_ID;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.UPDATED_AT;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_JS;
@@ -62,7 +64,7 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
             Integer count = template.fetchSingleRecord(GET_ORG_CUSTOM_CONTENT_COUNT_SQL,
                     (resultSet, rowNum) -> resultSet.getInt(1),
                     namedPreparedStatement -> {
-                        namedPreparedStatement.setInt(1, tenantId);
+                        namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     });
             if (count == 0) {
                 throw handleServerException(ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS, String.valueOf(tenantId));
@@ -89,12 +91,12 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
 
         try {
             template.executeUpdate(INSERT_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
-                namedPreparedStatement.setBinaryStream(1,
-                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setString(2, contentType);
-                namedPreparedStatement.setInt(3, tenantId);
-                namedPreparedStatement.setTimestamp(4, timestamp);
-                namedPreparedStatement.setTimestamp(5, timestamp);
+                namedPreparedStatement.setBinaryStream(CONTENT,
+                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), content.length());
+                namedPreparedStatement.setString(CONTENT_TYPE, contentType);
+                namedPreparedStatement.setInt(TENANT_ID, tenantId);
+                namedPreparedStatement.setTimeStamp(CREATED_AT, timestamp, null);
+                namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
             });
         } catch (DataAccessException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
@@ -127,11 +129,11 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
 
         try {
             template.executeUpdate(UPDATE_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
-                namedPreparedStatement.setBinaryStream(1,
-                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
-                namedPreparedStatement.setInt(3, tenantId);
-                namedPreparedStatement.setString(4, contentType);
-                namedPreparedStatement.setTimestamp(2, timestamp);
+                namedPreparedStatement.setBinaryStream(CONTENT,
+                        new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), content.length());
+                namedPreparedStatement.setInt(TENANT_ID, tenantId);
+                namedPreparedStatement.setString(CONTENT_TYPE, contentType);
+                namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
             });
         } catch (DataAccessException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);

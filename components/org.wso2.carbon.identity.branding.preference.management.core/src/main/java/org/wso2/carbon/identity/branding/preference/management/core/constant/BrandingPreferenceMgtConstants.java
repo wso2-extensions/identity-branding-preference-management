@@ -119,7 +119,7 @@ public class BrandingPreferenceMgtConstants {
                         "in tenant: %s."),
         // Error messages related to custom layout content configurations.
         ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00034",
-                "Invalid custom layout content for : %s."),
+                "Invalid custom layout content"),
         ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS("BRANDINGM_00035",
                 "Custom layout content is not configured for : %s."),
         ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_CONFIGURED("BRANDINGM_00036",
