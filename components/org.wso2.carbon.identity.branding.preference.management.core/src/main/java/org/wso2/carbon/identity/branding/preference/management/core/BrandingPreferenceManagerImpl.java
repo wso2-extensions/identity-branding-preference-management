@@ -301,23 +301,18 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
         }
-
-        BrandingPreference oldBrandingPreference = getBrandingPreference(type, name, locale);
-        String preferencesJSON = generatePreferencesJSONFromPreference(oldBrandingPreference.getPreference());
-
         try {
-            if (APPLICATION_TYPE.equals(type) || ORGANIZATION_TYPE.equals(type)) {
-                String appName = APPLICATION_TYPE.equals(type) ? name : null;
-                if (checkCustomLayoutContentModeEnabled(preferencesJSON)) {
-                    try {
-                        CustomContentDAO.deleteCustomContent(appName, tenantDomain);
-                    } catch (BrandingPreferenceMgtServerException e) {
-                        throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
-                    }
-                }
-            }
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
+            if (APPLICATION_TYPE.equals(type) || ORGANIZATION_TYPE.equals(type)) {
+                String appName = APPLICATION_TYPE.equals(type) ? name : null;
+                try {
+                    CustomContentDAO.deleteCustomContent(appName, tenantDomain);
+                } catch (BrandingPreferenceMgtServerException e) {
+                    throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
+                }
+            }
+
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
