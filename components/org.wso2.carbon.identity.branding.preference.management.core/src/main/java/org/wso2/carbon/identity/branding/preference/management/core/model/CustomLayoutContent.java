@@ -42,6 +42,36 @@ public class CustomLayoutContent {
     }
 
     /**
+     * Sets the CSS content for the custom layout.
+     *
+     * @param cssContent The CSS content as a string.
+     */
+    public void setCssContent(String cssContent) {
+
+        this.cssContent = cssContent;
+    }
+
+    /**
+     * Sets the HTML content for the custom layout.
+     *
+     * @param htmlContent The HTML content as a string.
+     */
+    public void setHtmlContent(String htmlContent) {
+
+        this.htmlContent = htmlContent;
+    }
+
+    /**
+     * Sets the JavaScript content for the custom layout.
+     *
+     * @param jsContent The JavaScript content as a string.
+     */
+    public void setJsContent(String jsContent) {
+
+        this.jsContent = jsContent;
+    }
+
+    /**
      * Retrieves the HTML content associated with this object.
      *
      * @return The HTML content as a string.
