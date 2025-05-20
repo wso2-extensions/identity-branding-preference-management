@@ -157,13 +157,8 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
     @Override
     public CustomLayoutContent getOrgCustomContent(int tenantId) throws BrandingPreferenceMgtException {
 
-        CustomLayoutContent result;
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
-
-        final String[] htmlContent = {""};
-        final String[] cssContent = {""};
-        final String[] jsContent = {""};
-
+        CustomLayoutContent customLayoutContent = new CustomLayoutContent("", "", "");
         try {
             template.executeQuery(
                     GET_ORG_CUSTOM_CONTENT_SQL,
@@ -172,11 +167,11 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
                         String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
 
                         switch (type) {
-                            case CONTENT_TYPE_HTML: htmlContent[0] = content;
+                            case CONTENT_TYPE_HTML: customLayoutContent.setHtmlContent(content);
                             break;
-                            case CONTENT_TYPE_CSS: cssContent[0] = content;
+                            case CONTENT_TYPE_CSS: customLayoutContent.setCssContent(content);
                             break;
-                            case CONTENT_TYPE_JS: jsContent[0] = content;
+                            case CONTENT_TYPE_JS: customLayoutContent.setJsContent(content);
                             break;
                         }
                         return null;
@@ -185,11 +180,10 @@ public class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
                         namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     }
             );
-            result = new CustomLayoutContent(htmlContent[0], cssContent[0], jsContent[0]);
+            return customLayoutContent;
         } catch (DataAccessException e) {
             throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
-        return result;
     }
 
     @Override

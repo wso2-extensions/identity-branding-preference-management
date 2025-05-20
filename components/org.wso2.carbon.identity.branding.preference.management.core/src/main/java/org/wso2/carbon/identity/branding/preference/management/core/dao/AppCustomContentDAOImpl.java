@@ -168,11 +168,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
             throws BrandingPreferenceMgtException {
 
         NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
-
-        final String[] htmlContent = {""};
-        final String[] cssContent = {""};
-        final String[] jsContent = {""};
-
+        CustomLayoutContent customLayoutContent = new CustomLayoutContent("", "", "");
         try {
             template.executeQuery(GET_APP_CUSTOM_CONTENT_SQL,
                     (resultSet, rowNum) -> {
@@ -180,11 +176,11 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
                         String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
 
                         switch (type) {
-                            case CONTENT_TYPE_HTML: htmlContent[0] = content;
+                            case CONTENT_TYPE_HTML: customLayoutContent.setHtmlContent(content);
                             break;
-                            case CONTENT_TYPE_CSS: cssContent[0] = content;
+                            case CONTENT_TYPE_CSS: customLayoutContent.setCssContent(content);
                             break;
-                            case CONTENT_TYPE_JS: jsContent[0] = content;
+                            case CONTENT_TYPE_JS: customLayoutContent.setJsContent(content);
                             break;
                         }
                         return null;
@@ -194,7 +190,7 @@ public class AppCustomContentDAOImpl implements AppCustomContentDAO {
                         namedPreparedStatement.setInt(TENANT_ID, tenantId);
                     }
             );
-            return new CustomLayoutContent(htmlContent[0], cssContent[0], jsContent[0]);
+            return customLayoutContent;
         } catch (DataAccessException e) {
             throw handleServerException(ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
         }
