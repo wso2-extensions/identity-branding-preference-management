@@ -148,14 +148,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
-            if (APPLICATION_TYPE.equals(brandingPreference.getType()) ||
-                    ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
-                String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
-                        brandingPreference.getName() : null;
-                if (checkCustomLayoutContentModeEnabled(preferencesJSON)) {
-                    CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
-                    CustomContentDAO.addCustomContent(customLayoutContent, appName, tenantDomain);
-                }
+            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                    brandingPreference.getName() : null;
+            if (checkCustomLayoutContentEnabled(preferencesJSON)) {
+                CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
+                CustomContentDAO.addCustomContent(customLayoutContent, appName, tenantDomain);
             }
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
@@ -273,14 +270,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
 
-            if (APPLICATION_TYPE.equals(brandingPreference.getType()) ||
-                    ORGANIZATION_TYPE.equals(brandingPreference.getType())) {
-                String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
-                        brandingPreference.getName() : null;
-                if (checkCustomLayoutContentModeEnabled(preferencesJSON)) {
-                    CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
-                    CustomContentDAO.updateCustomContent(customLayoutContent, appName, tenantDomain);
-                }
+            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                    brandingPreference.getName() : null;
+            if (checkCustomLayoutContentEnabled(preferencesJSON)) {
+                CustomLayoutContent customLayoutContent = extractCustomLayoutContent(preferencesJSON);
+                CustomContentDAO.updateCustomContent(customLayoutContent, appName, tenantDomain);
             }
         } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
@@ -305,13 +299,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
-            if (APPLICATION_TYPE.equals(type) || ORGANIZATION_TYPE.equals(type)) {
-                String appName = APPLICATION_TYPE.equals(type) ? name : null;
-                try {
-                    CustomContentDAO.deleteCustomContent(appName, tenantDomain);
-                } catch (BrandingPreferenceMgtServerException e) {
-                    throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
-                }
+            String appName = APPLICATION_TYPE.equals(type) ? name : null;
+            try {
+                CustomContentDAO.deleteCustomContent(appName, tenantDomain);
+            } catch (BrandingPreferenceMgtServerException e) {
+                throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
             }
 
         } catch (ConfigurationManagementException e) {
@@ -350,7 +342,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
      * @param preferencesJson The JSON string containing the branding preferences.
      * @return true if the preferences JSON contains "customContent", false otherwise.
      */
-    private boolean checkCustomLayoutContentModeEnabled(String preferencesJson) {
+    private boolean checkCustomLayoutContentEnabled(String preferencesJson) {
+
         if (StringUtils.isNotBlank(preferencesJson)) {
             return preferencesJson.contains("customContent");
         } else {

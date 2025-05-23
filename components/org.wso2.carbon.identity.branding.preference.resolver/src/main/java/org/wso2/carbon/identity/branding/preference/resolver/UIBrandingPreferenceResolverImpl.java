@@ -869,7 +869,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
-    private void getCustomContentIfNeeded(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type)
+    private void getCustomContent(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type)
             throws BrandingPreferenceMgtException {
 
         String activeLayout = root.path(LAYOUT_KEY).path(ACTIVE_LAYOUT_KEY).asText();
@@ -890,14 +890,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         ObjectNode customContentNode = objectRoot.objectNode();
-        if (customLayoutContent != null) {
-            customContentNode.put(HTML_CONTENT_KEY, customLayoutContent.getHtmlContent());
-            customContentNode.put(CSS_CONTENT_KEY, customLayoutContent.getCssContent());
-            customContentNode.put(JS_CONTENT_KEY, customLayoutContent.getJsContent());
-            objectRoot.set(CUSTOM_CONTENT_KEY, customContentNode);
-        } else {
+        if (customLayoutContent == null) {
             throw handleServerException(ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT);
         }
+        customContentNode.put(HTML_CONTENT_KEY, customLayoutContent.getHtmlContent());
+        customContentNode.put(CSS_CONTENT_KEY, customLayoutContent.getCssContent());
+        customContentNode.put(JS_CONTENT_KEY, customLayoutContent.getJsContent());
+        objectRoot.set(CUSTOM_CONTENT_KEY, customContentNode);
     }
 
     /**
@@ -923,10 +922,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(preferencesJSON);
 
-        if (checkCustomLayoutContentModeEnabled(preferencesJSON)) {
+        if (checkCustomLayoutContentEnabled(preferencesJSON)) {
             if (root.isObject()) {
                 ObjectNode objectRoot = (ObjectNode) root;
-                getCustomContentIfNeeded(objectRoot, root, resolvedSourceName, type);
+                getCustomContent(objectRoot, root, resolvedSourceName, type);
             }
         }
         Object preference = mapper.treeToValue(root, Object.class);
@@ -940,7 +939,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return brandingPreference;
     }
 
-    private boolean checkCustomLayoutContentModeEnabled(String preferencesJson)  {
+    private boolean checkCustomLayoutContentEnabled(String preferencesJson)  {
+
         if (StringUtils.isNotBlank(preferencesJson)) {
             return preferencesJson.contains("customContent");
         } else {
