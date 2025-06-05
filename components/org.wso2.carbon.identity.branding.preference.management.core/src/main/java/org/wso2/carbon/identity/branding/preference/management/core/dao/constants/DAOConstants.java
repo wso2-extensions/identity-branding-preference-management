@@ -28,7 +28,6 @@ public class DAOConstants {
      */
     public static class CustomContentTableColumns {
 
-        public static final String ID = "ID";
         public static final String TENANT_ID = "TENANT_ID";
         public static final String CONTENT = "CONTENT";
         public static final String CONTENT_TYPE = "CONTENT_TYPE";

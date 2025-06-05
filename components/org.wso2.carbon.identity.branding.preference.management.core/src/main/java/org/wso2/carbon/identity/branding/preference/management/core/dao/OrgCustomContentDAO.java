@@ -22,23 +22,14 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 
 /**
- * This Interface is to define CRUD operations for Organization vise Custom Layout Content
+ * This interface is to define CRUD operations for organization wise Custom Layout Content
  */
 public interface OrgCustomContentDAO {
 
     /**
-     * Checks whether custom layout content exists for the given ORG.
-     *
-     * @param tenantId Tenant ID.
-     * @return True if custom content exists for the tenant, False otherwise.
-     * @throws BrandingPreferenceMgtException if an error occurs during the database access.
-     */
-    boolean isOrgCustomContentAvailable(int tenantId) throws BrandingPreferenceMgtException;
-
-    /**
      * Adds new custom layout content (HTML, CSS, JS) for a given ORG.
      *
-     * @param content The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
+     * @param content  The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
      * @param tenantId Tenant ID.
      * @throws BrandingPreferenceMgtException if an error occurs during insertion of any content.
      */
@@ -47,7 +38,7 @@ public interface OrgCustomContentDAO {
     /**
      * Updates the custom layout content (HTML, CSS, JS) for the given ORG.
      *
-     * @param content The {@link CustomLayoutContent} object containing updated content.
+     * @param content  The {@link CustomLayoutContent} object containing updated content.
      * @param tenantId Tenant ID.
      * @throws BrandingPreferenceMgtException if an error occurs during update.
      */

@@ -23,7 +23,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.model.Custom
 
 /**
  * Interface defining the operations for managing custom layout content persistence.
- * Provides methods to add, update, retrieve, check existence, and delete custom layout content.
+ * Provides methods to add, update, retrieve, and delete custom layout content.
  */
 public interface CustomContentPersistentDAO {
 
@@ -31,8 +31,8 @@ public interface CustomContentPersistentDAO {
      * Adds custom layout content (HTML, CSS, JS).
      *
      * @param customLayoutContent The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
-     * @param applicationUuid   Application UUID.
-     * @param tenantDomain      Tenant domain.
+     * @param applicationUuid     Application UUID.
+     * @param tenantDomain        Tenant domain.
      * @throws BrandingPreferenceMgtException If an error occurs while adding the custom layout content.
      */
     void addCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
@@ -42,28 +42,18 @@ public interface CustomContentPersistentDAO {
      * Updates the existing custom layout content.
      *
      * @param customLayoutContent The {@link CustomLayoutContent} object containing updated HTML, CSS, and JS content.
-     * @param applicationUuid   Application UUID.
-     * @param tenantDomain      Tenant domain.
+     * @param applicationUuid     Application UUID.
+     * @param tenantDomain        Tenant domain.
      * @throws BrandingPreferenceMgtException If an error occurs while updating the custom layout content.
      */
     void updateCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
                              String tenantDomain) throws BrandingPreferenceMgtException;
 
     /**
-     * Check whether the specified custom layout content exists.
-     *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
-     * @return True if the custom content exists, false otherwise.
-     * @throws BrandingPreferenceMgtException If an error occurred while checking the existence.
-     */
-    boolean isCustomContentExists(String applicationUuid, String tenantDomain) throws BrandingPreferenceMgtException;
-
-    /**
      * Get specified custom layout content.
      *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
+     * @param applicationUuid Application UUID.
+     * @param tenantDomain    Tenant domain.
      * @return Custom Layout Content for a particular APP or ORG
      * @throws BrandingPreferenceMgtException If an error occurred while retrieving the content.
      */
@@ -73,10 +63,9 @@ public interface CustomContentPersistentDAO {
     /**
      * Delete specified custom layout content.
      *
-     * @param applicationUuid       Application UUID.
-     * @param tenantDomain          Tenant domain.
+     * @param applicationUuid Application UUID.
+     * @param tenantDomain    Tenant domain.
      * @throws BrandingPreferenceMgtException If an error occurred while deleting the content.
      */
     void deleteCustomContent(String applicationUuid, String tenantDomain) throws BrandingPreferenceMgtException;
-
 }

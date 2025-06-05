@@ -22,28 +22,17 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 
 /**
- * This Interface is to define CRUD operations for Application vise Custom Layout Content
+ * This interface is to define CRUD operations for application wise Custom Layout Content.
  */
 public interface AppCustomContentDAO {
 
     /**
-     * Checks whether custom layout content exists for the given APP.
-     *
-     * @param applicationUuid   Application UUID.
-     * @param tenantId          Tenant ID.
-     * @return                  True if custom content exists for the tenant, false otherwise.
-     * @throws BrandingPreferenceMgtException if an error occurs during the database access.
-     */
-    boolean isAppCustomContentAvailable(String applicationUuid, int tenantId)
-            throws BrandingPreferenceMgtException;
-
-    /**
      * Adds new custom layout content (HTML, CSS, JS) for a given APP.
      *
-     * @param content The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
+     * @param content         The {@link CustomLayoutContent} object containing HTML, CSS, and JS content.
      * @param applicationUuid Application UUID.
-     * @param tenantId Tenant ID.
-     * @throws BrandingPreferenceMgtException if an error occurs during insertion of any content.
+     * @param tenantId        Tenant ID.
+     * @throws BrandingPreferenceMgtException If an error occurs during insertion of any content.
      */
     void addAppCustomContent(CustomLayoutContent content, String applicationUuid, int tenantId)
             throws BrandingPreferenceMgtException;
@@ -51,10 +40,10 @@ public interface AppCustomContentDAO {
     /**
      * Updates the custom layout content (HTML, CSS, JS) for the given APP.
      *
-     * @param content The {@link CustomLayoutContent} object containing updated content.
+     * @param content         The {@link CustomLayoutContent} object containing updated content.
      * @param applicationUuid Application UUID.
-     * @param tenantId Tenant ID.
-     * @throws BrandingPreferenceMgtException if an error occurs during update.
+     * @param tenantId        Tenant ID.
+     * @throws BrandingPreferenceMgtException If an error occurs during update.
      */
     void updateAppCustomContent(CustomLayoutContent content, String applicationUuid, int tenantId)
             throws BrandingPreferenceMgtException;
@@ -63,9 +52,9 @@ public interface AppCustomContentDAO {
      * Retrieves the custom layout content (HTML, CSS, JS) for the specified APP.
      *
      * @param applicationUuid Application UUID.
-     * @param tenantId Tenant ID.
+     * @param tenantId        Tenant ID.
      * @return A {@link CustomLayoutContent} object containing the APP's custom layout content.
-     * @throws BrandingPreferenceMgtException if an error occurs while fetching the content.
+     * @throws BrandingPreferenceMgtException If an error occurs while fetching the content.
      */
     CustomLayoutContent getAppCustomContent(String applicationUuid, int tenantId)
             throws BrandingPreferenceMgtException;
@@ -74,9 +63,8 @@ public interface AppCustomContentDAO {
      * Deletes all custom layout content (HTML, CSS, JS) for the specified APP.
      *
      * @param applicationUuid Application UUID.
-     * @param tenantId Tenant ID.
-     * @throws BrandingPreferenceMgtException if an error occurs during deletion.
+     * @param tenantId        Tenant ID.
+     * @throws BrandingPreferenceMgtException If an error occurs during deletion.
      */
     void deleteAppCustomContent(String applicationUuid, int tenantId) throws BrandingPreferenceMgtException;
-
 }

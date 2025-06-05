@@ -28,7 +28,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
-import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAOImpl;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
@@ -110,7 +111,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private static final String ORGANIZATION_DETAILS = "organizationDetails";
     private static final String DISPLAY_NAME = "displayName";
     private static final String PUBLISHED_BRANDING_CACHE_KEY_SUFFIX = "_published";
-    private static final CustomContentPersistentDAOImpl CustomContentDAO = new CustomContentPersistentDAOImpl();
+    private static final CustomContentPersistentDAO CUSTOM_CONTENT_DAO =
+            CustomContentPersistentFactory.getCustomContentPersistentDAO();
 
     private final BrandedOrgCache brandedOrgCache;
     private final BrandedAppCache brandedAppCache;
@@ -869,36 +871,6 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return BrandingResolverComponentDataHolder.getInstance().getConfigurationManager();
     }
 
-    private void getCustomContent(ObjectNode objectRoot, JsonNode root, String resolvedSourceName, String type)
-            throws BrandingPreferenceMgtException {
-
-        String activeLayout = root.path(LAYOUT_KEY).path(ACTIVE_LAYOUT_KEY).asText();
-        if (!CUSTOM_CONTENT_TYPE.equals(activeLayout)) {
-            objectRoot.remove(CUSTOM_CONTENT_KEY);
-            return;
-        }
-
-        CustomLayoutContent customLayoutContent = null;
-        try {
-            if (APPLICATION_TYPE.equals(type)) {
-                customLayoutContent = CustomContentDAO.getCustomContent(resolvedSourceName, getTenantDomain());
-            } else if (ORGANIZATION_TYPE.equals(type)) {
-                customLayoutContent = CustomContentDAO.getCustomContent(null, resolvedSourceName);
-            }
-        } catch (BrandingPreferenceMgtException e) {
-            throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT);
-        }
-
-        ObjectNode customContentNode = objectRoot.objectNode();
-        if (customLayoutContent == null) {
-            throw handleServerException(ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT);
-        }
-        customContentNode.put(HTML_CONTENT_KEY, customLayoutContent.getHtmlContent());
-        customContentNode.put(CSS_CONTENT_KEY, customLayoutContent.getCssContent());
-        customContentNode.put(JS_CONTENT_KEY, customLayoutContent.getJsContent());
-        objectRoot.set(CUSTOM_CONTENT_KEY, customContentNode);
-    }
-
     /**
      * Build a Branding Preference Model from branding preference file stream.
      *
@@ -920,16 +892,9 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
 
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(preferencesJSON);
-
-        if (checkCustomLayoutContentEnabled(preferencesJSON)) {
-            if (root.isObject()) {
-                ObjectNode objectRoot = (ObjectNode) root;
-                getCustomContent(objectRoot, root, resolvedSourceName, type);
-            }
-        }
-        Object preference = mapper.treeToValue(root, Object.class);
-
+        Object preference = mapper.readValue(preferencesJSON, Object.class);
+        BrandingPreferenceMgtUtils.addCustomLayoutContentToPreferences(preference,
+                APPLICATION_TYPE.equals(type) ? resolvedSourceName : null, getTenantDomain());
         BrandingPreference brandingPreference = new BrandingPreference();
         brandingPreference.setPreference(preference);
         brandingPreference.setType(type);
@@ -937,15 +902,6 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference.setLocale(locale);
         brandingPreference.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
         return brandingPreference;
-    }
-
-    private boolean checkCustomLayoutContentEnabled(String preferencesJson)  {
-
-        if (StringUtils.isNotBlank(preferencesJson)) {
-            return preferencesJson.contains("customContent");
-        } else {
-            return false;
-        }
     }
 
     private String getTenantDomain() {

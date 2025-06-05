@@ -32,10 +32,11 @@ public class BrandingPreferenceMgtConstants {
     public static final String CUSTOM_CONTENT_TYPE = "custom";
     public static final String LAYOUT_KEY = "layout";
     public static final String ACTIVE_LAYOUT_KEY = "activeLayout";
-    public static final String CUSTOM_CONTENT_KEY = "customContent";
-    public static final String HTML_CONTENT_KEY = "htmlContent";
-    public static final String CSS_CONTENT_KEY = "cssContent";
-    public static final String JS_CONTENT_KEY = "jsContent";
+    public static final String CUSTOM_LAYOUT = "custom";
+    public static final String CUSTOM_CONTENT_KEY = "content";
+    public static final String HTML_CONTENT_KEY = "html";
+    public static final String CSS_CONTENT_KEY = "css";
+    public static final String JS_CONTENT_KEY = "js";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
     public static final String LOCAL_CODE_SEPARATOR = "-";
@@ -53,6 +54,26 @@ public class BrandingPreferenceMgtConstants {
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
+
+    /**
+     * Enum for custom layout components.
+     */
+    public enum CustomLayoutComponents {
+
+        MAIN_SECTION("MainSection");
+
+        private final String componentName;
+
+        CustomLayoutComponents(String componentName) {
+
+            this.componentName = componentName;
+        }
+
+        public String getComponentName() {
+
+            return componentName;
+        }
+    }
 
     /**
      * Enums for error messages.
@@ -119,7 +140,7 @@ public class BrandingPreferenceMgtConstants {
                         "in tenant: %s."),
         // Error messages related to custom layout content configurations.
         ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00034",
-                "Invalid custom layout content"),
+                "Invalid custom layout content."),
         ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS("BRANDINGM_00035",
                 "Custom layout content is not configured for : %s."),
         ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_CONFIGURED("BRANDINGM_00036",
@@ -141,7 +162,11 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_VALIDATING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00044",
                 "Error while validating custom layout content configurations for : %s."),
         ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00045",
-                "Error while getting app-level custom layout content for application id: %s.");
+                "Error while getting app-level custom layout content for application id: %s."),
+        ERROR_CODE_UNSUPPORTED_PREFERENCE_OBJECT_FORMAT("BRANDINGM_00046",
+                "Error while reading the preference object. Unsupported format or invalid data found."),
+        ERROR_CODE_MANDATORY_COMPONENT_NOT_FOUND("BRANDINGM_00047",
+                "Mandatory component '%s' not found in the custom layout html content.");
 
         private final String code;
         private final String message;

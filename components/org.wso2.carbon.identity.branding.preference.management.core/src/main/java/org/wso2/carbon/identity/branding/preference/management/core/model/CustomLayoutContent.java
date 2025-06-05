@@ -18,57 +18,81 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core.model;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Model class representing the layout content that includes HTML, CSS, and JS contents for a Custom Layout Defining.
  */
 public class CustomLayoutContent {
 
-    private String htmlContent;
-    private String cssContent;
-    private String jsContent;
+    private final String html;
+    private final String css;
+    private final String js;
 
-    /**
-     * Constructor to initialize a CustomLayoutContent object with HTML, CSS, and JS contents.
-     *
-     * @param htmlContent The HTML content as a string.
-     * @param cssContent The CSS content as a string.
-     * @param jsContent The JavaScript content as a string.
-     */
-    public CustomLayoutContent(String htmlContent, String cssContent, String jsContent) {
+    private CustomLayoutContent(String html, String css, String js) {
 
-        this.htmlContent = htmlContent;
-        this.cssContent = cssContent;
-        this.jsContent = jsContent;
+        this.html = html;
+        this.css = StringUtils.isNotBlank(css) ? css : null;
+        this.js = StringUtils.isNotBlank(js) ? js : null;
     }
 
     /**
-     * Sets the CSS content for the custom layout.
-     *
-     * @param cssContent The CSS content as a string.
+     * Builder class for constructing instances of CustomLayoutContent.
      */
-    public void setCssContent(String cssContent) {
+    public static class CustomLayoutContentBuilder {
 
-        this.cssContent = cssContent;
-    }
+        private String html;
+        private String css;
+        private String js;
 
-    /**
-     * Sets the HTML content for the custom layout.
-     *
-     * @param htmlContent The HTML content as a string.
-     */
-    public void setHtmlContent(String htmlContent) {
+        /**
+         * Sets the HTML content for the CustomLayoutContent.
+         *
+         * @param html The HTML content as a string.
+         * @return The builder instance for method chaining.
+         */
+        public CustomLayoutContentBuilder setHtml(String html) {
 
-        this.htmlContent = htmlContent;
-    }
+            this.html = html;
+            return this;
+        }
 
-    /**
-     * Sets the JavaScript content for the custom layout.
-     *
-     * @param jsContent The JavaScript content as a string.
-     */
-    public void setJsContent(String jsContent) {
+        /**
+         * Sets the CSS content for the CustomLayoutContent.
+         *
+         * @param css The CSS content as a string.
+         * @return The builder instance for method chaining.
+         */
+        public CustomLayoutContentBuilder setCss(String css) {
 
-        this.jsContent = jsContent;
+            this.css = css;
+            return this;
+        }
+
+        /**
+         * Sets the JavaScript content for the CustomLayoutContent.
+         *
+         * @param js The JavaScript content as a string.
+         * @return The builder instance for method chaining.
+         */
+        public CustomLayoutContentBuilder setJs(String js) {
+
+            this.js = js;
+            return this;
+        }
+
+        /**
+         * Builds an instance of CustomLayoutContent with the provided HTML, CSS, and JS content.
+         *
+         * @return A new instance of CustomLayoutContent.
+         */
+        public CustomLayoutContent build() {
+
+            if (StringUtils.isBlank(html)) {
+                return null;
+            }
+            return new CustomLayoutContent(html, css, js);
+        }
     }
 
     /**
@@ -76,9 +100,9 @@ public class CustomLayoutContent {
      *
      * @return The HTML content as a string.
      */
-    public String getHtmlContent() {
+    public String getHtml() {
 
-        return htmlContent;
+        return html;
     }
 
     /**
@@ -86,9 +110,9 @@ public class CustomLayoutContent {
      *
      * @return The CSS content as a string.
      */
-    public String getCssContent() {
+    public String getCss() {
 
-        return cssContent;
+        return css;
     }
 
     /**
@@ -96,8 +120,8 @@ public class CustomLayoutContent {
      *
      * @return The JavaScript content as a string.
      */
-    public String getJsContent() {
+    public String getJs() {
 
-        return jsContent;
+        return js;
     }
 }
