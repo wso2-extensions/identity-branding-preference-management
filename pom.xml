@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+  ~ Copyright (c) 2022-2025, WSO2 Inc. (http://www.wso2.com).
   ~
   ~ WSO2 Inc. licenses this file to you under the Apache License,
   ~ Version 2.0 (the "License"); you may not use this file except
@@ -211,6 +211,12 @@
                 <version>${httpclient.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wso2.carbon.utils</groupId>
+                <artifactId>org.wso2.carbon.database.utils</artifactId>
+                <version>${org.wso2.carbon.database.utils.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -411,6 +417,10 @@
         <identity.organization.management.core.version>1.1.9</identity.organization.management.core.version>
         <identity.organization.management.core.imp.pkg.version.range>[1.0.0,2.0.0)
         </identity.organization.management.core.imp.pkg.version.range>
+
+        <!--Carbon Database Utils Version-->
+        <org.wso2.carbon.database.utils.version>2.2.2</org.wso2.carbon.database.utils.version>
+        <org.wso2.carbon.database.utils.version.range>[2.1.0,3.0.0)</org.wso2.carbon.database.utils.version.range>
 
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>

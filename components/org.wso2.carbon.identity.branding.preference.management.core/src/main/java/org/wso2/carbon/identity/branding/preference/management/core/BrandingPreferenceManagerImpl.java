@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -26,10 +26,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -100,6 +103,9 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
     private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
 
+    private static final CustomContentPersistentDAO CUSTOM_CONTENT_DAO =
+            CustomContentPersistentFactory.getCustomContentPersistentDAO();
+
     @Override
     public BrandingPreference addBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
@@ -122,9 +128,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
 
         String preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
-        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
-            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
-        }
+        BrandingPreferenceMgtUtils.isValidBrandingPreference(preferencesJSON, tenantDomain);
         validatePreferenceUrls(brandingPreference);
 
         triggerPreAddBrandingPreferenceEvents(brandingPreference, tenantDomain);
@@ -135,6 +139,13 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
                     brandingPreference.getName(), tenantDomain);
+            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                    brandingPreference.getName() : null;
+            CustomLayoutContent customLayoutContent =
+                    BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
+            if (customLayoutContent != null) {
+                CUSTOM_CONTENT_DAO.addCustomContent(customLayoutContent, appName, tenantDomain);
+            }
         } catch (ConfigurationManagementException e) {
             if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 if (LOG.isDebugEnabled()) {
@@ -236,9 +247,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         }
 
         String preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
-        if (!BrandingPreferenceMgtUtils.isValidJSONString(preferencesJSON)) {
-            throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
-        }
+        BrandingPreferenceMgtUtils.isValidBrandingPreference(preferencesJSON, tenantDomain);
         validatePreferenceUrls(brandingPreference);
         BrandingPreference oldBrandingPreference = getBrandingPreference(brandingPreference.getType(),
                 brandingPreference.getName(), brandingPreference.getLocale());
@@ -250,6 +259,14 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
             getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
             clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
+
+            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                    brandingPreference.getName() : null;
+            CustomLayoutContent customLayoutContent =
+                    BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
+            if (customLayoutContent != null) {
+                CUSTOM_CONTENT_DAO.updateCustomContent(customLayoutContent, appName, tenantDomain);
+            }
         } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
@@ -270,10 +287,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         if (!isResourceExists(resourceType, resourceName)) {
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
         }
-
         try {
             getConfigurationManager().deleteResource(resourceType, resourceName);
             getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
+            String appName = APPLICATION_TYPE.equals(type) ? name : null;
+            CUSTOM_CONTENT_DAO.deleteCustomContent(appName, tenantDomain);
         } catch (ConfigurationManagementException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
@@ -521,6 +539,8 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
         ObjectMapper mapper = new ObjectMapper();
         Object preference = mapper.readValue(preferencesJSON, Object.class);
+        BrandingPreferenceMgtUtils.addCustomLayoutContentToPreferences(preference,
+                APPLICATION_TYPE.equals(type) ? name : null, getTenantDomain());
         BrandingPreference brandingPreference = new BrandingPreference();
         brandingPreference.setPreference(preference);
         brandingPreference.setType(type);

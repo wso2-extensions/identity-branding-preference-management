@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -29,6 +29,14 @@ public class BrandingPreferenceMgtConstants {
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
     public static final String CUSTOM_TYPE = "CUSTOM";
+    public static final String CUSTOM_CONTENT_TYPE = "custom";
+    public static final String LAYOUT_KEY = "layout";
+    public static final String ACTIVE_LAYOUT_KEY = "activeLayout";
+    public static final String CUSTOM_LAYOUT = "custom";
+    public static final String CUSTOM_CONTENT_KEY = "content";
+    public static final String HTML_CONTENT_KEY = "html";
+    public static final String CSS_CONTENT_KEY = "css";
+    public static final String JS_CONTENT_KEY = "js";
     public static final String DEFAULT_LOCALE = "en-US";
     public static final String RESOURCE_NAME_SEPARATOR = "_";
     public static final String LOCAL_CODE_SEPARATOR = "-";
@@ -46,6 +54,26 @@ public class BrandingPreferenceMgtConstants {
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
+
+    /**
+     * Enum for custom layout components.
+     */
+    public enum CustomLayoutComponents {
+
+        MAIN_SECTION("MainSection");
+
+        private final String componentName;
+
+        CustomLayoutComponents(String componentName) {
+
+            this.componentName = componentName;
+        }
+
+        public String getComponentName() {
+
+            return componentName;
+        }
+    }
 
     /**
      * Enums for error messages.
@@ -109,7 +137,36 @@ public class BrandingPreferenceMgtConstants {
                 "Invalid branding preference type: %s for tenant: %s."),
         ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE("BRANDINGM_00033",
                 "Error while getting app-level branding preference configurations for application id: %s " +
-                        "in tenant: %s.");
+                        "in tenant: %s."),
+        // Error messages related to custom layout content configurations.
+        ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00034",
+                "Invalid custom layout content."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_EXISTS("BRANDINGM_00035",
+                "Custom layout content is not configured for : %s."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_NOT_CONFIGURED("BRANDINGM_00036",
+                "Custom layout content is not configured for type: %s, name: %s in tenant: %s."),
+        ERROR_CODE_CUSTOM_LAYOUT_CONTENT_ALREADY_EXISTS("BRANDINGM_00037",
+                "Custom layout content already exists for : %s."),
+        ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00038",
+                "Error while retrieving custom layout content configurations for : %s."),
+        ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00039",
+                "Unable to add custom layout content configurations for : %s."),
+        ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00040",
+                "Unable to delete custom layout content configurations for : %s."),
+        ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00041",
+                "Unable to update custom layout content configurations."),
+        ERROR_CODE_ERROR_BUILDING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00042",
+                "Unable to build custom layout content from configurations for : %s."),
+        ERROR_CODE_ERROR_CHECKING_CUSTOM_LAYOUT_CONTENT_EXISTS("BRANDINGM_00043",
+                "Error while checking existence of custom layout content configurations."),
+        ERROR_CODE_ERROR_VALIDATING_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00044",
+                "Error while validating custom layout content configurations for : %s."),
+        ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00045",
+                "Error while getting app-level custom layout content for application id: %s."),
+        ERROR_CODE_UNSUPPORTED_PREFERENCE_OBJECT_FORMAT("BRANDINGM_00046",
+                "Error while reading the preference object. Unsupported format or invalid data found."),
+        ERROR_CODE_MANDATORY_COMPONENT_NOT_FOUND("BRANDINGM_00047",
+                "Mandatory component '%s' not found in the custom layout html content.");
 
         private final String code;
         private final String message;
