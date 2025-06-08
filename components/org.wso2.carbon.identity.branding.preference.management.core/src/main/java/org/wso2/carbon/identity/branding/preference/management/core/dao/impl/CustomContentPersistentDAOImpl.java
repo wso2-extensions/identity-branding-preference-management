@@ -21,7 +21,9 @@ package org.wso2.carbon.identity.branding.preference.management.core.dao.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.AppCustomContentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.cache.AppCustomContentCacheKey;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.cache.CustomContentCache;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.cache.CustomContentCacheEntry;
@@ -43,10 +45,6 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
 
     private static final Log log = LogFactory.getLog(CustomContentPersistentDAOImpl.class);
 
-    private final OrgCustomContentDAOImpl orgCustomContentDAO = new OrgCustomContentDAOImpl();
-    private final AppCustomContentDAOImpl appCustomContentDAO = new AppCustomContentDAOImpl();
-    private final CustomContentCache customContentCache = CustomContentCache.getInstance();
-
     @Override
     public void addCustomContent(CustomLayoutContent customLayoutContent, String applicationUuid,
                                  String tenantDomain) throws BrandingPreferenceMgtException {
@@ -54,7 +52,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
             try {
-                orgCustomContentDAO.addOrgCustomContent(customLayoutContent, tenantId);
+                getOrgCustomContentDAO().addOrgCustomContent(customLayoutContent, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
             }
@@ -64,7 +62,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
             }
         } else {
             try {
-                appCustomContentDAO.addAppCustomContent(customLayoutContent, applicationUuid, tenantId);
+                getAppCustomContentDAO().addAppCustomContent(customLayoutContent, applicationUuid, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
             }
@@ -83,7 +81,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
             try {
-                orgCustomContentDAO.updateOrgCustomContent(customLayoutContent, tenantId);
+                getOrgCustomContentDAO().updateOrgCustomContent(customLayoutContent, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
             }
@@ -93,7 +91,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
             }
         } else {
             try {
-                appCustomContentDAO.updateAppCustomContent(customLayoutContent, applicationUuid, tenantId);
+                getAppCustomContentDAO().updateAppCustomContent(customLayoutContent, applicationUuid, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
             }
@@ -120,7 +118,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         CustomLayoutContent customLayoutContent = null;
         if (StringUtils.isBlank(applicationUuid)) {
             try {
-                customLayoutContent = orgCustomContentDAO.getOrgCustomContent(tenantId);
+                customLayoutContent = getOrgCustomContentDAO().getOrgCustomContent(tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT,
                         tenantDomain, e);
@@ -131,7 +129,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
             }
         } else {
             try {
-                customLayoutContent = appCustomContentDAO.getAppCustomContent(applicationUuid, tenantId);
+                customLayoutContent = getAppCustomContentDAO().getAppCustomContent(applicationUuid, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
             }
@@ -152,7 +150,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
             try {
-                orgCustomContentDAO.deleteOrgCustomContent(tenantId);
+                getOrgCustomContentDAO().deleteOrgCustomContent(tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
             }
@@ -162,7 +160,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
             }
         } else {
             try {
-                appCustomContentDAO.deleteAppCustomContent(applicationUuid, tenantId);
+                getAppCustomContentDAO().deleteAppCustomContent(applicationUuid, tenantId);
             } catch (BrandingPreferenceMgtException e) {
                 throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
             }
@@ -175,21 +173,34 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         clearCache(applicationUuid, tenantDomain);
     }
 
+    /**
+     * Clears the cache for the specified application UUID and tenant domain.
+     *
+     * @param applicationUuid Application UUID, if applicable.
+     * @param tenantDomain    Tenant domain.
+     */
     private void clearCache(String applicationUuid, String tenantDomain) {
 
         if (StringUtils.isBlank(applicationUuid)) {
-            customContentCache.clearCacheEntry(new OrgCustomContentCacheKey(tenantDomain), tenantDomain);
+            getCustomContentCache().clearCacheEntry(new OrgCustomContentCacheKey(tenantDomain), tenantDomain);
         } else {
-            customContentCache.clearCacheEntry(new AppCustomContentCacheKey(applicationUuid, tenantDomain),
+            getCustomContentCache().clearCacheEntry(new AppCustomContentCacheKey(applicationUuid, tenantDomain),
                     tenantDomain);
         }
     }
 
+    /**
+     * Retrieves the cached custom layout content for the specified application UUID and tenant domain.
+     *
+     * @param applicationUuid Application UUID, if applicable.
+     * @param tenantDomain    Tenant domain.
+     * @return Cached Custom Layout Content or null if not found.
+     */
     private CustomLayoutContent getCacheEntry(String applicationUuid, String tenantDomain) {
 
         CustomContentCacheEntry cacheEntry;
         if (StringUtils.isBlank(applicationUuid)) {
-            cacheEntry = customContentCache.getValueFromCache(new OrgCustomContentCacheKey(tenantDomain),
+            cacheEntry = getCustomContentCache().getValueFromCache(new OrgCustomContentCacheKey(tenantDomain),
                     tenantDomain);
             if (cacheEntry != null) {
                 if (log.isDebugEnabled()) {
@@ -199,9 +210,8 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
                 return cacheEntry.getCustomLayoutContent();
             }
         } else {
-            cacheEntry =
-                    customContentCache.getValueFromCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain),
-                            tenantDomain);
+            cacheEntry = getCustomContentCache().getValueFromCache(
+                    new AppCustomContentCacheKey(applicationUuid, tenantDomain), tenantDomain);
             if (cacheEntry != null) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(
@@ -214,15 +224,56 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         return null;
     }
 
+    /**
+     * Adds custom content to the cache.
+     *
+     * @param customLayoutContent Custom layout content to be cached.
+     * @param applicationUuid     Application UUID, if applicable.
+     * @param tenantDomain        Tenant domain.
+     */
     private void addCustomContentToCache(CustomLayoutContent customLayoutContent, String applicationUuid,
             String tenantDomain) {
 
+        if (customLayoutContent == null) {
+            return;
+        }
+
         CustomContentCacheEntry cacheEntry = new CustomContentCacheEntry(customLayoutContent);
         if (StringUtils.isBlank(applicationUuid)) {
-            customContentCache.addToCache(new OrgCustomContentCacheKey(tenantDomain), cacheEntry, tenantDomain);
+            getCustomContentCache().addToCache(new OrgCustomContentCacheKey(tenantDomain), cacheEntry, tenantDomain);
         } else {
-            customContentCache.addToCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain), cacheEntry,
+            getCustomContentCache().addToCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain), cacheEntry,
                     tenantDomain);
         }
+    }
+
+    /**
+     * Get the singleton instance of CustomContentPersistentDAOImpl.
+     *
+     * @return CustomContentPersistentDAOImpl instance.
+     */
+    private OrgCustomContentDAO getOrgCustomContentDAO() {
+
+        return OrgCustomContentDAOImpl.getInstance();
+    }
+
+    /**
+     * Get the singleton instance of AppCustomContentDAOImpl.
+     *
+     * @return AppCustomContentDAOImpl instance.
+     */
+    private AppCustomContentDAO getAppCustomContentDAO() {
+
+        return AppCustomContentDAOImpl.getInstance();
+    }
+
+    /**
+     * Get the singleton instance of CustomContentCache.
+     *
+     * @return CustomContentCache instance.
+     */
+    private CustomContentCache getCustomContentCache() {
+
+        return CustomContentCache.getInstance();
     }
 }

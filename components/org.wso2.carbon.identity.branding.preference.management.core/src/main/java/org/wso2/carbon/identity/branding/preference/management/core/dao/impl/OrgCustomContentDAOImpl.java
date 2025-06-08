@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.branding.preference.management.core.dao.impl;
 
 import org.wso2.carbon.database.utils.jdbc.NamedJdbcTemplate;
+import org.wso2.carbon.database.utils.jdbc.NamedTemplate;
 import org.wso2.carbon.database.utils.jdbc.exceptions.DataAccessException;
 import org.wso2.carbon.database.utils.jdbc.exceptions.TransactionException;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.OrgCustomContentDAO;
@@ -29,23 +30,19 @@ import org.wso2.carbon.identity.core.util.JdbcUtils;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_CSS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CONTENT_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.CREATED_AT;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.TENANT_ID;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTableColumns.UPDATED_AT;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_CSS;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_HTML;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_JS;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.CustomContentTableColumns.CONTENT;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.CustomContentTableColumns.CONTENT_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.CustomContentTableColumns.TENANT_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.DELETE_ORG_CUSTOM_CONTENT_SQL;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.GET_ORG_CUSTOM_CONTENT_SQL;
 import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.SQLConstants.INSERT_ORG_CUSTOM_CONTENT_SQL;
@@ -56,13 +53,25 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
  */
 class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
 
+    private static final OrgCustomContentDAO instance = new OrgCustomContentDAOImpl();
+
+    private OrgCustomContentDAOImpl() {}
+
+    public static OrgCustomContentDAO getInstance() {
+
+        return instance;
+    }
+
     @Override
     public void addOrgCustomContent(CustomLayoutContent content, int tenantId) throws BrandingPreferenceMgtException {
 
-        NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
+        NamedJdbcTemplate jdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try {
-            insertContent(template, content, tenantId);
-        } catch (DataAccessException e) {
+            jdbcTemplate.withTransaction(template -> {
+                insertContent(template, content, tenantId);
+                return null;
+            });
+        } catch (TransactionException e) {
             throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
@@ -71,12 +80,11 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
     public void updateOrgCustomContent(CustomLayoutContent content, int tenantId)
             throws BrandingPreferenceMgtException {
 
-        NamedJdbcTemplate transactionTemplate = JdbcUtils.getNewNamedJdbcTemplate();
+        NamedJdbcTemplate jdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try {
-            transactionTemplate.withTransaction(newTemplate -> {
-                NamedJdbcTemplate executionTemplate = JdbcUtils.getNewNamedJdbcTemplate();
-                deleteContent(executionTemplate, tenantId);
-                insertContent(executionTemplate, content, tenantId);
+            jdbcTemplate.withTransaction(template -> {
+                deleteContent(template, tenantId);
+                insertContent(template, content, tenantId);
                 return null;
             });
         } catch (TransactionException e) {
@@ -87,35 +95,38 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
     @Override
     public CustomLayoutContent getOrgCustomContent(int tenantId) throws BrandingPreferenceMgtException {
 
-        NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
+        NamedJdbcTemplate jdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         CustomLayoutContent.CustomLayoutContentBuilder customLayoutContentBuilder =
                 new CustomLayoutContent.CustomLayoutContentBuilder();
         try {
-            template.executeQuery(
-                    GET_ORG_CUSTOM_CONTENT_SQL,
-                    (resultSet, rowNum) -> {
-                        String type = resultSet.getString(CONTENT_TYPE);
-                        String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
+            jdbcTemplate.withTransaction(template -> {
+                template.executeQuery(
+                        GET_ORG_CUSTOM_CONTENT_SQL,
+                        (resultSet, rowNum) -> {
+                            String type = resultSet.getString(CONTENT_TYPE);
+                            String content = new String(resultSet.getBytes(CONTENT), StandardCharsets.UTF_8);
 
-                        switch (type) {
-                            case CONTENT_TYPE_HTML:
-                                customLayoutContentBuilder.setHtml(content);
-                                break;
-                            case CONTENT_TYPE_CSS:
-                                customLayoutContentBuilder.setCss(content);
-                                break;
-                            case CONTENT_TYPE_JS:
-                                customLayoutContentBuilder.setJs(content);
-                                break;
+                            switch (type) {
+                                case CONTENT_TYPE_HTML:
+                                    customLayoutContentBuilder.setHtml(content);
+                                    break;
+                                case CONTENT_TYPE_CSS:
+                                    customLayoutContentBuilder.setCss(content);
+                                    break;
+                                case CONTENT_TYPE_JS:
+                                    customLayoutContentBuilder.setJs(content);
+                                    break;
+                            }
+                            return null;
+                        },
+                        namedPreparedStatement -> {
+                            namedPreparedStatement.setInt(TENANT_ID, tenantId);
                         }
-                        return null;
-                    },
-                    namedPreparedStatement -> {
-                        namedPreparedStatement.setInt(TENANT_ID, tenantId);
-                    }
-                                 );
+                                     );
+                return null;
+            });
             return customLayoutContentBuilder.build();
-        } catch (DataAccessException e) {
+        } catch (TransactionException e) {
             throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
@@ -123,10 +134,13 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
     @Override
     public void deleteOrgCustomContent(int tenantId) throws BrandingPreferenceMgtException {
 
-        NamedJdbcTemplate template = JdbcUtils.getNewNamedJdbcTemplate();
+        NamedJdbcTemplate jdbcTemplate = JdbcUtils.getNewNamedJdbcTemplate();
         try {
-            deleteContent(template, tenantId);
-        } catch (DataAccessException e) {
+            jdbcTemplate.withTransaction(template -> {
+                deleteContent(template, tenantId);
+                return null;
+            });
+        } catch (TransactionException e) {
             throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, String.valueOf(tenantId), e);
         }
     }
@@ -139,7 +153,7 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
      * @param tenantId Tenant ID.
      * @throws DataAccessException If an error occurs during content insertion.
      */
-    private void insertContent(NamedJdbcTemplate template, CustomLayoutContent content, int tenantId)
+    private void insertContent(NamedTemplate<Object> template, CustomLayoutContent content, int tenantId)
             throws DataAccessException {
 
         Map<String, String> contents = BrandingPreferenceMgtUtils.resolveContentTypes(content);
@@ -149,7 +163,6 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
         }
 
         Iterator<String> iterator = contents.keySet().iterator();
-        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
         if (contents.size() == 1) {
             String contentKey = iterator.next();
             template.executeInsert(INSERT_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -158,8 +171,6 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
                         contents.get(contentKey).length());
                 namedPreparedStatement.setString(CONTENT_TYPE, contentKey);
                 namedPreparedStatement.setInt(TENANT_ID, tenantId);
-                namedPreparedStatement.setTimeStamp(CREATED_AT, timestamp, null);
-                namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
             }, null, false);
         } else {
             template.executeBatchInsert(INSERT_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
@@ -171,8 +182,6 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
                             contents.get(contentKey).length());
                     namedPreparedStatement.setString(CONTENT_TYPE, contentKey);
                     namedPreparedStatement.setInt(TENANT_ID, tenantId);
-                    namedPreparedStatement.setTimeStamp(CREATED_AT, timestamp, null);
-                    namedPreparedStatement.setTimeStamp(UPDATED_AT, timestamp, null);
                     namedPreparedStatement.addBatch();
                 }
             }, null);
@@ -186,7 +195,7 @@ class OrgCustomContentDAOImpl implements OrgCustomContentDAO {
      * @param tenantId Tenant ID.
      * @throws DataAccessException If an error occurs during content deletion.
      */
-    private void deleteContent(NamedJdbcTemplate template, int tenantId) throws DataAccessException {
+    private void deleteContent(NamedTemplate<Object> template, int tenantId) throws DataAccessException {
 
         template.executeUpdate(DELETE_ORG_CUSTOM_CONTENT_SQL, namedPreparedStatement -> {
             namedPreparedStatement.setInt(TENANT_ID, tenantId);

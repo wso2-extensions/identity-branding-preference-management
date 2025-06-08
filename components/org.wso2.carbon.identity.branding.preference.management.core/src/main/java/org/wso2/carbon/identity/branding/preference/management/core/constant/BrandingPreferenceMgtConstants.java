@@ -193,4 +193,14 @@ public class BrandingPreferenceMgtConstants {
             return code + ":" + message;
         }
     }
+
+    /**
+     * Defines constants for custom layout content types.
+     */
+    public static class CustomContentTypes {
+
+        public static final String CONTENT_TYPE_HTML = "html";
+        public static final String CONTENT_TYPE_CSS = "css";
+        public static final String CONTENT_TYPE_JS = "js";
+    }
 }

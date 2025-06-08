@@ -419,7 +419,7 @@
         </identity.organization.management.core.imp.pkg.version.range>
 
         <!--Carbon Database Utils Version-->
-        <org.wso2.carbon.database.utils.version>2.2.2</org.wso2.carbon.database.utils.version>
+        <org.wso2.carbon.database.utils.version>2.2.8</org.wso2.carbon.database.utils.version>
         <org.wso2.carbon.database.utils.version.range>[2.1.0,3.0.0)</org.wso2.carbon.database.utils.version.range>
 
         <!-- Commons version -->

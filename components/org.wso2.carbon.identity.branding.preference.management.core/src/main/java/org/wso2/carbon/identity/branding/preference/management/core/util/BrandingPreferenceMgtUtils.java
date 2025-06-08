@@ -42,6 +42,9 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_LAYOUT;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_CSS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.IS_BRANDING_ENABLED;
@@ -49,9 +52,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LAYOUT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LOCAL_CODE_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_CSS;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_HTML;
-import static org.wso2.carbon.identity.branding.preference.management.core.dao.constants.DAOConstants.CustomContentTypes.CONTENT_TYPE_JS;
 
 /**
  * Util class for branding preference management.
