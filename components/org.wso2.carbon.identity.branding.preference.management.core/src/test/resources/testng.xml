@@ -28,6 +28,7 @@
             <class name="org.wso2.carbon.identity.branding.preference.management.core.dao.impl.AppCustomContentDAOImplTest"/>
             <class name="org.wso2.carbon.identity.branding.preference.management.core.dao.impl.OrgCustomContentDAOImplTest"/>
             <class name="org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentDAOImplTest"/>
+            <class name="org.wso2.carbon.identity.branding.preference.management.core.listener.IdentityTenantMgtListenerTest"/>
         </classes>
     </test>
 </suite>
