@@ -18,22 +18,20 @@
 
 package org.wso2.carbon.identity.branding.preference.resolver;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.database.utils.jdbc.exceptions.TransactionException;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
-import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
@@ -50,6 +48,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.core.ThreadLocalAwareExecutors;
+import org.wso2.carbon.identity.core.util.JdbcUtils;
 import org.wso2.carbon.identity.organization.management.application.OrgApplicationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
@@ -71,13 +70,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ACTIVE_LAYOUT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS;
@@ -87,13 +82,8 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_CLEARING_CUSTOM_TEXT_PREFERENCE_RESOLVER_CACHE_HIERARCHY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LAYOUT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
@@ -835,31 +825,37 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
             String resourceName = getResourceName(type, name, locale);
             String resourceType = getResourceType(type);
-            List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(resourceType, resourceName);
-            if (resourceFiles.isEmpty()) {
-                return Optional.empty();
-            }
-            if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
-                return Optional.empty();
-            }
+            return JdbcUtils.getNewNamedJdbcTemplate().withTransaction((template) -> {
+                List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(resourceType, resourceName);
+                if (resourceFiles.isEmpty()) {
+                    return Optional.empty();
+                }
+                if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
+                    return Optional.empty();
+                }
+                InputStream inputStream = getConfigurationManager().getFileById
+                        (resourceType, resourceName, resourceFiles.get(0).getId());
+                if (inputStream == null) {
+                    return Optional.empty();
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
+                }
+                String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
 
-            InputStream inputStream = getConfigurationManager().getFileById
-                    (resourceType, resourceName, resourceFiles.get(0).getId());
-            if (inputStream == null) {
-                return Optional.empty();
+                return Optional.of(buildBrandingPreference(inputStream, type, name, locale, resolvedSourceName));
+            });
+        } catch (TransactionException e) {
+            BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
+            if (e.getCause() instanceof IOException) {
+                throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, tenantDomain);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
+            if (e.getCause() instanceof ConfigurationManagementException) {
+                ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
+                if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
+                    throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, cmException);
+                }
             }
-            String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
-
-            return Optional.of(buildBrandingPreference(inputStream, type, name, locale, resolvedSourceName));
-        } catch (ConfigurationManagementException e) {
-            if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
-            }
-        } catch (IOException e) {
-            throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, tenantDomain);
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }

@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.database.utils.jdbc.exceptions.TransactionException;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
@@ -39,6 +40,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.util.JdbcUtils;
 import org.wso2.carbon.identity.event.IdentityEventException;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -103,9 +105,6 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
 
     private static final Log LOG = LogFactory.getLog(BrandingPreferenceManagerImpl.class);
 
-    private static final CustomContentPersistentDAO CUSTOM_CONTENT_DAO =
-            CustomContentPersistentFactory.getCustomContentPersistentDAO();
-
     @Override
     public BrandingPreference addBrandingPreference(BrandingPreference brandingPreference)
             throws BrandingPreferenceMgtException {
@@ -135,23 +134,32 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
-            Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
-            getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
-            getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
-                    brandingPreference.getName(), tenantDomain);
-            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
-                    brandingPreference.getName() : null;
-            CustomLayoutContent customLayoutContent =
-                    BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
-            if (customLayoutContent != null) {
-                CUSTOM_CONTENT_DAO.addCustomContent(customLayoutContent, appName, tenantDomain);
-            }
-        } catch (ConfigurationManagementException e) {
-            if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Branding preferences are already exists for tenant: " + tenantDomain, e);
+            JdbcUtils.getNewNamedJdbcTemplate().withTransaction((template) -> {
+                Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
+                getConfigurationManager().addResource(resourceType, brandingPreferenceResource);
+                getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(brandingPreference.getType(),
+                        brandingPreference.getName(), tenantDomain);
+                String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                        brandingPreference.getName() : null;
+                CustomLayoutContent customLayoutContent =
+                        BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
+                if (customLayoutContent != null) {
+                    getCustomContentPersistentDAO().addCustomContent(customLayoutContent, appName, tenantDomain);
                 }
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
+                return null;
+            });
+        } catch (TransactionException e) {
+            BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
+            if (e.getCause() instanceof ConfigurationManagementException) {
+                ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
+                if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain,
+                                cmException);
+                    }
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, tenantDomain);
+                }
+                throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, cmException);
             }
             throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, e);
         } catch (IOException e) {
@@ -172,33 +180,46 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         String tenantDomain = getTenantDomain();
         try {
             // Return default branding preference.
-            List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(resourceType, resourceName);
-            if (resourceFiles.isEmpty()) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
-            }
-            if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
-            }
-
-            InputStream inputStream = getConfigurationManager().getFileById
-                    (resourceType, resourceName, resourceFiles.get(0).getId());
-            if (inputStream == null) {
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
-            }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
-            }
-            return buildBrandingPreferenceFromResource(inputStream, type, name, locale);
-        } catch (ConfigurationManagementException e) {
-            if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain, e);
+            return JdbcUtils.getNewNamedJdbcTemplate().withTransaction((template) -> {
+                List<ResourceFile> resourceFiles = getConfigurationManager().getFiles(resourceType, resourceName);
+                if (resourceFiles.isEmpty()) {
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name,
+                            tenantDomain);
                 }
-                throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
+                if (StringUtils.isBlank(resourceFiles.get(0).getId())) {
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name,
+                            tenantDomain);
+                }
+
+                InputStream inputStream = getConfigurationManager().getFileById
+                        (resourceType, resourceName, resourceFiles.get(0).getId());
+                if (inputStream == null) {
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name,
+                            tenantDomain);
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
+                }
+                return buildBrandingPreferenceFromResource(inputStream, type, name, locale);
+            });
+        } catch (TransactionException e) {
+            BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
+            if (e.getCause() instanceof IOException) {
+                throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, tenantDomain);
+            }
+            if (e.getCause() instanceof ConfigurationManagementException) {
+                ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
+                if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain,
+                                cmException);
+                    }
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name,
+                            tenantDomain);
+                }
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, cmException);
             }
             throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, e);
-        } catch (IOException e) {
-            throw handleServerException(ERROR_CODE_ERROR_BUILDING_BRANDING_PREFERENCE, tenantDomain);
         }
     }
 
@@ -256,18 +277,25 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
         preferencesJSON = generatePreferencesJSONFromPreference(brandingPreference.getPreference());
 
         try (InputStream inputStream = new ByteArrayInputStream(preferencesJSON.getBytes(StandardCharsets.UTF_8))) {
-            Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
-            getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
-            clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
-
-            String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
-                    brandingPreference.getName() : null;
-            CustomLayoutContent customLayoutContent =
-                    BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
-            if (customLayoutContent != null) {
-                CUSTOM_CONTENT_DAO.updateCustomContent(customLayoutContent, appName, tenantDomain);
+            JdbcUtils.getNewNamedJdbcTemplate().withTransaction((template) -> {
+                Resource brandingPreferenceResource = buildResource(resourceName, inputStream);
+                getConfigurationManager().replaceResource(resourceType, brandingPreferenceResource);
+                clearBrandingResolverCacheIfRequired(oldBrandingPreference, brandingPreference, tenantDomain);
+                String appName = APPLICATION_TYPE.equals(brandingPreference.getType()) ?
+                        brandingPreference.getName() : null;
+                CustomLayoutContent customLayoutContent =
+                        BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
+                if (customLayoutContent != null) {
+                    getCustomContentPersistentDAO().updateCustomContent(customLayoutContent, appName, tenantDomain);
+                }
+                return null;
+            });
+        } catch (TransactionException | IOException e) {
+            BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
+            if (e.getCause() instanceof ConfigurationManagementException) {
+                ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
+                throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, cmException);
             }
-        } catch (ConfigurationManagementException | IOException e) {
             throw handleServerException(ERROR_CODE_ERROR_UPDATING_BRANDING_PREFERENCE, tenantDomain, e);
         }
         if (LOG.isDebugEnabled()) {
@@ -288,11 +316,15 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, type, name, tenantDomain);
         }
         try {
-            getConfigurationManager().deleteResource(resourceType, resourceName);
-            getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
-            String appName = APPLICATION_TYPE.equals(type) ? name : null;
-            CUSTOM_CONTENT_DAO.deleteCustomContent(appName, tenantDomain);
-        } catch (ConfigurationManagementException e) {
+            JdbcUtils.getNewNamedJdbcTemplate().withTransaction((template) -> {
+                getConfigurationManager().deleteResource(resourceType, resourceName);
+                getUIBrandingPreferenceResolver().clearBrandingResolverCacheHierarchy(type, name, tenantDomain);
+                String appName = APPLICATION_TYPE.equals(type) ? name : null;
+                getCustomContentPersistentDAO().deleteCustomContent(appName, tenantDomain);
+                return null;
+            });
+        } catch (TransactionException e) {
+            BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
             throw handleServerException(ERROR_CODE_ERROR_DELETING_BRANDING_PREFERENCE, tenantDomain);
         }
         if (LOG.isDebugEnabled()) {
@@ -766,5 +798,15 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
     private UIBrandingPreferenceResolver getUIBrandingPreferenceResolver() {
 
         return BrandingPreferenceManagerComponentDataHolder.getInstance().getUiBrandingPreferenceResolver();
+    }
+
+    /**
+     * Get custom content persistent DAO.
+     *
+     * @return CustomContentPersistentDAO instance.
+     */
+    private CustomContentPersistentDAO getCustomContentPersistentDAO() {
+
+        return CustomContentPersistentFactory.getCustomContentPersistentDAO();
     }
 }

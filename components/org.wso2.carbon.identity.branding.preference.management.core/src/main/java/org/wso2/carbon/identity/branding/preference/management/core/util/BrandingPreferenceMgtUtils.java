@@ -339,4 +339,26 @@ public class BrandingPreferenceMgtUtils {
             }
         }
     }
+
+    /**
+     * Handle exceptions related to branding preference management.
+     *
+     * @param t Throwable instance.
+     * @throws BrandingPreferenceMgtException Throws appropriate BrandingPreferenceMgtException based on the type
+     *                                        of the Throwable.
+     */
+    public static void handleBrandingMgtException(Throwable t) throws BrandingPreferenceMgtException {
+
+        if (t == null) {
+            return;
+        }
+
+        if (t instanceof BrandingPreferenceMgtClientException) {
+            throw (BrandingPreferenceMgtClientException) t;
+        } else if (t instanceof BrandingPreferenceMgtServerException) {
+            throw (BrandingPreferenceMgtServerException) t;
+        } else if (t instanceof BrandingPreferenceMgtException) {
+            throw (BrandingPreferenceMgtException) t;
+        }
+    }
 }
