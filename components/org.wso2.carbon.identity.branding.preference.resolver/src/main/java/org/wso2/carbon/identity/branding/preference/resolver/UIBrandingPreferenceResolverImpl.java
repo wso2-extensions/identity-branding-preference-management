@@ -853,7 +853,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             if (e.getCause() instanceof ConfigurationManagementException) {
                 ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
                 if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
-                    throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain, cmException);
+                    throw handleServerException(ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE, tenantDomain,
+                            cmException);
                 }
             }
         } finally {
