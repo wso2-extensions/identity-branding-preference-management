@@ -31,11 +31,6 @@ import org.wso2.carbon.identity.branding.preference.management.core.dao.cache.Or
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT;
-import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.handleServerException;
 import static org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId;
 
 /**
@@ -51,21 +46,13 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
 
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
-            try {
-                getOrgCustomContentDAO().addOrgCustomContent(customLayoutContent, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
-            }
+            getOrgCustomContentDAO().addOrgCustomContent(customLayoutContent, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for tenant: %s successfully added.", tenantDomain));
             }
         } else {
-            try {
-                getAppCustomContentDAO().addAppCustomContent(customLayoutContent, applicationUuid, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_ADDING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
-            }
+            getAppCustomContentDAO().addAppCustomContent(customLayoutContent, applicationUuid, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for application: %s for tenant: %s " + "successfully added.",
@@ -80,21 +67,13 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
 
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
-            try {
-                getOrgCustomContentDAO().updateOrgCustomContent(customLayoutContent, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
-            }
+            getOrgCustomContentDAO().updateOrgCustomContent(customLayoutContent, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for tenant: %s successfully updated.", tenantDomain));
             }
         } else {
-            try {
-                getAppCustomContentDAO().updateAppCustomContent(customLayoutContent, applicationUuid, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_UPDATING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
-            }
+            getAppCustomContentDAO().updateAppCustomContent(customLayoutContent, applicationUuid, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for application: %s for tenant: %s " + "successfully updated.",
@@ -117,22 +96,13 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         int tenantId = getTenantId(tenantDomain);
         CustomLayoutContent customLayoutContent = null;
         if (StringUtils.isBlank(applicationUuid)) {
-            try {
-                customLayoutContent = getOrgCustomContentDAO().getOrgCustomContent(tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT,
-                        tenantDomain, e);
-            }
+            customLayoutContent = getOrgCustomContentDAO().getOrgCustomContent(tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for tenant: %s successfully retrieved.", tenantDomain));
             }
         } else {
-            try {
-                customLayoutContent = getAppCustomContentDAO().getAppCustomContent(applicationUuid, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
-            }
+            customLayoutContent = getAppCustomContentDAO().getAppCustomContent(applicationUuid, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout Content for application: %s for tenant: %s " +
@@ -149,21 +119,13 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
 
         int tenantId = getTenantId(tenantDomain);
         if (StringUtils.isBlank(applicationUuid)) {
-            try {
-                getOrgCustomContentDAO().deleteOrgCustomContent(tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, tenantDomain, e);
-            }
+            getOrgCustomContentDAO().deleteOrgCustomContent(tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for tenant: %s successfully deleted.", tenantDomain));
             }
         } else {
-            try {
-                getAppCustomContentDAO().deleteAppCustomContent(applicationUuid, tenantId);
-            } catch (BrandingPreferenceMgtException e) {
-                throw handleServerException(ERROR_CODE_ERROR_DELETING_CUSTOM_LAYOUT_CONTENT, applicationUuid, e);
-            }
+            getAppCustomContentDAO().deleteAppCustomContent(applicationUuid, tenantId);
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "Custom Layout content for application: %s for tenant: %s " +
