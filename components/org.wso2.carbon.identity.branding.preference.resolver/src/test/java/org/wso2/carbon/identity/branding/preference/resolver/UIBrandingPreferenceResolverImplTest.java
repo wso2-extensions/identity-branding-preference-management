@@ -24,12 +24,15 @@ import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.context.internal.OSGiDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
@@ -43,6 +46,7 @@ import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -59,10 +63,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.sql.DataSource;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -98,6 +105,13 @@ public class UIBrandingPreferenceResolverImplTest {
     private BrandedAppCache brandedAppCache;
     @Mock
     private TextCustomizedOrgCache textCustomizedOrgCache;
+    @Mock
+    private CustomContentPersistentDAO customContentPersistentDAO;
+    @Mock
+    private Connection connection;
+
+    private MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory;
+    private MockedStatic<IdentityDatabaseUtil> mockedIdentityDatabaseUtil;
 
     private UIBrandingPreferenceResolver brandingPreferenceResolver;
 
@@ -118,6 +132,15 @@ public class UIBrandingPreferenceResolverImplTest {
         openMocks(this);
         setCarbonHome();
 
+        mockedCustomContentPersistentFactory = mockStatic(CustomContentPersistentFactory.class);
+        mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                .thenReturn(customContentPersistentDAO);
+
+        mockedIdentityDatabaseUtil = mockStatic(IdentityDatabaseUtil.class);
+        DataSource dataSource = mock(DataSource.class);
+        mockedIdentityDatabaseUtil.when(IdentityDatabaseUtil::getDataSource).thenReturn(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+
         BrandingResolverComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
         BrandingResolverComponentDataHolder.getInstance().setOrganizationManager(organizationManager);
         BrandingResolverComponentDataHolder.getInstance().setOrgApplicationManager(orgApplicationManager);
@@ -127,6 +150,13 @@ public class UIBrandingPreferenceResolverImplTest {
 
         brandingPreferenceResolver =
                 new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedCustomContentPersistentFactory.close();
+        mockedIdentityDatabaseUtil.close();
     }
 
     @Test
