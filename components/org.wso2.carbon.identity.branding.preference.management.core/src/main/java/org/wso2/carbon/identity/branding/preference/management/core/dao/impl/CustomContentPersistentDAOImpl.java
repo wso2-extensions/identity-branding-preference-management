@@ -109,9 +109,9 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
             throws BrandingPreferenceMgtException {
 
         // Check if the content is already cached.
-        CustomLayoutContent cachedContent = getCacheEntry(applicationUuid, tenantDomain);
-        if (cachedContent != null) {
-            return cachedContent;
+        CustomContentCacheEntry cacheEntry = getCacheEntry(applicationUuid, tenantDomain);
+        if (cacheEntry != null) {
+            return cacheEntry.getCustomLayoutContent();
         }
 
         int tenantId = getTenantId(tenantDomain);
@@ -194,9 +194,9 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
      *
      * @param applicationUuid Application UUID, if applicable.
      * @param tenantDomain    Tenant domain.
-     * @return Cached Custom Layout Content or null if not found.
+     * @return Custom cache entry containing the custom layout content, or null if not found.
      */
-    private CustomLayoutContent getCacheEntry(String applicationUuid, String tenantDomain) {
+    private CustomContentCacheEntry getCacheEntry(String applicationUuid, String tenantDomain) {
 
         CustomContentCacheEntry cacheEntry;
         if (StringUtils.isBlank(applicationUuid)) {
@@ -207,7 +207,6 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
                     log.debug(String.format(
                             "Custom Layout content for tenant: %s retrieved from cache.", tenantDomain));
                 }
-                return cacheEntry.getCustomLayoutContent();
             }
         } else {
             cacheEntry = getCustomContentCache().getValueFromCache(
@@ -218,10 +217,9 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
                             "Custom Layout content for application: %s for tenant: %s retrieved from cache.",
                             applicationUuid, tenantDomain));
                 }
-                return cacheEntry.getCustomLayoutContent();
             }
         }
-        return null;
+        return cacheEntry;
     }
 
     /**
@@ -233,10 +231,6 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
      */
     private void addCustomContentToCache(CustomLayoutContent customLayoutContent, String applicationUuid,
             String tenantDomain) {
-
-        if (customLayoutContent == null) {
-            return;
-        }
 
         CustomContentCacheEntry cacheEntry = new CustomContentCacheEntry(customLayoutContent);
         if (StringUtils.isBlank(applicationUuid)) {

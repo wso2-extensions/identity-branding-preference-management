@@ -24,5 +24,13 @@
   },
   "configs": {
     "isBrandingEnabled": true
+  },
+  "layout": {
+    "activeLayout": "custom",
+    "content": {
+      "html": "<h1>Welcome to Bifrost</h1>{{{MainSection}}}<p>Experience the bridge between worlds.</p>",
+      "css": "h1 { color: #e73940; } p { font-size: 16px; }",
+      "js": "console.log('Welcome to Bifrost');"
+    }
   }
 }

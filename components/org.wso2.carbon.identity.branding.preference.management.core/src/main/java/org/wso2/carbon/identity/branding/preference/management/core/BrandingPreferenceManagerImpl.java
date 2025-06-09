@@ -152,12 +152,11 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
             BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
             if (e.getCause() instanceof ConfigurationManagementException) {
                 ConfigurationManagementException cmException = (ConfigurationManagementException) e.getCause();
-                if (RESOURCE_NOT_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
+                if (RESOURCE_ALREADY_EXISTS_ERROR_CODE.equals(cmException.getErrorCode())) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Can not find a branding preference configurations for tenant: " + tenantDomain,
-                                cmException);
+                        LOG.debug("Branding preferences are already exists for tenant: " + tenantDomain, cmException);
                     }
-                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED, tenantDomain);
+                    throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_ALREADY_EXISTS, tenantDomain);
                 }
                 throw handleServerException(ERROR_CODE_ERROR_ADDING_BRANDING_PREFERENCE, tenantDomain, cmException);
             }

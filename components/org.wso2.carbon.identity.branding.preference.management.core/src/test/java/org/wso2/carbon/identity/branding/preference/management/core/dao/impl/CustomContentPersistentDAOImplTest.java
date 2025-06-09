@@ -23,6 +23,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.cache.CustomContentCache;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
@@ -74,6 +75,10 @@ public class CustomContentPersistentDAOImplTest {
         mockedIdentityTenantUtil = mockStatic(IdentityTenantUtil.class);
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN_1)).thenReturn(TENANT_ID_1);
         mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN_2)).thenReturn(TENANT_ID_2);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantDomain(TENANT_ID_1))
+                .thenReturn(TENANT_DOMAIN_1);
+        mockedIdentityTenantUtil.when(() -> IdentityTenantUtil.getTenantDomain(TENANT_ID_2))
+                .thenReturn(TENANT_DOMAIN_2);
     }
 
     @AfterClass
@@ -124,6 +129,9 @@ public class CustomContentPersistentDAOImplTest {
         customContentPersistentDAO.getCustomContent(null, TENANT_DOMAIN_1);
         verify(orgCustomContentDAO).getOrgCustomContent(TENANT_ID_1);
         clearInvocations(orgCustomContentDAO);
+        assertNull(customContentPersistentDAO.getCustomContent(null, TENANT_DOMAIN_1));
+        verifyNoInteractions(orgCustomContentDAO);
+        CustomContentCache.getInstance().clear(TENANT_ID_1);
         when(orgCustomContentDAO.getOrgCustomContent(TENANT_ID_1)).thenReturn(customLayoutContent);
         customContentPersistentDAO.getCustomContent(null, TENANT_DOMAIN_1);
         verify(orgCustomContentDAO).getOrgCustomContent(TENANT_ID_1);
