@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -725,21 +725,21 @@ public class BrandingPreferenceManagerImplTest {
         brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
 
         // Test the failure of deleting custom layout content.
-//        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
-//                CustomContentPersistentFactory.class)) {
-//            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
-//            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
-//                    .thenReturn(customContentPersistentDAO);
-//            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
-//                    .deleteCustomContent(anyString(), anyString());
-//            assertThrows(BrandingPreferenceMgtServerException.class,
-//                    () -> brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE,
-//                            SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE));
-//            // Verify transaction rollback.
-//            BrandingPreference currentBP = brandingPreferenceManagerImpl
-//                    .getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE);
-//            assertEquals(currentBP.getPreference(), brandingPreference.getPreference());
-//        }
+        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
+                CustomContentPersistentFactory.class)) {
+            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
+            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                    .thenReturn(customContentPersistentDAO);
+            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
+                    .deleteCustomContent(anyString(), anyString());
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE,
+                            SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE));
+            // Verify transaction rollback.
+            BrandingPreference currentBP = brandingPreferenceManagerImpl
+                    .getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE);
+            assertEquals(currentBP.getPreference(), brandingPreference.getPreference());
+        }
 
         // Test the failure of replacing branding config in configuration store.
         ConfigurationManager configurationManager = BrandingPreferenceManagerComponentDataHolder.getInstance()
