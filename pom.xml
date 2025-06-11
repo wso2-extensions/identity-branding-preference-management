@@ -410,6 +410,9 @@
         <carbon.identity.framework.version>7.8.200-SNAPSHOT</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
 
+        <!--Carbon commons version-->
+        <carbon.commons.imp.pkg.version>[4.7.2, 5.0.0)</carbon.commons.imp.pkg.version>
+
         <!-- Org management dependency versions-->
         <identity.organization.management.version>1.4.42</identity.organization.management.version>
         <identity.organization.management.imp.pkg.version.range>[1.0.0,3.0.0)
