@@ -162,6 +162,7 @@
                             org.wso2.carbon.identity.organization.management.service.exception; version="${identity.organization.management.core.imp.pkg.version.range}",
                             org.wso2.carbon.identity.organization.management.service.model; version="${identity.organization.management.core.imp.pkg.version.range}",
                             org.wso2.carbon.identity.organization.management.service.util; version="${identity.organization.management.core.imp.pkg.version.range}",
+                            org.wso2.carbon.database.utils.jdbc.exceptions;version="${org.wso2.carbon.database.utils.version.range}"
                         </Import-Package>
                     </instructions>
                 </configuration>
