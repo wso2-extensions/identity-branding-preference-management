@@ -66,6 +66,10 @@
             <artifactId>org.wso2.carbon.identity.ai.service.mgt</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.flow.execution.engine</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
         </dependency>
@@ -179,7 +183,7 @@
                             org.wso2.carbon.identity.ai.service.mgt.*; version="${carbon.identity.package.import.version.range}",
                             org.wso2.carbon.utils;version="${carbon.kernel.package.import.version.range}",
                             org.wso2.carbon.stratos.common.listeners;version="${carbon.commons.imp.pkg.version}",
-
+                            org.wso2.carbon.identity.flow.execution.engine.*; version="${carbon.identity.package.import.version.range}",
                             org.json; version="${json.wso2.version.range}",
                         </Import-Package>
                     </instructions>
