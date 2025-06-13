@@ -42,7 +42,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
  */
 public class PortalURLResolver extends AbstractFlowExecutionListener {
 
-    private static final Log log = LogFactory.getLog(PortalURLResolver.class);
+    private static final Log LOG = LogFactory.getLog(PortalURLResolver.class);
     private final BrandingPreferenceManagerImpl brandingPreferenceManager;
     public static final String SELF_SIGN_UP_URL = "selfSignUpURL";
     public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/authenticationendpoint/register.do";
@@ -78,7 +78,6 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
             if (StringUtils.isNotBlank(context.getPortalUrl())) {
                 return true;
             }
-
             String applicationId = context.getApplicationId();
             String tenantDomain = context.getTenantDomain();
             String type = StringUtils.isBlank(applicationId) ? ORGANIZATION_TYPE : APPLICATION_TYPE;
@@ -96,37 +95,38 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
                     if (StringUtils.isNotBlank(signUpUrl)) {
                         context.setPortalUrl(signUpUrl);
                     } else {
-                        log.debug("Self sign-up URL not configured for tenant: " + tenantDomain +
-                                ". Using default URL.");
+                        logMissingSelfSignupUrl(context);
                         context.setPortalUrl(buildDefaultRegistrationUrl());
                     }
                 }
             }
             if (StringUtils.isBlank(context.getPortalUrl())) {
-                log.debug(String.format("No branding preference found for type: %s, name: %s, tenant: %s." +
-                        " Using default URL.", type, name, tenantDomain));
+                logMissingSelfSignupUrl(context);
                 context.setPortalUrl(buildDefaultRegistrationUrl());
             }
             return true;
         } catch (BrandingPreferenceMgtClientException e) {
-            log.debug("Self sign-up URL not configured for tenant: " + context.getTenantDomain() +
-                    ". Using default URL.");
+            logMissingSelfSignupUrl(context);
             try {
                 context.setPortalUrl(buildDefaultRegistrationUrl());
             } catch (URLBuilderException ex) {
-                log.error("Failed to build default registration URL for tenant: " + context.getTenantDomain(), ex);
+                LOG.error("Failed to build default registration URL for tenant: " + context.getTenantDomain(), ex);
                 return false;
             }
             return true;
-
         } catch (BrandingPreferenceMgtException e) {
-            log.error("Error retrieving branding preference for tenant: " + context.getTenantDomain(), e);
+            LOG.error("Error retrieving branding preference for tenant: " + context.getTenantDomain(), e);
             return false;
-
         } catch (URLBuilderException e) {
-            log.error("Error building default registration portal URL for tenant: " + context.getTenantDomain(), e);
+            LOG.error("Error building default registration portal URL for tenant: " + context.getTenantDomain(), e);
             return false;
         }
+    }
+
+    private static void logMissingSelfSignupUrl(FlowExecutionContext context) {
+
+        LOG.debug("Self sign-up URL not configured for tenant: " + context.getTenantDomain() + ". Using default URL: "
+        + DEFAULT_REGISTRATION_PORTAL_URL);
     }
 
     private String buildDefaultRegistrationUrl() throws URLBuilderException {
