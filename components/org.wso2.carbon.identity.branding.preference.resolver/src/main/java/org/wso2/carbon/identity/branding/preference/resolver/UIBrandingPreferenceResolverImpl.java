@@ -592,6 +592,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         OrganizationManager organizationManager =
                 BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
+        if (StringUtils.isBlank(organizationId)) {
+            try {
+                organizationId = organizationManager.resolveOrganizationId(currentTenantDomain);
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, currentTenantDomain);
+            }
+        }
 
         /* Tenant domain will always be carbon.super for SaaS apps (ex. myaccount). Hence need to resolve
           tenant domain from the name parameter. */

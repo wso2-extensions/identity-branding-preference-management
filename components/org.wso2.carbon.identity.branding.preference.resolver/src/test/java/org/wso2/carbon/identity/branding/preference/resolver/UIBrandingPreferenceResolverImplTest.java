@@ -31,13 +31,16 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.context.internal.OSGiDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
 import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
@@ -49,6 +52,9 @@ import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.identity.organization.management.application.OrgApplicationManager;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
+import org.wso2.carbon.identity.organization.management.service.model.Organization;
+import org.wso2.carbon.identity.organization.management.service.model.ParentOrganizationDO;
+import org.wso2.carbon.identity.organization.management.service.util.Utils;
 import org.wso2.carbon.user.api.TenantManager;
 import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -60,9 +66,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -685,6 +694,31 @@ public class UIBrandingPreferenceResolverImplTest {
                 BrandingPreference resolvedBrandingPreference =
                         brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE,
                                 true);
+            });
+        }
+    }
+
+    @Test
+    public void testResolveCustomTextThrowsServerExceptionWhenOrgIdResolutionFails() throws Exception {
+
+        String tenantDomain = CHILD_ORG_ID;
+        String name = "orgName";
+        String screen = "LOGIN";
+
+        try (MockedStatic<PrivilegedCarbonContext> mockedContext = mockStatic(PrivilegedCarbonContext.class)) {
+            PrivilegedCarbonContext context = mock(PrivilegedCarbonContext.class);
+            mockedContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(context);
+            when(context.getOrganizationId()).thenReturn("");
+            when(context.getTenantDomain()).thenReturn(tenantDomain);
+
+            when(organizationManager.resolveOrganizationId(tenantDomain))
+                    .thenThrow(new OrganizationManagementException("error"));
+
+            UIBrandingPreferenceResolverImpl resolver =
+                    new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache);
+
+            assertThrows(BrandingPreferenceMgtException.class, () -> {
+                resolver.resolveCustomText(ORGANIZATION_TYPE, name, screen, DEFAULT_LOCALE);
             });
         }
     }
