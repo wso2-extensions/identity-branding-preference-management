@@ -24,5 +24,8 @@
   },
   "configs": {
     "isBrandingEnabled": true
+  },
+  "layout": {
+    "activeLayout": "custom"
   }
 }

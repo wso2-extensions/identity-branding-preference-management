@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,43 +18,65 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.management.core.util.ConfigurationManagementUtils;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementClientException;
+import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
+import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
+import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.user.core.UserStoreException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.TestUtils.getPreferenceFromFile;
 
 /**
@@ -65,8 +87,9 @@ public class BrandingPreferenceManagerImplTest {
 
     public static final int SAMPLE_TENANT_ID_ABC = 1;
     public static final String SAMPLE_TENANT_DOMAIN_NAME_ABC = "abc";
-    public static final String SAMPLE_APPLICATION_NAME_1 = "SampleApp1";
-    public static final String SAMPLE_APPLICATION_NAME_2 = "SampleApp2";
+    public static final String SAMPLE_APPLICATION_ID_1 = "550e8400-e29b-41d4-a716-446655440000";
+    public static final String SAMPLE_APPLICATION_ID_2 = "550e8400-e29b-41d4-a716-446655440001";
+    public static final String SAMPLE_APPLICATION_ID_3 = "550e8400-e29b-41d4-a716-446655440002";
     public static final String LOGIN_SCREEN = "login";
     public static final String FRENCH_LOCALE = "fr-FR";
 
@@ -113,7 +136,7 @@ public class BrandingPreferenceManagerImplTest {
 
         BrandingPreference brandingPreference3 = new BrandingPreference();
         brandingPreference3.setType(APPLICATION_TYPE);
-        brandingPreference3.setName(SAMPLE_APPLICATION_NAME_1);
+        brandingPreference3.setName(SAMPLE_APPLICATION_ID_1);
         brandingPreference3.setLocale(DEFAULT_LOCALE);
         brandingPreference3.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
@@ -129,13 +152,13 @@ public class BrandingPreferenceManagerImplTest {
 
         BrandingPreference brandingPreference1 = new BrandingPreference();
         brandingPreference1.setType(APPLICATION_TYPE);
-        brandingPreference1.setName(SAMPLE_APPLICATION_NAME_1);
+        brandingPreference1.setName(SAMPLE_APPLICATION_ID_1);
         brandingPreference1.setLocale(DEFAULT_LOCALE);
         brandingPreference1.setPreference(getPreferenceFromFile("sample-preference-1.json"));
 
         BrandingPreference brandingPreference2 = new BrandingPreference();
         brandingPreference2.setType(APPLICATION_TYPE);
-        brandingPreference2.setName(SAMPLE_APPLICATION_NAME_2);
+        brandingPreference2.setName(SAMPLE_APPLICATION_ID_2);
         brandingPreference2.setLocale(DEFAULT_LOCALE);
         brandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
@@ -216,10 +239,22 @@ public class BrandingPreferenceManagerImplTest {
         brandingPreference3.setLocale(DEFAULT_LOCALE);
         brandingPreference3.setPreference(new JSONObject());
 
+        BrandingPreference brandingPreference4 = new BrandingPreference();
+        brandingPreference3.setType(ORGANIZATION_TYPE);
+        brandingPreference3.setName(SUPER_TENANT_DOMAIN_NAME);
+        brandingPreference3.setLocale(DEFAULT_LOCALE);
+        JSONObject preference = new JSONObject();
+        JSONObject layout = new JSONObject();
+        layout.put("activeLayout", "custom");
+        layout.put("content", new JSONObject());
+        preference.put("layout", layout);
+        brandingPreference3.setPreference(preference);
+
         return new Object[][]{
                 {brandingPreference1},
                 {brandingPreference2},
                 {brandingPreference3},
+                {brandingPreference4},
         };
     }
 
@@ -233,6 +268,51 @@ public class BrandingPreferenceManagerImplTest {
                 .addBrandingPreference(inputBP));
         // Verify that clearBrandingResolverCacheHierarchy is never called.
         verify(resolver, never()).clearBrandingResolverCacheHierarchy(any(), any(), any());
+    }
+
+    @Test(description = "Test the transaction errors while adding branding preference.")
+    public void testTransactionErrorsWhileAddingBrandingPreference() throws Exception {
+
+        BrandingPreference brandingPreference = new BrandingPreference();
+        brandingPreference.setType(APPLICATION_TYPE);
+        brandingPreference.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreference.setLocale(DEFAULT_LOCALE);
+        brandingPreference.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        // Test the failure of adding custom layout content.
+        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
+                CustomContentPersistentFactory.class)) {
+            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
+            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                    .thenReturn(customContentPersistentDAO);
+            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
+                    .addCustomContent(any(CustomLayoutContent.class), anyString(), anyString());
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference));
+            // Verify transaction rollback.
+            try {
+                brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE);
+            } catch (BrandingPreferenceMgtClientException e) {
+                assertEquals(e.getMessage(), "Branding preferences are not configured for type: APP, name: " +
+                        "550e8400-e29b-41d4-a716-446655440002 in tenant: carbon.super.");
+            }
+        }
+
+        // Test the failure of adding branding config into configuration store.
+        ConfigurationManager configurationManager = mock(ConfigurationManager.class);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
+        doThrow(ConfigurationManagementException.class).when(configurationManager)
+                .addResource(anyString(), any(Resource.class));
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference));
+        doThrow(new ConfigurationManagementClientException("error", RESOURCE_ALREADY_EXISTS_ERROR_CODE)).when(
+                configurationManager).addResource(anyString(), any(Resource.class));
+        assertThrows(BrandingPreferenceMgtClientException.class,
+                () -> brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference));
+        doThrow(RuntimeException.class).when(configurationManager).addResource(anyString(), any(Resource.class));
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference));
     }
 
     @Test(dataProvider = "brandingPreferenceDataProvider")
@@ -311,6 +391,75 @@ public class BrandingPreferenceManagerImplTest {
                 .getBrandingPreference(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
     }
 
+    @Test(description = "Test the transaction errors while getting branding preference.")
+    public void testTransactionErrorsWhileGettingBrandingPreference() throws Exception {
+
+        BrandingPreference brandingPreference = new BrandingPreference();
+        brandingPreference.setType(APPLICATION_TYPE);
+        brandingPreference.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreference.setLocale(DEFAULT_LOCALE);
+        brandingPreference.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
+
+        // Test the failure of getting custom layout content.
+        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
+                CustomContentPersistentFactory.class)) {
+            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
+            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                    .thenReturn(customContentPersistentDAO);
+            when(customContentPersistentDAO.getCustomContent(anyString(), anyString()))
+                    .thenThrow(BrandingPreferenceMgtServerException.class);
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE,
+                            SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE));
+        }
+
+        // Test the failure of getting branding config from configuration store.
+        ConfigurationManager configurationManager = mock(ConfigurationManager.class);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
+        when(configurationManager.getFiles(anyString(), anyString())).thenReturn(new ArrayList<>());
+        assertThrows(BrandingPreferenceMgtClientException.class,
+                () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+        ResourceFile resourceFile = mock(ResourceFile.class);
+        when(resourceFile.getId()).thenReturn(null);
+        when(configurationManager.getFiles(anyString(), anyString())).thenReturn(new ArrayList<ResourceFile>() {{
+            add(resourceFile);
+        }});
+        assertThrows(BrandingPreferenceMgtClientException.class,
+                () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+        when(resourceFile.getId()).thenReturn("file-id");
+        when(configurationManager.getFileById(anyString(), anyString(), anyString())).thenReturn(null);
+        assertThrows(BrandingPreferenceMgtClientException.class,
+                () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+        when(configurationManager.getFiles(anyString(), anyString())).thenThrow(
+                ConfigurationManagementException.class);
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+        doThrow(RuntimeException.class).when(configurationManager).getFiles(anyString(), anyString());
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .setConfigurationManager(ConfigurationManagementUtils.getConfigurationManager());
+        // Test the IO exception while building the branding preference.
+        try (MockedStatic<IOUtils> mockedIOUtils = mockStatic(IOUtils.class)) {
+            mockedIOUtils.when(() -> IOUtils.toString(any(InputStream.class), anyString()))
+                    .thenThrow(IOException.class);
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.getBrandingPreference(APPLICATION_TYPE,
+                            SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE));
+        }
+
+        brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                DEFAULT_LOCALE);
+    }
+
     @DataProvider(name = "replaceBrandingPreferenceDataProvider")
     public Object[][] replaceBrandingPreferenceDataProvider() throws Exception {
 
@@ -338,9 +487,22 @@ public class BrandingPreferenceManagerImplTest {
         newBrandingPreference2.setLocale(DEFAULT_LOCALE);
         newBrandingPreference2.setPreference(getPreferenceFromFile("sample-preference-2.json"));
 
+        BrandingPreference brandingPreference3 = new BrandingPreference();
+        brandingPreference3.setType(APPLICATION_TYPE);
+        brandingPreference3.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreference3.setLocale(DEFAULT_LOCALE);
+        brandingPreference3.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        BrandingPreference newBrandingPreference3 = new BrandingPreference();
+        newBrandingPreference3.setType(APPLICATION_TYPE);
+        newBrandingPreference3.setName(SAMPLE_APPLICATION_ID_3);
+        newBrandingPreference3.setLocale(DEFAULT_LOCALE);
+        newBrandingPreference3.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
         return new Object[][]{
                 {brandingPreference1, newBrandingPreference1, SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID},
                 {brandingPreference2, newBrandingPreference2, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC},
+                {brandingPreference3, newBrandingPreference3, SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC}
         };
     }
 
@@ -458,6 +620,64 @@ public class BrandingPreferenceManagerImplTest {
                 .replaceBrandingPreference(newBP));
     }
 
+    @Test(description = "Test the transaction errors while replacing branding preference.")
+    public void testTransactionErrorsWhileReplacingBrandingPreference() throws Exception {
+
+        BrandingPreference brandingPreference = new BrandingPreference();
+        brandingPreference.setType(APPLICATION_TYPE);
+        brandingPreference.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreference.setLocale(DEFAULT_LOCALE);
+        brandingPreference.setPreference(getPreferenceFromFile("sample-preference-1.json"));
+
+        BrandingPreference brandingPreferenceNew = new BrandingPreference();
+        brandingPreferenceNew.setType(APPLICATION_TYPE);
+        brandingPreferenceNew.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreferenceNew.setLocale(DEFAULT_LOCALE);
+        brandingPreferenceNew.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
+
+        // Test the failure of updating custom layout content.
+        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
+                CustomContentPersistentFactory.class)) {
+            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
+            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                    .thenReturn(customContentPersistentDAO);
+            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
+                    .updateCustomContent(any(CustomLayoutContent.class), anyString(), anyString());
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreferenceNew));
+            // Verify transaction rollback.
+            BrandingPreference currentBP = brandingPreferenceManagerImpl
+                    .getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE);
+            assertEquals(currentBP.getPreference(), brandingPreference.getPreference());
+        }
+
+        // Test the failure of replacing branding config in configuration store.
+        ConfigurationManager configurationManager = BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .getConfigurationManager();
+        configurationManager = spy(configurationManager);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
+        doThrow(ConfigurationManagementException.class).when(configurationManager)
+                .replaceResource(anyString(), any(Resource.class));
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreferenceNew));
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .setConfigurationManager(ConfigurationManagementUtils.getConfigurationManager());
+        // Test the IO exception while building the branding preference.
+        try (MockedConstruction<ByteArrayInputStream> mockedByteArrayInputStream = mockConstruction(
+                ByteArrayInputStream.class, (mock, context) -> {
+                    throw new IOException("error");
+                })) {
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreferenceNew));
+        }
+
+        brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                DEFAULT_LOCALE);
+    }
+
     @Test(dataProvider = "brandingPreferenceDataProvider")
     public void testDeleteBrandingPreference(Object brandingPreference, String tenantDomain, int tenantId)
             throws Exception {
@@ -491,6 +711,51 @@ public class BrandingPreferenceManagerImplTest {
                 .deleteBrandingPreference(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, DEFAULT_LOCALE));
         // Verify that clearBrandingResolverCacheHierarchy is never called.
         verify(resolver, never()).clearBrandingResolverCacheHierarchy(any(), any(), any());
+    }
+
+    @Test(description = "Test the transaction errors while deleting branding preference.")
+    public void testTransactionErrorsWhileDeletingBrandingPreference() throws Exception {
+
+        BrandingPreference brandingPreference = new BrandingPreference();
+        brandingPreference.setType(APPLICATION_TYPE);
+        brandingPreference.setName(SAMPLE_APPLICATION_ID_3);
+        brandingPreference.setLocale(DEFAULT_LOCALE);
+        brandingPreference.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+        brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
+
+        // Test the failure of deleting custom layout content.
+        try (MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory = mockStatic(
+                CustomContentPersistentFactory.class)) {
+            CustomContentPersistentDAO customContentPersistentDAO = mock(CustomContentPersistentDAO.class);
+            mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                    .thenReturn(customContentPersistentDAO);
+            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
+                    .deleteCustomContent(anyString(), anyString());
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE,
+                            SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE));
+            // Verify transaction rollback.
+            BrandingPreference currentBP = brandingPreferenceManagerImpl
+                    .getBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3, DEFAULT_LOCALE);
+            assertEquals(currentBP.getPreference(), brandingPreference.getPreference());
+        }
+
+        // Test the failure of replacing branding config in configuration store.
+        ConfigurationManager configurationManager = BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .getConfigurationManager();
+        configurationManager = spy(configurationManager);
+        BrandingPreferenceManagerComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
+        doThrow(ConfigurationManagementException.class).when(configurationManager)
+                .deleteResource(anyString(), anyString());
+        assertThrows(BrandingPreferenceMgtServerException.class,
+                () -> brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                        DEFAULT_LOCALE));
+
+        BrandingPreferenceManagerComponentDataHolder.getInstance()
+                .setConfigurationManager(ConfigurationManagementUtils.getConfigurationManager());
+        brandingPreferenceManagerImpl.deleteBrandingPreference(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_3,
+                DEFAULT_LOCALE);
     }
 
     @DataProvider(name = "customTextPreferenceDataProvider")

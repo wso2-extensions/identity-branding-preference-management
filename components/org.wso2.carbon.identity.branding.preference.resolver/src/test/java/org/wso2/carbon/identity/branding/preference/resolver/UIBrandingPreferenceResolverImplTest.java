@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2024-2025, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -20,18 +20,23 @@ package org.wso2.carbon.identity.branding.preference.resolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.base.CarbonBaseConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.context.internal.OSGiDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
+import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
@@ -44,6 +49,7 @@ import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
@@ -59,15 +65,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -79,6 +91,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
 
 /**
  * Unit tests for UIBrandingPreferenceResolverImpl.
@@ -99,6 +112,13 @@ public class UIBrandingPreferenceResolverImplTest {
     private BrandedAppCache brandedAppCache;
     @Mock
     private TextCustomizedOrgCache textCustomizedOrgCache;
+    @Mock
+    private CustomContentPersistentDAO customContentPersistentDAO;
+    @Mock
+    private Connection connection;
+
+    private MockedStatic<CustomContentPersistentFactory> mockedCustomContentPersistentFactory;
+    private MockedStatic<IdentityDatabaseUtil> mockedIdentityDatabaseUtil;
 
     private UIBrandingPreferenceResolver brandingPreferenceResolver;
 
@@ -119,6 +139,15 @@ public class UIBrandingPreferenceResolverImplTest {
         openMocks(this);
         setCarbonHome();
 
+        mockedCustomContentPersistentFactory = mockStatic(CustomContentPersistentFactory.class);
+        mockedCustomContentPersistentFactory.when(CustomContentPersistentFactory::getCustomContentPersistentDAO)
+                .thenReturn(customContentPersistentDAO);
+
+        mockedIdentityDatabaseUtil = mockStatic(IdentityDatabaseUtil.class);
+        DataSource dataSource = mock(DataSource.class);
+        mockedIdentityDatabaseUtil.when(IdentityDatabaseUtil::getDataSource).thenReturn(dataSource);
+        when(dataSource.getConnection()).thenReturn(connection);
+
         BrandingResolverComponentDataHolder.getInstance().setConfigurationManager(configurationManager);
         BrandingResolverComponentDataHolder.getInstance().setOrganizationManager(organizationManager);
         BrandingResolverComponentDataHolder.getInstance().setOrgApplicationManager(orgApplicationManager);
@@ -128,6 +157,13 @@ public class UIBrandingPreferenceResolverImplTest {
 
         brandingPreferenceResolver =
                 new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        mockedCustomContentPersistentFactory.close();
+        mockedIdentityDatabaseUtil.close();
     }
 
     @Test
@@ -690,6 +726,71 @@ public class UIBrandingPreferenceResolverImplTest {
         }
     }
 
+    @Test(description = "Test transaction errors while getting branding preference.")
+    public void testTransactionErrorsWhileGettingBrandingPreference() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceName = CHILD_APP_ID.toLowerCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "51356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-app-branding-preference.json";
+
+            // Test when resource files are not available.
+            ResourceFile resourceFile = mock(ResourceFile.class);
+            when(resourceFile.getId()).thenReturn(null);
+            when(configurationManager.getFiles(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName)).thenReturn(
+                    new ArrayList<ResourceFile>() {{
+                        add(resourceFile);
+                    }});
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+            when(resourceFile.getId()).thenReturn("file-id");
+            when(configurationManager.getFileById(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName, "file-id"))
+                    .thenReturn(null);
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+
+            // Test failure when getting custom content.
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, APPLICATION_BRANDING_RESOURCE_TYPE,
+                    resourceFileName);
+            doThrow(BrandingPreferenceMgtServerException.class).when(customContentPersistentDAO)
+                    .getCustomContent(anyString(), anyString());
+            assertThrows(BrandingPreferenceMgtServerException.class,
+                    () -> brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID,
+                            DEFAULT_LOCALE, false));
+
+            // Test the IOException when building the preference.
+            try (MockedStatic<IOUtils> mockedIOUtils = mockStatic(IOUtils.class)) {
+                mockedIOUtils.when(() -> IOUtils.toString(any(InputStream.class), any(Charset.class)))
+                        .thenThrow(IOException.class);
+                assertThrows(BrandingPreferenceMgtServerException.class, () -> {
+                    brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+                });
+            }
+
+            // Test failure when getting files from config store.
+            doThrow(ConfigurationManagementException.class).when(configurationManager)
+                    .getFiles(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName);
+            assertThrows(BrandingPreferenceMgtServerException.class, () -> {
+                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+            doThrow(new ConfigurationManagementException("error", RESOURCE_NOT_EXISTS_ERROR_CODE)).when(
+                    configurationManager).getFiles(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName);
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+            doThrow(RuntimeException.class).when(configurationManager)
+                    .getFiles(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName);
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> {
+                brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+        }
+    }
+                         
     @Test
     public void testResolveCustomTextThrowsServerExceptionWhenOrgIdResolutionFails() throws Exception {
 
