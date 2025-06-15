@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomCo
 import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
@@ -786,6 +787,31 @@ public class UIBrandingPreferenceResolverImplTest {
                     .getFiles(APPLICATION_BRANDING_RESOURCE_TYPE, resourceName);
             assertThrows(BrandingPreferenceMgtClientException.class, () -> {
                 brandingPreferenceResolver.resolveBranding(APPLICATION_TYPE, CHILD_APP_ID, DEFAULT_LOCALE, false);
+            });
+        }
+    }
+                         
+    @Test
+    public void testResolveCustomTextThrowsServerExceptionWhenOrgIdResolutionFails() throws Exception {
+
+        String tenantDomain = CHILD_ORG_ID;
+        String name = "orgName";
+        String screen = "LOGIN";
+
+        try (MockedStatic<PrivilegedCarbonContext> mockedContext = mockStatic(PrivilegedCarbonContext.class)) {
+            PrivilegedCarbonContext context = mock(PrivilegedCarbonContext.class);
+            mockedContext.when(PrivilegedCarbonContext::getThreadLocalCarbonContext).thenReturn(context);
+            when(context.getOrganizationId()).thenReturn("");
+            when(context.getTenantDomain()).thenReturn(tenantDomain);
+
+            when(organizationManager.resolveOrganizationId(tenantDomain))
+                    .thenThrow(new OrganizationManagementException("error"));
+
+            UIBrandingPreferenceResolverImpl resolver =
+                    new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache);
+
+            assertThrows(BrandingPreferenceMgtException.class, () -> {
+                resolver.resolveCustomText(ORGANIZATION_TYPE, name, screen, DEFAULT_LOCALE);
             });
         }
     }
