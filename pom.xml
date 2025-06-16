@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+  ~ Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
   ~
-  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ WSO2 LLC. licenses this file to you under the Apache License,
   ~ Version 2.0 (the "License"); you may not use this file except
   ~ in compliance with the License.
   ~ You may obtain a copy of the License at
@@ -211,6 +211,12 @@
                 <version>${httpclient.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wso2.carbon.utils</groupId>
+                <artifactId>org.wso2.carbon.database.utils</artifactId>
+                <version>${org.wso2.carbon.database.utils.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -401,8 +407,11 @@
         <pax.logging.api.version>1.10.1</pax.logging.api.version>
 
         <!-- Carbon identity framework version -->
-        <carbon.identity.framework.version>7.7.95</carbon.identity.framework.version>
+        <carbon.identity.framework.version>7.8.225</carbon.identity.framework.version>
         <carbon.identity.package.import.version.range>[5.20.0, 8.0.0)</carbon.identity.package.import.version.range>
+
+        <!--Carbon commons version-->
+        <carbon.commons.imp.pkg.version>[4.7.2, 5.0.0)</carbon.commons.imp.pkg.version>
 
         <!-- Org management dependency versions-->
         <identity.organization.management.version>1.4.42</identity.organization.management.version>
@@ -411,6 +420,10 @@
         <identity.organization.management.core.version>1.1.9</identity.organization.management.core.version>
         <identity.organization.management.core.imp.pkg.version.range>[1.0.0,2.0.0)
         </identity.organization.management.core.imp.pkg.version.range>
+
+        <!--Carbon Database Utils Version-->
+        <org.wso2.carbon.database.utils.version>2.2.8</org.wso2.carbon.database.utils.version>
+        <org.wso2.carbon.database.utils.version.range>[2.1.0,3.0.0)</org.wso2.carbon.database.utils.version.range>
 
         <!-- Commons version -->
         <commons-lang.wso2.version>2.6.0.wso2v1</commons-lang.wso2.version>

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2022, WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) 2022-2025, WSO2 LLC. (http://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,8 +31,10 @@ import org.wso2.carbon.identity.branding.preference.management.core.BrandingPref
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
 import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManagerImpl;
+import org.wso2.carbon.identity.branding.preference.management.core.listener.IdentityTenantMgtListener;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 
 /**
  * OSGi declarative services component which handles registration and un-registration of branding preference management
@@ -55,6 +57,8 @@ public class BrandingPreferenceManagerComponent {
             context.getBundleContext()
                     .registerService(BrandingAIPreferenceManager.class.getName(), new BrandingAIPreferenceManagerImpl(),
                             null);
+            context.getBundleContext()
+                    .registerService(TenantMgtListener.class.getName(), new IdentityTenantMgtListener(), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BrandingPreferenceMgt Service Component is activated.");
             }
