@@ -47,6 +47,9 @@ import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 
+/**
+ * Unit tests for {@link PortalURLResolver}.
+ */
 public class PortalURLResolverTest {
 
     public static final String PORTAL_URL = "https://signup.wso2.com";

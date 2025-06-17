@@ -38,7 +38,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 
 /**
- * This class is responsible for handling the branding preference management during flow execution.
+ * This class is responsible for injecting the portal URL during flow execution.
  */
 public class PortalURLResolver extends AbstractFlowExecutionListener {
 
@@ -126,7 +126,7 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
     private static void logMissingSelfSignupUrl(FlowExecutionContext context) {
 
         LOG.debug("Self sign-up URL not configured for tenant: " + context.getTenantDomain() + ". Using default URL: "
-        + DEFAULT_REGISTRATION_PORTAL_URL);
+                + DEFAULT_REGISTRATION_PORTAL_URL);
     }
 
     private String buildDefaultRegistrationUrl() throws URLBuilderException {
