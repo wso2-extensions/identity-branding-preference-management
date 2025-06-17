@@ -32,8 +32,10 @@ import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPr
 import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.ai.BrandingAIPreferenceManagerImpl;
 import org.wso2.carbon.identity.branding.preference.management.core.listener.IdentityTenantMgtListener;
+import org.wso2.carbon.identity.branding.preference.management.core.listener.PortalURLResolver;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.flow.execution.engine.listener.FlowExecutionListener;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 
 /**
@@ -52,13 +54,16 @@ public class BrandingPreferenceManagerComponent {
     protected void activate(ComponentContext context) {
 
         try {
+            BrandingPreferenceManagerImpl brandingPreferenceManager = new BrandingPreferenceManagerImpl();
             context.getBundleContext()
-                    .registerService(BrandingPreferenceManager.class, new BrandingPreferenceManagerImpl(), null);
+                    .registerService(BrandingPreferenceManager.class, brandingPreferenceManager, null);
             context.getBundleContext()
                     .registerService(BrandingAIPreferenceManager.class.getName(), new BrandingAIPreferenceManagerImpl(),
                             null);
             context.getBundleContext()
                     .registerService(TenantMgtListener.class.getName(), new IdentityTenantMgtListener(), null);
+            context.getBundleContext().registerService(FlowExecutionListener.class.getName(),
+                            new PortalURLResolver(brandingPreferenceManager), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BrandingPreferenceMgt Service Component is activated.");
             }
