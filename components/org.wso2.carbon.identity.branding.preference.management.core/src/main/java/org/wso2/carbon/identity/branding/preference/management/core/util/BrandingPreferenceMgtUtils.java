@@ -31,7 +31,9 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,6 +48,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.IS_BRANDING_ENABLED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
@@ -100,13 +103,50 @@ public class BrandingPreferenceMgtUtils {
                                     BrandingPreferenceMgtConstants.ErrorMessages
                                             .ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT);
                         }
+                        validateCustomLayoutContentSize(customContent.getString(HTML_CONTENT_KEY));
                         validateMandatoryComponentsInLayoutContent(customContent.getString(HTML_CONTENT_KEY));
+                        if (customContent.has(CSS_CONTENT_KEY)) {
+                            validateCustomLayoutContentSize(customContent.getString(CSS_CONTENT_KEY));
+                        }
+                        if (customContent.has(JS_CONTENT_KEY)) {
+                            validateCustomLayoutContentSize(customContent.getString(JS_CONTENT_KEY));
+                        }
                     }
                 }
             }
         } catch (JSONException e) {
             throw handleClientException(ERROR_CODE_INVALID_BRANDING_PREFERENCE, tenantDomain);
         }
+    }
+
+    /**
+     * Validate the custom layout content size.
+     *
+     * @param content Custom layout content.
+     * @throws BrandingPreferenceMgtException If the custom layout content size exceeds the configured limit.
+     */
+    private static void validateCustomLayoutContentSize(String content) throws BrandingPreferenceMgtException {
+
+        if (StringUtils.isBlank(content)) {
+            return;
+        }
+
+        String maxFileSizeConfig =
+                IdentityUtil.getProperty(BrandingPreferenceMgtConstants.CUSTOM_CONTENT_SIZE_LIMIT_CONFIG_KEY);
+        int maxFileSize = BrandingPreferenceMgtConstants.CUSTOM_CONTENT_SIZE_LIMIT_DEFAULT;
+        if (StringUtils.isNotBlank(maxFileSizeConfig)) {
+            try {
+                maxFileSize = Integer.parseInt(maxFileSizeConfig);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid custom content size limit configuration found. Using default value: "
+                        + BrandingPreferenceMgtConstants.CUSTOM_CONTENT_SIZE_LIMIT_DEFAULT, e);
+            }
+        }
+        byte[] utf8Bytes = content.getBytes(StandardCharsets.UTF_8);
+        if (utf8Bytes.length <= maxFileSize) {
+            return;
+        }
+        throw handleClientException(ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED, String.valueOf(maxFileSize));
     }
 
     /**

@@ -22,12 +22,15 @@ import org.mockito.MockedStatic;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
+import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -40,6 +43,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
@@ -108,7 +112,15 @@ public class BrandingPreferenceMgtUtilsTest {
                 {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{   MainSection    }}}\"}}}",
                         true},
                 {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{ \nMainSection}}}\"}}}",
-                        false}
+                        false},
+                {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection}}}" +
+                        generateLargeString() + "\"}}}", false},
+                {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection}}}"
+                        + "\", \"css\":\"\"}}}", true},
+                {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection}}}"
+                        + "\", \"css\":\"" + generateLargeString() + "\"}}}", false},
+                {"{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection}}}"
+                        + "\", \"css\":\"\", \"js\": \"" + generateLargeString() + "\"}}}", false}
         };
     }
 
@@ -121,6 +133,33 @@ public class BrandingPreferenceMgtUtilsTest {
             assertTrue(isValid, "Valid preference should not throw an exception.");
         } catch (BrandingPreferenceMgtException e) {
             assertFalse(isValid, "Invalid preference should throw an exception.");
+        }
+    }
+
+    @Test(description = "Test isValidBrandingPreference with change content size")
+    public void testIsValidBrandingPreferenceWithChangeContentSize() throws Exception {
+
+        String preference1 = "{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection" +
+                "}}}\", \"css\":\"" + generateLargeString() + "\"}}}";
+        String preference2 = "{\"layout\": {\"activeLayout\": \"custom\", \"content\": {\"html\":\"{{{MainSection" +
+                "}}}\", \"css\":\"" + generateLargeString() + generateLargeString() + "\"}}}";
+
+        try (MockedStatic<IdentityUtil> identityUtilMockedStatic = mockStatic(IdentityUtil.class)) {
+
+            identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(
+                                    BrandingPreferenceMgtConstants.CUSTOM_CONTENT_SIZE_LIMIT_CONFIG_KEY))
+                    .thenReturn("2097152");
+
+            BrandingPreferenceMgtUtils.isValidBrandingPreference(preference1, SUPER_TENANT_DOMAIN_NAME);
+
+            assertThrows(BrandingPreferenceMgtClientException.class,
+                    () -> BrandingPreferenceMgtUtils.isValidBrandingPreference(preference2, SUPER_TENANT_DOMAIN_NAME));
+
+            identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(
+                            BrandingPreferenceMgtConstants.CUSTOM_CONTENT_SIZE_LIMIT_CONFIG_KEY))
+                    .thenReturn("wrong-value");
+            assertThrows(BrandingPreferenceMgtClientException.class,
+                    () -> BrandingPreferenceMgtUtils.isValidBrandingPreference(preference1, SUPER_TENANT_DOMAIN_NAME));
         }
     }
 
@@ -276,5 +315,23 @@ public class BrandingPreferenceMgtUtilsTest {
                 assertEquals(preference, preferenceMap, "Preference map should not be modified.");
             }
         }
+    }
+
+    /**
+     * Generates a large string of approximately 1.2 MB in size.
+     *
+     * @return A large string of approximately 1.2 MB.
+     */
+    private String generateLargeString() {
+
+        String paragraph = "This is a paragraph to increase the size.";
+        int repeatCount = (int) Math.ceil((1024.0 * 1024 * 1.2) / paragraph.length()); // ~1.2MB
+        StringBuilder contentBuilder = new StringBuilder();
+
+        for (int i = 0; i < repeatCount; i++) {
+            contentBuilder.append(paragraph);
+        }
+
+        return contentBuilder.toString();
     }
 }

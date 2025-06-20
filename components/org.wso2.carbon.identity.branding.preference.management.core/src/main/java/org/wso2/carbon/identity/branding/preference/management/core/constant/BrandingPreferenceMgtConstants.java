@@ -49,6 +49,9 @@ public class BrandingPreferenceMgtConstants {
     public static final String BRANDING_URLS = "urls";
     public static final String CONFIGS = "configs";
     public static final String IS_BRANDING_ENABLED = "isBrandingEnabled";
+    public static final String CUSTOM_CONTENT_SIZE_LIMIT_CONFIG_KEY =
+            "BrandingConfiguration.CustomContent.MaxFileSize";
+    public static final int CUSTOM_CONTENT_SIZE_LIMIT_DEFAULT = 1048576; // 1 MB
 
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
@@ -151,7 +154,9 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_ERROR_GETTING_APP_CUSTOM_LAYOUT_CONTENT("BRANDINGM_00045",
                 "Error while getting app-level custom layout content for application id: %s."),
         ERROR_CODE_MANDATORY_COMPONENT_NOT_FOUND("BRANDINGM_00047",
-                "Mandatory component '%s' not found in the custom layout html content.");
+                "Mandatory component '%s' not found in the custom layout html content."),
+        ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED("BRANDINGM_00048",
+                "Maximum custom content length exceeded. The maximum allowed size is %s bytes.");
 
         private final String code;
         private final String message;
