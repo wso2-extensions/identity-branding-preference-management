@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 
@@ -89,7 +90,8 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
                 Map<String, Object> prefMap = (Map<String, Object>) preference.getPreference();
                 Map<String, String> urlMap = (Map<String, String>) prefMap.get(BRANDING_URLS);
 
-                if (REGISTRATION.equals(context.getFlowType())) {
+                if (REGISTRATION.equals(context.getFlowType()) || Flow.Name.USER_REGISTRATION.toString().
+                        equalsIgnoreCase(context.getFlowType())) {
                     String signUpUrl = (urlMap != null) ? urlMap.get(SELF_SIGN_UP_URL) : null;
 
                     if (StringUtils.isNotBlank(signUpUrl)) {
