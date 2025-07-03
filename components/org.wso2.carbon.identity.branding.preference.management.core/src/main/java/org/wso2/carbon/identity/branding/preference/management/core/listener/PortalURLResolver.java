@@ -25,9 +25,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.BrandingPref
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
-import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
-import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 
@@ -37,6 +35,9 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.DEFAULT_REGISTRATION_PORTAL_URL;
+import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.REGISTRATION;
+import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.buildDefaultPortalUrl;
 
 /**
  * This class is responsible for injecting the portal URL during flow execution.
@@ -46,8 +47,6 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
     private static final Log LOG = LogFactory.getLog(PortalURLResolver.class);
     private final BrandingPreferenceManagerImpl brandingPreferenceManager;
     public static final String SELF_SIGN_UP_URL = "selfSignUpURL";
-    public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/authenticationendpoint/register.do";
-    public static final String REGISTRATION = "REGISTRATION";
 
     public PortalURLResolver(BrandingPreferenceManagerImpl brandingPreferenceManager) {
 
@@ -75,10 +74,11 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
     @Override
     public boolean doPreExecute(FlowExecutionContext context) {
 
+        String flowType = context.getFlowType();
+        if (StringUtils.isNotBlank(context.getPortalUrl())) {
+            return true;
+        }
         try {
-            if (StringUtils.isNotBlank(context.getPortalUrl())) {
-                return true;
-            }
             String applicationId = context.getApplicationId();
             String tenantDomain = context.getTenantDomain();
             String type = StringUtils.isBlank(applicationId) ? ORGANIZATION_TYPE : APPLICATION_TYPE;
@@ -90,27 +90,25 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
                 Map<String, Object> prefMap = (Map<String, Object>) preference.getPreference();
                 Map<String, String> urlMap = (Map<String, String>) prefMap.get(BRANDING_URLS);
 
-                if (REGISTRATION.equals(context.getFlowType()) || Flow.Name.USER_REGISTRATION.toString().
-                        equalsIgnoreCase(context.getFlowType())) {
+                if (REGISTRATION.equalsIgnoreCase(flowType)) {
                     String signUpUrl = (urlMap != null) ? urlMap.get(SELF_SIGN_UP_URL) : null;
-
                     if (StringUtils.isNotBlank(signUpUrl)) {
                         context.setPortalUrl(signUpUrl);
                     } else {
                         logMissingSelfSignupUrl(context);
-                        context.setPortalUrl(buildDefaultRegistrationUrl());
+                        context.setPortalUrl(buildDefaultPortalUrl(flowType));
                     }
                 }
             }
             if (StringUtils.isBlank(context.getPortalUrl())) {
                 logMissingSelfSignupUrl(context);
-                context.setPortalUrl(buildDefaultRegistrationUrl());
+                context.setPortalUrl(buildDefaultPortalUrl(flowType));
             }
             return true;
         } catch (BrandingPreferenceMgtClientException e) {
             logMissingSelfSignupUrl(context);
             try {
-                context.setPortalUrl(buildDefaultRegistrationUrl());
+                context.setPortalUrl(buildDefaultPortalUrl(flowType));
             } catch (URLBuilderException ex) {
                 LOG.error("Failed to build default registration URL for tenant: " + context.getTenantDomain(), ex);
                 return false;
@@ -129,13 +127,5 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
 
         LOG.debug("Self sign-up URL not configured for tenant: " + context.getTenantDomain() + ". Using default URL: "
                 + DEFAULT_REGISTRATION_PORTAL_URL);
-    }
-
-    private String buildDefaultRegistrationUrl() throws URLBuilderException {
-
-        return ServiceURLBuilder.create()
-                .addPath(DEFAULT_REGISTRATION_PORTAL_URL)
-                .build()
-                .getAbsolutePublicURL();
     }
 }

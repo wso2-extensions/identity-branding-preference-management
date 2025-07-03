@@ -31,6 +31,9 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -62,6 +65,9 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 public class BrandingPreferenceMgtUtils {
 
     private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
+    public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/authenticationendpoint/register.do";
+    public static final String DEFAULT_RECOVERY_PORTAL_URL = "/authenticationendpoint/recovery.do";
+    public static final String REGISTRATION = "REGISTRATION";
 
     /**
      * Check whether the given string is a valid preference object or not.
@@ -400,5 +406,15 @@ public class BrandingPreferenceMgtUtils {
         } else if (t instanceof BrandingPreferenceMgtException) {
             throw (BrandingPreferenceMgtException) t;
         }
+    }
+
+    public static String buildDefaultPortalUrl(String flowType) throws URLBuilderException {
+
+        ServiceURLBuilder builder = ServiceURLBuilder.create();
+        String path = Flow.Name.USER_REGISTRATION.name().equalsIgnoreCase(flowType) ||
+                REGISTRATION.equalsIgnoreCase(flowType)
+                ? DEFAULT_REGISTRATION_PORTAL_URL
+                : DEFAULT_RECOVERY_PORTAL_URL;
+        return builder.addPath(path).build().getAbsolutePublicURL();
     }
 }

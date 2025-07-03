@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.model.Brandi
 import org.wso2.carbon.identity.core.ServiceURL;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
+import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 
 import java.util.HashMap;
@@ -124,6 +125,25 @@ public class PortalURLResolverTest {
             mockServiceURLBuilder();
             boolean result = resolver.doPreExecute(flowContext);
             assertTrue(result);
+        }
+    }
+
+    @Test
+    public void fallBackToDefaultRecoveryUrl() throws Exception {
+
+        when(flowContext.getPortalUrl()).thenReturn(null);
+        when(flowContext.getApplicationId()).thenReturn(null);
+        when(flowContext.getTenantDomain()).thenReturn("wso2.com");
+        when(flowContext.getFlowType()).thenReturn(Flow.Name.INVITED_USER_REGISTRATION.name());
+
+        when(brandingPreferenceManager.getBrandingPreference(ORGANIZATION_TYPE, "wso2.com", DEFAULT_LOCALE))
+                .thenReturn(null);
+
+        try (MockedStatic<ServiceURLBuilder> serviceURLBuilder = mockStatic(ServiceURLBuilder.class)) {
+            mockServiceURLBuilder();
+            boolean result = resolver.doPreExecute(flowContext);
+            assertTrue(result);
+            verify(flowContext).setPortalUrl("https://default.url");
         }
     }
 
