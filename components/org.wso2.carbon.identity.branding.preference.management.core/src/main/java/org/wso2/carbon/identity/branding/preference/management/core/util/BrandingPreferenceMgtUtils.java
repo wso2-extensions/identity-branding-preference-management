@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.impl.CustomContentPersistentFactory;
@@ -33,7 +34,6 @@ import org.wso2.carbon.identity.branding.preference.management.core.model.Brandi
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
-import org.wso2.carbon.identity.core.context.model.Flow;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ACTIVE_LAYOUT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
@@ -50,6 +51,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
@@ -57,17 +59,19 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LAYOUT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LOCAL_CODE_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RECOVERY_PORTAL_URL;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.SELF_SIGN_UP_URL;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
  * Util class for branding preference management.
  */
 public class BrandingPreferenceMgtUtils {
 
-    private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
     public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/authenticationendpoint/register.do";
     public static final String DEFAULT_RECOVERY_PORTAL_URL = "/authenticationendpoint/recovery.do";
-    public static final String REGISTRATION = "REGISTRATION";
+    private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
 
     /**
      * Check whether the given string is a valid preference object or not.
@@ -361,7 +365,7 @@ public class BrandingPreferenceMgtUtils {
     public static void addCustomLayoutContentToPreferences(Object preferences, String appId, String tenantDomain)
             throws BrandingPreferenceMgtException {
 
-       CustomContentPersistentDAO customContentDAO = CustomContentPersistentFactory.getCustomContentPersistentDAO();
+        CustomContentPersistentDAO customContentDAO = CustomContentPersistentFactory.getCustomContentPersistentDAO();
         if (preferences instanceof Map) {
             Map<String, Object> preferenceMap = (Map<String, Object>) preferences;
             if (preferenceMap.get(LAYOUT_KEY) instanceof Map) {
@@ -408,13 +412,58 @@ public class BrandingPreferenceMgtUtils {
         }
     }
 
-    public static String buildDefaultPortalUrl(String flowType) throws URLBuilderException {
+    private static String buildDefaultPortalUrl(String flowType) throws URLBuilderException {
 
         ServiceURLBuilder builder = ServiceURLBuilder.create();
-        String path = Flow.Name.USER_REGISTRATION.name().equalsIgnoreCase(flowType) ||
-                REGISTRATION.equalsIgnoreCase(flowType)
-                ? DEFAULT_REGISTRATION_PORTAL_URL
+        String path = REGISTRATION.getType().equalsIgnoreCase(flowType) ? DEFAULT_REGISTRATION_PORTAL_URL
                 : DEFAULT_RECOVERY_PORTAL_URL;
         return builder.addPath(path).build().getAbsolutePublicURL();
+    }
+
+    /**
+     * Builds the configured portal URL based on the type, name, tenant domain, and flow type.
+     *
+     * @param type                      Organization or Application type.
+     * @param name                      If the applicationId is blank, the tenant domain will be used as the name.
+     * @param tenantDomain              Tenant domain of the application or organization.
+     * @param brandingPreferenceManager BrandingPreferenceManager instance to retrieve branding preferences.
+     * @param flowType                  Flow type to determine the default URL if the configured URL is not found.
+     * @return Configured portal URL or default URL if not found.
+     * @throws URLBuilderException            If there is an error building the URL.
+     * @throws BrandingPreferenceMgtException If there is an error retrieving the branding preference.
+     */
+    public static String buildConfiguredPortalURL(String type, String name, String tenantDomain,
+                                                  BrandingPreferenceManager brandingPreferenceManager,
+                                                  String flowType)
+            throws URLBuilderException, BrandingPreferenceMgtException {
+
+        BrandingPreference preference;
+        String configuredURL = StringUtils.EMPTY;
+
+        String requiredURL = REGISTRATION.getType().equalsIgnoreCase(flowType) ? SELF_SIGN_UP_URL :
+                RECOVERY_PORTAL_URL;
+
+        try {
+            preference = brandingPreferenceManager.getBrandingPreference(type, name, DEFAULT_LOCALE);
+            if (preference != null) {
+                Map<String, Object> prefMap = (Map<String, Object>) preference.getPreference();
+                Map<String, String> urlMap = (Map<String, String>) prefMap.get(BRANDING_URLS);
+                configuredURL = (urlMap != null) ? urlMap.get(requiredURL) : null;
+            }
+        } catch (BrandingPreferenceMgtClientException e) {
+            log.error("Failed to build default registration URL for tenant: " + tenantDomain, e);
+        }
+
+        if (StringUtils.isBlank(configuredURL)) {
+            configuredURL = buildDefaultPortalUrl(flowType);
+            logMissingPortalUrl(tenantDomain, configuredURL);
+        }
+        return configuredURL;
+    }
+
+    private static void logMissingPortalUrl(String tenantDomain, String defaultURL) {
+
+        log.debug("Portal URL is not configured for tenant: " + tenantDomain + ". Using default URL: "
+                + defaultURL);
     }
 }

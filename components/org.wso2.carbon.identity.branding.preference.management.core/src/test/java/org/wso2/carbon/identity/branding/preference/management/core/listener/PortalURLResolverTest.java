@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManagerImpl;
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtClientException;
@@ -53,7 +54,8 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
  */
 public class PortalURLResolverTest {
 
-    public static final String PORTAL_URL = "https://signup.wso2.com";
+    public static final String SELF_SIGNUP_PORTAL_URL = "https://signup.wso2.com";
+    public static final String RECOVERY_PORTAL_URL = "https://recovery.wso2.com";
     @Mock
     private BrandingPreferenceManagerImpl brandingPreferenceManager;
 
@@ -83,6 +85,43 @@ public class PortalURLResolverTest {
         verify(flowContext, never()).setPortalUrl(any());
     }
 
+    @DataProvider
+    public Object[][] flowTypes() {
+
+        return new Object[][]{
+                {"PASSWORD_RECOVERY", "", "recoveryPortalURL", RECOVERY_PORTAL_URL},
+                {"REGISTRATION", "appId", "selfSignUpURL", SELF_SIGNUP_PORTAL_URL},
+                {"INVITED_USER_REGISTRATION", "", "recoveryPortalURL", RECOVERY_PORTAL_URL}
+        };
+    }
+
+    @Test(dataProvider = "flowTypes")
+    public void testValidPreferenceSetsConfiguredUrl(String flowType, String applicationId, String portalURL,
+                                                     String configuredUrl)
+            throws Exception {
+
+        when(flowContext.getPortalUrl()).thenReturn(null);
+        when(flowContext.getApplicationId()).thenReturn(applicationId);
+        when(flowContext.getTenantDomain()).thenReturn("wso2.com");
+        when(flowContext.getFlowType()).thenReturn(flowType);
+
+        Map<String, String> urlsMap = new HashMap<>();
+        urlsMap.put(portalURL, configuredUrl);
+        Map<String, Object> prefMap = new HashMap<>();
+        prefMap.put("urls", urlsMap);
+
+        when(brandingPreferenceManager.getBrandingPreference(anyString(), anyString(), anyString()))
+                .thenReturn(brandingPreference);
+        when(brandingPreference.getPreference()).thenReturn(prefMap);
+
+        try (MockedStatic<ServiceURLBuilder> serviceURLBuilder = mockStatic(ServiceURLBuilder.class)) {
+            mockServiceURLBuilder();
+            boolean result = resolver.doPreExecute(flowContext);
+            assertTrue(result);
+            verify(flowContext).setPortalUrl(configuredUrl);
+        }
+    }
+
     @Test
     public void validPref_setsCustomSignupUrl() throws Exception {
 
@@ -92,7 +131,7 @@ public class PortalURLResolverTest {
         when(flowContext.getFlowType()).thenReturn("REGISTRATION");
 
         Map<String, String> urlsMap = new HashMap<>();
-        urlsMap.put("selfSignUpURL", PORTAL_URL);
+        urlsMap.put("selfSignUpURL", SELF_SIGNUP_PORTAL_URL);
         Map<String, Object> prefMap = new HashMap<>();
         prefMap.put("urls", urlsMap);
 
@@ -105,7 +144,7 @@ public class PortalURLResolverTest {
             mockServiceURLBuilder();
             boolean result = resolver.doPreExecute(flowContext);
             assertTrue(result);
-            verify(flowContext).setPortalUrl(PORTAL_URL);
+            verify(flowContext).setPortalUrl(SELF_SIGNUP_PORTAL_URL);
         }
     }
 
