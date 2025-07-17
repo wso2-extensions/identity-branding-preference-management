@@ -444,11 +444,13 @@ public class BrandingPreferenceMgtUtils {
                 RECOVERY_PORTAL_URL;
 
         try {
-            preference = brandingPreferenceManager.getBrandingPreference(type, name, DEFAULT_LOCALE);
-            if (preference != null) {
-                Map<String, Object> prefMap = (Map<String, Object>) preference.getPreference();
-                Map<String, String> urlMap = (Map<String, String>) prefMap.get(BRANDING_URLS);
-                configuredURL = (urlMap != null) ? urlMap.get(requiredURL) : null;
+            if (brandingPreferenceManager != null) {
+                preference = brandingPreferenceManager.getBrandingPreference(type, name, DEFAULT_LOCALE);
+                if (preference != null) {
+                    Map<String, Object> prefMap = (Map<String, Object>) preference.getPreference();
+                    Map<String, String> urlMap = (Map<String, String>) prefMap.get(BRANDING_URLS);
+                    configuredURL = (urlMap != null) ? urlMap.get(requiredURL) : null;
+                }
             }
         } catch (BrandingPreferenceMgtClientException e) {
             log.error("Failed to build default registration URL for tenant: " + tenantDomain, e);
