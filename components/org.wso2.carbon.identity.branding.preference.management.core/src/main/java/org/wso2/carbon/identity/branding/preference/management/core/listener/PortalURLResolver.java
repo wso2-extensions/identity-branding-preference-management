@@ -27,8 +27,6 @@ import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.flow.execution.engine.listener.AbstractFlowExecutionListener;
 import org.wso2.carbon.identity.flow.execution.engine.model.FlowExecutionContext;
 
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.BrandingPreferenceMgtUtils.buildConfiguredPortalURL;
 
 /**
@@ -71,11 +69,9 @@ public class PortalURLResolver extends AbstractFlowExecutionListener {
         }
         String applicationId = context.getApplicationId();
         String tenantDomain = context.getTenantDomain();
-        String type = StringUtils.isBlank(applicationId) ? ORGANIZATION_TYPE : APPLICATION_TYPE;
-        String name = StringUtils.isBlank(applicationId) ? tenantDomain : applicationId;
         try {
-            String configuredPortalURL = buildConfiguredPortalURL(type, name, tenantDomain, brandingPreferenceManager,
-                    flowType);
+            String configuredPortalURL = buildConfiguredPortalURL(applicationId, tenantDomain,
+                    brandingPreferenceManager, flowType);
             context.setPortalUrl(configuredPortalURL);
         } catch (URLBuilderException e) {
             LOG.error("Error building default portal URL for tenant: " + tenantDomain, e);

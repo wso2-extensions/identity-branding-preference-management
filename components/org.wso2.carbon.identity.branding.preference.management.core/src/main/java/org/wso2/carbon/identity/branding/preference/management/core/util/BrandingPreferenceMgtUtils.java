@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ACTIVE_LAYOUT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
@@ -59,6 +60,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.JS_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LAYOUT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.LOCAL_CODE_SEPARATOR;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RECOVERY_PORTAL_URL;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.SELF_SIGN_UP_URL;
@@ -421,10 +423,9 @@ public class BrandingPreferenceMgtUtils {
     }
 
     /**
-     * Builds the configured portal URL based on the type, name, tenant domain, and flow type.
+     * Builds the configured portal URL based on the application id, tenant domain, and flow type.
      *
-     * @param type                      Organization or Application type.
-     * @param name                      If the applicationId is blank, the tenant domain will be used as the name.
+     * @param applicationId             Application ID for which the portal URL is to be built.
      * @param tenantDomain              Tenant domain of the application or organization.
      * @param brandingPreferenceManager BrandingPreferenceManager instance to retrieve branding preferences.
      * @param flowType                  Flow type to determine the default URL if the configured URL is not found.
@@ -432,7 +433,7 @@ public class BrandingPreferenceMgtUtils {
      * @throws URLBuilderException            If there is an error building the URL.
      * @throws BrandingPreferenceMgtException If there is an error retrieving the branding preference.
      */
-    public static String buildConfiguredPortalURL(String type, String name, String tenantDomain,
+    public static String buildConfiguredPortalURL(String applicationId, String tenantDomain,
                                                   BrandingPreferenceManager brandingPreferenceManager,
                                                   String flowType)
             throws URLBuilderException, BrandingPreferenceMgtException {
@@ -440,6 +441,8 @@ public class BrandingPreferenceMgtUtils {
         BrandingPreference preference;
         String configuredURL = StringUtils.EMPTY;
 
+        String type = StringUtils.isBlank(applicationId) ? ORGANIZATION_TYPE : APPLICATION_TYPE;
+        String name = StringUtils.isBlank(applicationId) ? tenantDomain : applicationId;
         String requiredURL = REGISTRATION.getType().equalsIgnoreCase(flowType) ? SELF_SIGN_UP_URL :
                 RECOVERY_PORTAL_URL;
 
