@@ -56,6 +56,8 @@ public class BrandingPreferenceMgtConstants {
     public static final String RESOURCE_NOT_EXISTS_ERROR_CODE = "CONFIGM_00017";
     public static final String RESOURCES_NOT_EXISTS_ERROR_CODE = "CONFIGM_00020";
     public static final String RESOURCE_ALREADY_EXISTS_ERROR_CODE = "CONFIGM_00013";
+    public static final String SELF_SIGN_UP_URL = "selfSignUpURL";
+    public static final String RECOVERY_PORTAL_URL = "recoveryPortalURL";
 
     /**
      * Enum for custom layout components.
