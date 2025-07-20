@@ -456,7 +456,9 @@ public class BrandingPreferenceMgtUtils {
                 }
             }
         } catch (BrandingPreferenceMgtClientException e) {
-            log.error("Failed to build default registration URL for tenant: " + tenantDomain, e);
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to build configured portal URL for tenant: " + tenantDomain, e);
+            }
         }
 
         if (StringUtils.isBlank(configuredURL)) {
