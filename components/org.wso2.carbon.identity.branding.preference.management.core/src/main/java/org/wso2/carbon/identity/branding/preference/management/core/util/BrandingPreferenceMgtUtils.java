@@ -71,8 +71,8 @@ import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION
  */
 public class BrandingPreferenceMgtUtils {
 
-    public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/authenticationendpoint/register.do";
-    public static final String DEFAULT_RECOVERY_PORTAL_URL = "/authenticationendpoint/recovery.do";
+    public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/accounts/register";
+    public static final String DEFAULT_RECOVERY_PORTAL_URL = "/accounts/recovery";
     private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
 
     /**
