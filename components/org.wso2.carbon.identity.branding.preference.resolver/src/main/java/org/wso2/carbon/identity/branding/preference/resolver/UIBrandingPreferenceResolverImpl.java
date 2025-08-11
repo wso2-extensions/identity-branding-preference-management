@@ -53,7 +53,6 @@ import org.wso2.carbon.identity.organization.management.application.OrgApplicati
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.identity.organization.management.service.model.BasicOrganization;
-import org.wso2.carbon.identity.organization.management.service.model.Organization;
 import org.wso2.carbon.identity.organization.management.service.util.Utils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -636,38 +635,35 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             try {
-                Organization organization = organizationManager.getOrganization(organizationId, false, false);
-                // There's no need to resolve branding preferences for super tenant since it is the root organization.
+                // There's no need to resolve custom text for super tenant since it is the root organization.
                 if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
                     // Get the details of the parent organization and resolve the custom text preferences.
-                    String parentId = organization.getParent().getId();
-                    String parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                    int parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                    List<String> ancestorOrganizationIds =
+                            organizationManager.getAncestorOrganizationIds(organizationId);
+                    if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
+                        /*  No custom text found. Adding the same tenant domain to cache
+                          to avoid the resolving in the next run. */
+                        addCustomTextResolvedOrgToCache(organizationId, resourceName, currentTenantDomain,
+                                currentTenantDomain);
+                        throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain());
+                    }
 
                     // Get the minimum hierarchy depth that needs to be reached to resolve branding preference.
                     int minHierarchyDepth = Utils.getSubOrgStartLevel() - 1;
+                    for (String ancestorOrgId : ancestorOrganizationIds.subList(1, ancestorOrganizationIds.size())) {
+                        String ancestorTenantDomain = organizationManager.resolveTenantDomain(ancestorOrgId);
+                        int ancestorDepthInHierarchy =
+                                organizationManager.getOrganizationDepthInHierarchy(ancestorOrgId);
 
-                    while (parentDepthInHierarchy >= minHierarchyDepth) {
-                        customText = getCustomText(type, name, screen, locale, parentTenantDomain);
-                        if (customText.isPresent()) {
-                            addCustomTextResolvedOrgToCache
-                                    (organizationId, resourceName, currentTenantDomain, parentTenantDomain);
-                            return customText.get();
-                        }
-
-                        /*
-                            Get ancestor organization ids (including itself) of a given organization. The list is sorted
-                            from given organization id to the root organization id.
-                        */
-                        List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(parentId);
-                        if (!ancestorOrganizationIds.isEmpty() && ancestorOrganizationIds.size() > 1) {
-                            // Go to the parent organization again.
-                            parentId = ancestorOrganizationIds.get(1);
-                            parentTenantDomain = organizationManager.resolveTenantDomain(parentId);
-                            parentDepthInHierarchy = organizationManager.getOrganizationDepthInHierarchy(parentId);
+                        if (ancestorDepthInHierarchy >= minHierarchyDepth) {
+                            customText = getCustomText(type, name, screen, locale, ancestorTenantDomain);
+                            if (customText.isPresent()) {
+                                addCustomTextResolvedOrgToCache
+                                        (organizationId, resourceName, currentTenantDomain, ancestorTenantDomain);
+                                return customText.get();
+                            }
                         } else {
-                            // Reached to the root of the organization tree.
-                            parentDepthInHierarchy = -1;
+                            break;
                         }
                     }
                 }
