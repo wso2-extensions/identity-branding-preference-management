@@ -64,6 +64,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RECOVERY_PORTAL_URL;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.SELF_SIGN_UP_URL;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
@@ -417,7 +418,9 @@ public class BrandingPreferenceMgtUtils {
     private static String buildDefaultPortalUrl(String flowType) throws URLBuilderException {
 
         ServiceURLBuilder builder = ServiceURLBuilder.create();
-        String path = REGISTRATION.getType().equalsIgnoreCase(flowType) ? DEFAULT_REGISTRATION_PORTAL_URL
+        String path = (REGISTRATION.getType().equalsIgnoreCase(flowType)
+                || INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(flowType))
+                ? DEFAULT_REGISTRATION_PORTAL_URL
                 : DEFAULT_RECOVERY_PORTAL_URL;
         return builder.addPath(path).build().getAbsolutePublicURL();
     }
