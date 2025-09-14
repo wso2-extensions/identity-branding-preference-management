@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.branding.preference.management.core.BrandingPreferenceManager;
 import org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants;
 import org.wso2.carbon.identity.branding.preference.management.core.dao.CustomContentPersistentDAO;
@@ -422,6 +423,9 @@ public class BrandingPreferenceMgtUtils {
                 || INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(flowType))
                 ? DEFAULT_REGISTRATION_PORTAL_URL
                 : DEFAULT_RECOVERY_PORTAL_URL;
+
+        builder.setOrganization(PrivilegedCarbonContext.getThreadLocalCarbonContext().getOrganizationId());
+
         return builder.addPath(path).build().getAbsolutePublicURL();
     }
 
