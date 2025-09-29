@@ -40,9 +40,6 @@ import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
-import org.wso2.carbon.identity.core.DefaultServiceURLBuilder;
-import org.wso2.carbon.identity.core.ServiceURLBuilder;
-import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.core.util.JdbcUtils;
 import org.wso2.carbon.identity.event.IdentityEventException;
@@ -292,7 +289,7 @@ public class BrandingPreferenceManagerImpl implements BrandingPreferenceManager 
                         BrandingPreferenceMgtUtils.extractCustomLayoutContent(brandingPreference.getPreference());
                 if (customLayoutContent != null) {
                     if (Boolean.parseBoolean(IdentityUtil.getProperty(CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS))
-                            && !BrandingPreferenceMgtUtils.isURLBrandingEnabledForTheTenant(tenantDomain)) {
+                            && !BrandingPreferenceMgtUtils.isURLBrandingConfiguredForTheTenant(tenantDomain)) {
                         throw handleClientException(ERROR_CODE_CUSTOM_LAYOUT_CONFIG_NOT_ALLOWED, tenantDomain);
                     }
                     getCustomContentPersistentDAO().updateCustomContent(customLayoutContent, appName, tenantDomain);

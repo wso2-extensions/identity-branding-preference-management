@@ -56,7 +56,6 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
-import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_LAYOUT_CONFIG_NOT_ALLOWED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
@@ -384,7 +383,7 @@ public class BrandingPreferenceMgtUtils {
                     if (customLayoutContent != null) {
                         if (Boolean.parseBoolean(IdentityUtil
                                 .getProperty(CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS))
-                                && !BrandingPreferenceMgtUtils.isURLBrandingEnabledForTheTenant(tenantDomain)) {
+                                && !BrandingPreferenceMgtUtils.isURLBrandingConfiguredForTheTenant(tenantDomain)) {
                             return;
                         }
                         Map<String, String> customContent = new LinkedHashMap<>();
@@ -489,7 +488,8 @@ public class BrandingPreferenceMgtUtils {
                 + defaultURL);
     }
 
-    public static boolean isURLBrandingEnabledForTheTenant(String tenantDomain) throws BrandingPreferenceMgtException {
+    public static boolean isURLBrandingConfiguredForTheTenant(String tenantDomain)
+            throws BrandingPreferenceMgtException {
 
         try {
             // If a custom service URL builder exists, get the configured proxy host name for the tenant.
