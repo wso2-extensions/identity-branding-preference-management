@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.branding.preference.management.core;
 
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.mockito.Mock;
@@ -45,10 +47,15 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
+import org.wso2.carbon.identity.core.ServiceURL;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.internal.IdentityCoreServiceComponent;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
 import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.utils.ConfigurationContextService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -74,6 +81,7 @@ import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
@@ -1040,6 +1048,48 @@ public class BrandingPreferenceManagerImplTest {
                 .getCustomText(inputCT1.getType(), inputCT1.getName(), inputCT1.getScreen(), inputCT1.getLocale()));
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .getCustomText(inputCT2.getType(), inputCT2.getName(), inputCT2.getScreen(), inputCT2.getLocale()));
+    }
+
+    @Test(dependsOnMethods = "testDeleteBrandingPreference")
+    public void testCustomLayoutConfigurationForURLBrandedTenant() throws Exception {
+
+        try (MockedStatic<IdentityUtil> mockedIdentityUtil = mockStatic(IdentityUtil.class);
+             MockedStatic<ServiceURLBuilder> mockedServiceURLBuilder = mockStatic(ServiceURLBuilder.class);
+             MockedStatic<IdentityCoreServiceComponent> identityCoreServiceComponent =
+                     mockStatic(IdentityCoreServiceComponent.class)) {
+
+            mockedIdentityUtil.when(() -> IdentityUtil.getProperty(CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS))
+                    .thenReturn("true");
+
+            ConfigurationContextService mockConfigurationContextService = mock(ConfigurationContextService.class);
+            ConfigurationContext mockConfigurationContext = mock(ConfigurationContext.class);
+            AxisConfiguration mockAxisConfiguration = mock(AxisConfiguration.class);
+
+            identityCoreServiceComponent.when(IdentityCoreServiceComponent::getConfigurationContextService)
+                    .thenReturn(mockConfigurationContextService);
+            when(mockConfigurationContextService.getServerConfigContext()).thenReturn(mockConfigurationContext);
+            when(mockConfigurationContext.getAxisConfiguration()).thenReturn(mockAxisConfiguration);
+
+            ServiceURLBuilder serviceURLBuilder = mock(ServiceURLBuilder.class);
+            mockedServiceURLBuilder.when(ServiceURLBuilder::create).thenReturn(serviceURLBuilder);
+            ServiceURL serviceURL = mock(ServiceURL.class);
+            when(serviceURL.getProxyHostName()).thenReturn("abc.com");
+            when(serviceURLBuilder.setTenant(SUPER_TENANT_DOMAIN_NAME)).thenReturn(serviceURLBuilder);
+            when(serviceURLBuilder.build()).thenReturn(serviceURL);
+
+            setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
+            BrandingPreference brandingPreference = new BrandingPreference();
+            brandingPreference.setType(ORGANIZATION_TYPE);
+            brandingPreference.setName(SUPER_TENANT_DOMAIN_NAME);
+            brandingPreference.setLocale(DEFAULT_LOCALE);
+            brandingPreference.setPreference(getPreferenceFromFile("sample-preference-2.json"));
+
+            // Adding new branding preference.
+            brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
+            brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreference);
+            brandingPreferenceManagerImpl.deleteBrandingPreference(brandingPreference.getType(),
+                    brandingPreference.getName(), brandingPreference.getLocale());
+        }
     }
 
     private void setCarbonContextForTenant(String tenantDomain, int tenantId) throws UserStoreException {

@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
 import org.wso2.carbon.identity.branding.preference.management.core.model.CustomLayoutContent;
+import org.wso2.carbon.identity.core.DefaultServiceURLBuilder;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -48,12 +49,14 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_LAYOUT;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_LAYOUT_CONFIG_NOT_ALLOWED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.HTML_CONTENT_KEY;
@@ -379,6 +382,11 @@ public class BrandingPreferenceMgtUtils {
                     CustomLayoutContent customLayoutContent =
                             customContentDAO.getCustomContent(appId, tenantDomain);
                     if (customLayoutContent != null) {
+                        if (Boolean.parseBoolean(IdentityUtil
+                                .getProperty(CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS))
+                                && !BrandingPreferenceMgtUtils.isURLBrandingEnabledForTheTenant(tenantDomain)) {
+                            return;
+                        }
                         Map<String, String> customContent = new LinkedHashMap<>();
                         customContent.put(HTML_CONTENT_KEY, customLayoutContent.getHtml());
                         if (StringUtils.isNotBlank(customLayoutContent.getCss())) {
@@ -479,5 +487,23 @@ public class BrandingPreferenceMgtUtils {
 
         log.debug("Portal URL is not configured for tenant: " + tenantDomain + ". Using default URL: "
                 + defaultURL);
+    }
+
+    public static boolean isURLBrandingEnabledForTheTenant(String tenantDomain) throws BrandingPreferenceMgtException {
+
+        try {
+            // If a custom service URL builder exists, get the configured proxy host name for the tenant.
+            String proxyHostName = ServiceURLBuilder.create().setTenant(tenantDomain).build().getProxyHostName();
+
+            DefaultServiceURLBuilder defaultServiceURLBuilder = new DefaultServiceURLBuilder();
+            String defaultProxyHostName = defaultServiceURLBuilder.setTenant(tenantDomain).build()
+                    .getProxyHostName();
+
+            /* If the configured proxy host name is the same as the default proxy host name, it means
+               URL branding is not enabled for the tenant. */
+            return StringUtils.equals(proxyHostName, defaultProxyHostName);
+        } catch (URLBuilderException e) {
+            throw new BrandingPreferenceMgtException(e);
+        }
     }
 }
