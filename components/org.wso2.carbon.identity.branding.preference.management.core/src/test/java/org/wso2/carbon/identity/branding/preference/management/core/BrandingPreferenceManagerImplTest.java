@@ -83,6 +83,7 @@ import static org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_ID;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_ALLOW_ONLY_URL_BRANDED_TENANTS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_CUSTOM_LAYOUT_CONFIG_NOT_ALLOWED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_ALREADY_EXISTS_ERROR_CODE;
 import static org.wso2.carbon.identity.branding.preference.management.core.util.TestUtils.getPreferenceFromFile;
@@ -1073,7 +1074,7 @@ public class BrandingPreferenceManagerImplTest {
             ServiceURLBuilder serviceURLBuilder = mock(ServiceURLBuilder.class);
             mockedServiceURLBuilder.when(ServiceURLBuilder::create).thenReturn(serviceURLBuilder);
             ServiceURL serviceURL = mock(ServiceURL.class);
-            when(serviceURL.getProxyHostName()).thenReturn("abc.com");
+            when(serviceURL.getProxyHostName()).thenReturn("wso2.com");
             when(serviceURLBuilder.setTenant(SUPER_TENANT_DOMAIN_NAME)).thenReturn(serviceURLBuilder);
             when(serviceURLBuilder.build()).thenReturn(serviceURL);
 
@@ -1086,7 +1087,18 @@ public class BrandingPreferenceManagerImplTest {
 
             // Adding new branding preference.
             brandingPreferenceManagerImpl.addBrandingPreference(brandingPreference);
+
+            // Replacing branding preference should work when URL branding configured.
             brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreference);
+
+            try {
+                // Replacing branding preference should fail when URL branding is not configured.
+                when(serviceURL.getProxyHostName()).thenReturn("localhost");
+                brandingPreferenceManagerImpl.replaceBrandingPreference(brandingPreference);
+            } catch (BrandingPreferenceMgtClientException e) {
+                assertEquals(e.getErrorCode(), ERROR_CODE_CUSTOM_LAYOUT_CONFIG_NOT_ALLOWED.getCode());
+            }
+
             brandingPreferenceManagerImpl.deleteBrandingPreference(brandingPreference.getType(),
                     brandingPreference.getName(), brandingPreference.getLocale());
         }
