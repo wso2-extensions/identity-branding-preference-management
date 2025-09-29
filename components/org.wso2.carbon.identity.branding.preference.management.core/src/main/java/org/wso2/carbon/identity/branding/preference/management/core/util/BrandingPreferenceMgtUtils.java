@@ -501,7 +501,7 @@ public class BrandingPreferenceMgtUtils {
 
             /* If the configured proxy host name is the same as the default proxy host name, it means
                URL branding is not enabled for the tenant. */
-            return StringUtils.equals(proxyHostName, defaultProxyHostName);
+            return !StringUtils.equals(proxyHostName, defaultProxyHostName);
         } catch (URLBuilderException e) {
             throw new BrandingPreferenceMgtException(e);
         }
