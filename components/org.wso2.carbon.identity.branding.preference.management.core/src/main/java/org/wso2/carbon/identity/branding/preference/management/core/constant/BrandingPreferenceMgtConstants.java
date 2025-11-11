@@ -116,6 +116,8 @@ public class BrandingPreferenceMgtConstants {
                 "There is no application with the name : %s , in the organization: %s."),
         ERROR_CODE_ERROR_VALIDATING_BRANDING_PREFERENCE("BRANDINGM_00021",
                 "Error while validating branding preference configurations for the organization: %s."),
+        ERROR_CODE_TENANT_RESOLVE_FAILED("BRANDINGM_00014",
+                "Error while resolving tenant domain from organization id: %s."),
         // Error messages related to custom text configurations.
         ERROR_CODE_INVALID_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00022",
                 "Invalid custom text configurations for tenant: %s."),

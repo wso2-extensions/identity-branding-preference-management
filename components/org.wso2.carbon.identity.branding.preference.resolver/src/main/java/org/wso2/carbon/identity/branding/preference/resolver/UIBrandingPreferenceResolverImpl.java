@@ -83,6 +83,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_TENANT_RESOLVE_FAILED;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NOT_EXISTS_ERROR_CODE;
@@ -624,8 +625,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             if (valueFromCache != null) {
                 Optional<CustomText> customText =
                         getCustomText(type, name, screen, locale, valueFromCache.getCustomTextResolvedTenant());
+                String finalCurrentTenantDomain = currentTenantDomain;
                 return customText.orElseThrow(
-                        () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+                        () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS,
+                                finalCurrentTenantDomain));
             }
 
             // No cache found. Start with current organization.
@@ -677,8 +680,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         } else {
             // No need to resolve the custom text preference. Try to fetch the config from the same org.
             Optional<CustomText> customText = getCustomText(type, name, screen, locale, currentTenantDomain);
+            String finalCurrentTenantDomain = currentTenantDomain;
             return customText.orElseThrow(
-                    () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain()));
+                    () -> handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS,
+                            finalCurrentTenantDomain));
         }
     }
 
@@ -904,8 +909,18 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         return brandingPreference;
     }
 
-    private String getTenantDomain() {
+    private String getTenantDomain() throws BrandingPreferenceMgtException {
 
+        String appResidentOrgId = PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .getApplicationResidentOrganizationId();
+        if (StringUtils.isNotBlank(appResidentOrgId)) {
+            try {
+                return BrandingResolverComponentDataHolder.getInstance().getOrganizationManager()
+                        .resolveTenantDomain(appResidentOrgId);
+            } catch (OrganizationManagementException e) {
+                throw handleServerException(ERROR_CODE_TENANT_RESOLVE_FAILED, appResidentOrgId);
+            }
+        }
         return PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
     }
 
