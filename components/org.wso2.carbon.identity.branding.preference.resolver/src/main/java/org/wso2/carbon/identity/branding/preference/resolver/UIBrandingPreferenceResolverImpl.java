@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.database.utils.jdbc.exceptions.TransactionException;
 import org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver;
@@ -93,6 +94,13 @@ import static org.wso2.carbon.identity.branding.preference.management.core.util.
 /**
  * UI Branding Preference Resolver Implementation.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.branding.preference.management.core.UIBrandingPreferenceResolver",
+                "service.scope=singleton"
+        }
+)
 public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceResolver {
 
     private static final Log LOG = LogFactory.getLog(UIBrandingPreferenceResolverImpl.class);
