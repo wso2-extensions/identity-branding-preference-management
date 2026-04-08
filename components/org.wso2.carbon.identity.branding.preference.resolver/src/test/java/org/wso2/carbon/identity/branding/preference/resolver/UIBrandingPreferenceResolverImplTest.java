@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.branding.preference.management.core.exception.Br
 import org.wso2.carbon.identity.branding.preference.management.core.exception.BrandingPreferenceMgtServerException;
 import org.wso2.carbon.identity.branding.preference.management.core.internal.BrandingPreferenceManagerComponentDataHolder;
 import org.wso2.carbon.identity.branding.preference.management.core.model.BrandingPreference;
+import org.wso2.carbon.identity.branding.preference.management.core.model.CustomText;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCache;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheKey;
@@ -88,6 +89,7 @@ import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.DEFAULT_LOCALE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
@@ -791,6 +793,90 @@ public class UIBrandingPreferenceResolverImplTest {
         }
     }
                          
+    @Test(description = "Test resolveBranding uses accessing org as the effective org when accessing org ID is set.")
+    public void testResolveBrandingUsesAccessingOrgIdAsEffectiveOrg() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(ROOT_TENANT_DOMAIN, ROOT_TENANT_ID, ROOT_ORG_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setAccessingOrganizationId(CHILD_ORG_ID);
+
+            when(organizationManager.resolveTenantDomain(CHILD_ORG_ID)).thenReturn(CHILD_ORG_ID);
+
+            String resourceName = String.valueOf(CHILD_TENANT_ID) + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE;
+            String resourceId = "61356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-org-branding-preference.json";
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, BRANDING_RESOURCE_TYPE, resourceFileName);
+
+            BrandingPreference resolvedBrandingPreference =
+                    brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE, false);
+
+            Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
+        }
+    }
+
+    @Test(description = "Test resolveBranding throws server exception when accessing org's tenant resolution fails.")
+    public void testResolveBrandingThrowsServerExceptionWhenAccessingOrgTenantResolutionFails() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(ROOT_TENANT_DOMAIN, ROOT_TENANT_ID, ROOT_ORG_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setAccessingOrganizationId(CHILD_ORG_ID);
+
+            when(organizationManager.resolveTenantDomain(CHILD_ORG_ID))
+                    .thenThrow(new OrganizationManagementException("error"));
+
+            assertThrows(BrandingPreferenceMgtServerException.class, () ->
+                    brandingPreferenceResolver.resolveBranding(ORGANIZATION_TYPE, CHILD_ORG_ID, DEFAULT_LOCALE,
+                            false));
+        }
+    }
+
+    @Test(description = "Test resolveCustomText throws server exception when accessing org's tenant resolution fails.")
+    public void testResolveCustomTextThrowsServerExceptionWhenAccessingOrgTenantResolutionFails() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(ROOT_TENANT_DOMAIN, ROOT_TENANT_ID, ROOT_ORG_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setAccessingOrganizationId(CHILD_ORG_ID);
+
+            when(organizationManager.resolveTenantDomain(CHILD_ORG_ID))
+                    .thenThrow(new OrganizationManagementException("error"));
+
+            assertThrows(BrandingPreferenceMgtServerException.class, () ->
+                    brandingPreferenceResolver.resolveCustomText(ORGANIZATION_TYPE, CHILD_ORG_ID, "LOGIN",
+                            DEFAULT_LOCALE));
+        }
+    }
+
+    @Test(description = "Test resolveCustomText uses accessing org as the effective org when accessing org ID is set.")
+    public void testResolveCustomTextUsesAccessingOrgIdAsEffectiveOrg() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(ROOT_TENANT_DOMAIN, ROOT_TENANT_ID, ROOT_ORG_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setAccessingOrganizationId(CHILD_ORG_ID);
+
+            when(organizationManager.resolveTenantDomain(CHILD_ORG_ID)).thenReturn(CHILD_ORG_ID);
+
+            String screen = "LOGIN";
+            String resourceName = screen + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE.toLowerCase();
+            String resourceId = "71356f5e-e10b-49f2-87a6-f7f48e164374";
+            String resourceFileName = "sample-child-org-custom-text.json";
+            mockBrandingPreferenceRetrieval(resourceName, resourceId, CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+
+            CustomText resolvedCustomText =
+                    brandingPreferenceResolver.resolveCustomText(ORGANIZATION_TYPE, CHILD_ORG_ID, screen,
+                            DEFAULT_LOCALE);
+
+            Assert.assertEquals(resolvedCustomText.getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedCustomText.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedCustomText.getScreen(), screen);
+        }
+    }
+
     @Test
     public void testResolveCustomTextThrowsServerExceptionWhenOrgIdResolutionFails() throws Exception {
 
