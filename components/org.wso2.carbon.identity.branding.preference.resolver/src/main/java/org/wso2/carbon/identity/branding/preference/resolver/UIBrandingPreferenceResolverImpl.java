@@ -83,6 +83,8 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_APP_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_BRANDING_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_BRANDING_PREFERENCE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_CUSTOM_TEXT_PREFERENCE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_BRANDING_PREFERENCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ORGANIZATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
@@ -158,8 +160,15 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     public BrandingPreference resolveBranding(String type, String name, String locale, boolean restrictToPublished)
             throws BrandingPreferenceMgtException {
 
-        String organizationId = getOrganizationId();
-        String currentTenantDomain = getTenantDomain();
+        String currentTenantDomain;
+        String organizationId;
+        try {
+            currentTenantDomain = resolveEffectiveTenantDomain();
+            organizationId = resolveEffectiveOrganizationId();
+        } catch (OrganizationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_BRANDING_PREFERENCE,
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getAccessingOrganizationId());
+        }
 
         OrganizationManager organizationManager =
                 BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
@@ -600,8 +609,15 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     public CustomText resolveCustomText(String type, String name, String screen, String locale)
             throws BrandingPreferenceMgtException {
 
-        String organizationId = getOrganizationId();
-        String currentTenantDomain = getTenantDomain();
+        String currentTenantDomain;
+        String organizationId;
+        try {
+            currentTenantDomain = resolveEffectiveTenantDomain();
+            organizationId = resolveEffectiveOrganizationId();
+        } catch (OrganizationManagementException e) {
+            throw handleServerException(ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_CUSTOM_TEXT_PREFERENCE,
+                    PrivilegedCarbonContext.getThreadLocalCarbonContext().getAccessingOrganizationId());
+        }
 
         OrganizationManager organizationManager =
                 BrandingResolverComponentDataHolder.getInstance().getOrganizationManager();
@@ -925,6 +941,27 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
     private String getOrganizationId() {
 
         return PrivilegedCarbonContext.getThreadLocalCarbonContext().getOrganizationId();
+    }
+
+    private String resolveEffectiveTenantDomain() throws OrganizationManagementException {
+
+        String accessingOrganizationId =
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getAccessingOrganizationId();
+        if (StringUtils.isNotBlank(accessingOrganizationId)) {
+            return BrandingResolverComponentDataHolder.getInstance().getOrganizationManager()
+                    .resolveTenantDomain(accessingOrganizationId);
+        }
+        return getTenantDomain();
+    }
+
+    private String resolveEffectiveOrganizationId() {
+
+        String accessingOrganizationId =
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getAccessingOrganizationId();
+        if (StringUtils.isNotBlank(accessingOrganizationId)) {
+            return accessingOrganizationId;
+        }
+        return getOrganizationId();
     }
 
     private String getResourceName(String type, String name, String locale) {

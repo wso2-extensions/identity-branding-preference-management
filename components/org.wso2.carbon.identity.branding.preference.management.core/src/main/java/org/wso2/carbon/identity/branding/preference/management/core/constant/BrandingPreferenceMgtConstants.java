@@ -158,7 +158,13 @@ public class BrandingPreferenceMgtConstants {
         ERROR_CODE_MANDATORY_COMPONENT_NOT_FOUND("BRANDINGM_00047",
                 "Mandatory component '%s' not found in the custom layout html content."),
         ERROR_CODE_MAXIMUM_CUSTOM_CONTENT_SIZE_EXCEEDED("BRANDINGM_00048",
-                "Maximum custom content length exceeded. The maximum allowed size is %s bytes.");
+                "Maximum custom content length exceeded. The maximum allowed size is %s bytes."),
+        ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_BRANDING_PREFERENCE("BRANDINGM_00049",
+                "Error while resolving tenant domain for accessing organization: %s during branding " +
+                        "preference resolution."),
+        ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00050",
+                "Error while resolving tenant domain for accessing organization: %s during custom text " +
+                        "preference resolution.");
 
         private final String code;
         private final String message;
