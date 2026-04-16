@@ -236,7 +236,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
                         /*  No branding found. Adding the same tenant domain to cache
                           to avoid the resolving in the next run. */
-                        addOrgBrandingToCache(organizationId, currentTenantDomain, currentTenantDomain,
+                        addOrgBrandingToCacheOnRead(organizationId, currentTenantDomain, currentTenantDomain,
                                 restrictToPublished);
                         throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                                 ORGANIZATION_TYPE, name, currentTenantDomain);
@@ -256,7 +256,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                                 /*Since Branding is inherited from an ancestor org,
                                   removing the ancestor org displayName.*/
                                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                                addOrgBrandingToCache(organizationId, currentTenantDomain, ancestorTenantDomain,
+                                addOrgBrandingToCacheOnRead(organizationId, currentTenantDomain, ancestorTenantDomain,
                                         restrictToPublished);
                                 return brandingPreference.get();
                             }
@@ -270,7 +270,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             // No branding found. Adding the same tenant domain to cache to avoid the resolving in the next run.
-            addOrgBrandingToCache(organizationId, currentTenantDomain, currentTenantDomain, restrictToPublished);
+            addOrgBrandingToCacheOnRead(organizationId, currentTenantDomain, currentTenantDomain, restrictToPublished);
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                     ORGANIZATION_TYPE, name, currentTenantDomain);
         } else {
@@ -314,7 +314,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         brandingPreference = getBrandingPreference(ORGANIZATION_TYPE, currentTenantDomain, locale,
                 currentTenantDomain);
         if (isBrandingAvailable(restrictToPublished, brandingPreference)) {
-            addAppBrandingToCache(appId, currentTenantDomain, null, currentTenantDomain, ORGANIZATION_TYPE,
+            addAppBrandingToCacheOnRead(appId, currentTenantDomain, null, currentTenantDomain, ORGANIZATION_TYPE,
                     restrictToPublished);
             return brandingPreference.get();
         }
@@ -323,7 +323,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
           if the current tenant domain is super tenant since it is the root organization. */
         if (orgId == null || MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(currentTenantDomain)) {
             // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+            addAppBrandingToCacheOnRead(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
                     restrictToPublished);
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                     APPLICATION_TYPE, appId, currentTenantDomain);
@@ -335,7 +335,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             List<String> ancestorOrganizationIds = organizationManager.getAncestorOrganizationIds(orgId);
             if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
                 // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-                addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+                addAppBrandingToCacheOnRead(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
                         restrictToPublished);
                 throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                         APPLICATION_TYPE, appId, currentTenantDomain);
@@ -363,7 +363,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             // No branding found. Adding the same app id to cache to avoid the resolving in the next run.
-            addAppBrandingToCache(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
+            addAppBrandingToCacheOnRead(appId, currentTenantDomain, appId, currentTenantDomain, APPLICATION_TYPE,
                     restrictToPublished);
             throw handleClientException(ERROR_CODE_BRANDING_PREFERENCE_NOT_CONFIGURED,
                     APPLICATION_TYPE, appId, currentTenantDomain);
@@ -438,7 +438,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 /* Since Branding is inherited from app-level branding of the ancestor org,
                   removing the ancestor org displayName. */
                 removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-                addAppBrandingToCache(appId, currentTenantDomain, ancestorAppId, ancestorTenantDomain,
+                addAppBrandingToCacheOnRead(appId, currentTenantDomain, ancestorAppId, ancestorTenantDomain,
                         APPLICATION_TYPE, restrictToPublished);
                 return brandingPreference;
             }
@@ -451,7 +451,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             /* Since Branding is inherited from org-level branding of the parent org,
               removing the ancestor org displayName. */
             removeOrgDisplayNameFromBrandingPreference(brandingPreference.get());
-            addAppBrandingToCache(appId, currentTenantDomain, null, ancestorTenantDomain,
+            addAppBrandingToCacheOnRead(appId, currentTenantDomain, null, ancestorTenantDomain,
                     ORGANIZATION_TYPE, restrictToPublished);
             return brandingPreference;
         }
@@ -667,7 +667,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                     if (CollectionUtils.isEmpty(ancestorOrganizationIds) || ancestorOrganizationIds.size() < 2) {
                         /*  No custom text found. Adding the same tenant domain to cache
                           to avoid the resolving in the next run. */
-                        addCustomTextResolvedOrgToCache(organizationId, resourceName, currentTenantDomain,
+                        addCustomTextResolvedOrgToCacheOnRead(organizationId, resourceName, currentTenantDomain,
                                 currentTenantDomain);
                         throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain());
                     }
@@ -682,7 +682,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                         if (ancestorDepthInHierarchy >= minHierarchyDepth) {
                             customText = getCustomText(type, name, screen, locale, ancestorTenantDomain);
                             if (customText.isPresent()) {
-                                addCustomTextResolvedOrgToCache
+                                addCustomTextResolvedOrgToCacheOnRead
                                         (organizationId, resourceName, currentTenantDomain, ancestorTenantDomain);
                                 return customText.get();
                             }
@@ -696,7 +696,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             // No custom text found. Adding the same tenant domain to cache to avoid the resolving in the next run.
-            addCustomTextResolvedOrgToCache(organizationId, resourceName, currentTenantDomain, currentTenantDomain);
+            addCustomTextResolvedOrgToCacheOnRead(organizationId, resourceName, currentTenantDomain, currentTenantDomain);
             throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain());
         } else {
             // No need to resolve the custom text preference. Try to fetch the config from the same org.
@@ -824,10 +824,37 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
         BrandedOrgCacheKey cacheKey = new BrandedOrgCacheKey(cacheKeyId);
         BrandedOrgCacheEntry cacheEntry = new BrandedOrgCacheEntry(brandingInheritedTenantDomain);
+        brandedOrgCache.addToCache(cacheKey, cacheEntry, brandedTenantDomain);
+    }
+
+    private void addOrgBrandingToCacheOnRead(String brandedOrgId, String brandedTenantDomain,
+                                       String brandingInheritedTenantDomain, boolean restrictToPublished) {
+
+        String cacheKeyId = brandedOrgId;
+        if (restrictToPublished) {
+            cacheKeyId += PUBLISHED_BRANDING_CACHE_KEY_SUFFIX;
+        }
+        BrandedOrgCacheKey cacheKey = new BrandedOrgCacheKey(cacheKeyId);
+        BrandedOrgCacheEntry cacheEntry = new BrandedOrgCacheEntry(brandingInheritedTenantDomain);
         brandedOrgCache.addToCacheOnRead(cacheKey, cacheEntry, brandedTenantDomain);
     }
 
     private void addAppBrandingToCache(String appId, String tenantDomain, String brandingInheritedAppId,
+                                       String brandingInheritedTenantDomain, String resolvedBrandingType,
+                                       boolean restrictToPublished) {
+
+        String cacheKeyId = appId;
+        if (restrictToPublished) {
+            cacheKeyId += PUBLISHED_BRANDING_CACHE_KEY_SUFFIX;
+        }
+        BrandedAppCacheKey cacheKey = new BrandedAppCacheKey(cacheKeyId);
+        BrandedAppCacheEntry cacheEntry =
+                new BrandedAppCacheEntry(brandingInheritedTenantDomain, brandingInheritedAppId,
+                        resolvedBrandingType);
+        brandedAppCache.addToCache(cacheKey, cacheEntry, tenantDomain);
+    }
+
+    private void addAppBrandingToCacheOnRead(String appId, String tenantDomain, String brandingInheritedAppId,
                                        String brandingInheritedTenantDomain, String resolvedBrandingType,
                                        boolean restrictToPublished) {
 
@@ -995,6 +1022,23 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
      * @param customTextInheritedTenantDomain Custom text inherited tenant domain.
      */
     private void addCustomTextResolvedOrgToCache(String textCustomizedOrgId, String resourceName,
+                                                 String textCustomizedTenantDomain,
+                                                 String customTextInheritedTenantDomain) {
+
+        TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(textCustomizedOrgId, resourceName);
+        TextCustomizedOrgCacheEntry cacheEntry = new TextCustomizedOrgCacheEntry(customTextInheritedTenantDomain);
+        textCustomizedOrgCache.addToCache(cacheKey, cacheEntry, textCustomizedTenantDomain);
+    }
+
+    /**
+     * Add custom text resolved tenant to cache during a read operation.
+     *
+     * @param textCustomizedOrgId             Text customized organization id.
+     * @param resourceName                    Resource name of the custom text resource. Unique to the screen & locale.
+     * @param textCustomizedTenantDomain      Text customized tenant domain.
+     * @param customTextInheritedTenantDomain Custom text inherited tenant domain.
+     */
+    private void addCustomTextResolvedOrgToCacheOnRead(String textCustomizedOrgId, String resourceName,
                                                  String textCustomizedTenantDomain,
                                                  String customTextInheritedTenantDomain) {
 
