@@ -696,7 +696,8 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             }
 
             // No custom text found. Adding the same tenant domain to cache to avoid the resolving in the next run.
-            addCustomTextResolvedOrgToCacheOnRead(organizationId, resourceName, currentTenantDomain, currentTenantDomain);
+            addCustomTextResolvedOrgToCacheOnRead(organizationId, resourceName, 
+                    currentTenantDomain, currentTenantDomain);
             throw handleClientException(ERROR_CODE_CUSTOM_TEXT_PREFERENCE_NOT_EXISTS, getTenantDomain());
         } else {
             // No need to resolve the custom text preference. Try to fetch the config from the same org.
