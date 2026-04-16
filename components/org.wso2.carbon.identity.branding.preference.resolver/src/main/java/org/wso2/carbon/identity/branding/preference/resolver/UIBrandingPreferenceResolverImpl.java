@@ -824,7 +824,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         }
         BrandedOrgCacheKey cacheKey = new BrandedOrgCacheKey(cacheKeyId);
         BrandedOrgCacheEntry cacheEntry = new BrandedOrgCacheEntry(brandingInheritedTenantDomain);
-        brandedOrgCache.addToCache(cacheKey, cacheEntry, brandedTenantDomain);
+        brandedOrgCache.addToCacheOnRead(cacheKey, cacheEntry, brandedTenantDomain);
     }
 
     private void addAppBrandingToCache(String appId, String tenantDomain, String brandingInheritedAppId,
@@ -839,7 +839,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         BrandedAppCacheEntry cacheEntry =
                 new BrandedAppCacheEntry(brandingInheritedTenantDomain, brandingInheritedAppId,
                         resolvedBrandingType);
-        brandedAppCache.addToCache(cacheKey, cacheEntry, tenantDomain);
+        brandedAppCache.addToCacheOnRead(cacheKey, cacheEntry, tenantDomain);
     }
 
     private Optional<BrandingPreference> getBrandingPreference(String type, String name, String locale,
@@ -1000,7 +1000,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         TextCustomizedOrgCacheKey cacheKey = new TextCustomizedOrgCacheKey(textCustomizedOrgId, resourceName);
         TextCustomizedOrgCacheEntry cacheEntry = new TextCustomizedOrgCacheEntry(customTextInheritedTenantDomain);
-        textCustomizedOrgCache.addToCache(cacheKey, cacheEntry, textCustomizedTenantDomain);
+        textCustomizedOrgCache.addToCacheOnRead(cacheKey, cacheEntry, textCustomizedTenantDomain);
     }
 
     /**
