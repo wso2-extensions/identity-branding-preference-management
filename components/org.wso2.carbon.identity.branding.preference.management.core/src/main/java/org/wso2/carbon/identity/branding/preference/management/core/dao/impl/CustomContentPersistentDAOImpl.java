@@ -196,11 +196,10 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
 
         CustomContentCacheEntry cacheEntry = new CustomContentCacheEntry(customLayoutContent);
         if (StringUtils.isBlank(applicationUuid)) {
-            getCustomContentCache().addToCache(new OrgCustomContentCacheKey(tenantDomain), 
-                cacheEntry, tenantDomain);
+            getCustomContentCache().addToCache(new OrgCustomContentCacheKey(tenantDomain), cacheEntry, tenantDomain);
         } else {
-            getCustomContentCache().addToCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain), 
-            cacheEntry, tenantDomain);
+            getCustomContentCache().addToCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain), cacheEntry,
+                    tenantDomain);
         }
     }
 
