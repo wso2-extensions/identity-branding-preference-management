@@ -109,7 +109,7 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
                                 "successfully retrieved.", applicationUuid, tenantDomain));
             }
         }
-        addCustomContentToCache(customLayoutContent, applicationUuid, tenantDomain);
+        addCustomContentToCacheOnRead(customLayoutContent, applicationUuid, tenantDomain);
         return customLayoutContent;
     }
 
@@ -200,6 +200,26 @@ class CustomContentPersistentDAOImpl implements CustomContentPersistentDAO {
         } else {
             getCustomContentCache().addToCache(new AppCustomContentCacheKey(applicationUuid, tenantDomain), cacheEntry,
                     tenantDomain);
+        }
+    }
+
+    /**
+     * Adds custom content to the cache for read operations.
+     *
+     * @param customLayoutContent Custom layout content to be cached.
+     * @param applicationUuid     Application UUID, if applicable.
+     * @param tenantDomain        Tenant domain.
+     */
+    private void addCustomContentToCacheOnRead(CustomLayoutContent customLayoutContent, String applicationUuid,
+            String tenantDomain) {
+
+        CustomContentCacheEntry cacheEntry = new CustomContentCacheEntry(customLayoutContent);
+        if (StringUtils.isBlank(applicationUuid)) {
+            getCustomContentCache().addToCacheOnRead(new OrgCustomContentCacheKey(tenantDomain), 
+                cacheEntry, tenantDomain);
+        } else {
+            getCustomContentCache().addToCacheOnRead(new AppCustomContentCacheKey(applicationUuid, tenantDomain), 
+            cacheEntry, tenantDomain);
         }
     }
 
