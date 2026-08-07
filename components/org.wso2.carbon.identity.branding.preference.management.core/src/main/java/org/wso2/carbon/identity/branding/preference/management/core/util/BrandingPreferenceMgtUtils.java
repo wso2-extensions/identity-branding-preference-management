@@ -171,6 +171,12 @@ public class BrandingPreferenceMgtUtils {
      */
     private static void validateMandatoryComponentsInLayoutContent(String html) throws BrandingPreferenceMgtException {
 
+        // Reject values that are remote/external resource references rather than inline HTML markup.
+        if (isRemoteResource(html)) {
+            throw handleClientException(
+                    BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_INVALID_CUSTOM_LAYOUT_CONTENT);
+        }
+
         // Validate for the MainSection component.
         Pattern mainSectionPattern = Pattern.compile("\\{\\{\\{[ \\t]*MainSection[ \\t]*\\}\\}\\}");
         if (!mainSectionPattern.matcher(html).find()) {
@@ -178,6 +184,55 @@ public class BrandingPreferenceMgtUtils {
                     BrandingPreferenceMgtConstants.ErrorMessages.ERROR_CODE_MANDATORY_COMPONENT_NOT_FOUND,
                     "{{{" + BrandingPreferenceMgtConstants.CustomLayoutComponents.MAIN_SECTION.getComponentName() +
                             "}}}");
+        }
+    }
+
+    /**
+     * Returns true if the input is a remote/external resource reference rather than inline
+     * HTML markup. Rejects URI scheme prefixes, protocol-relative references, and file
+     * extensions that the layout engine routes to its deserialization path.
+     *
+     * @param input The branding layout value to inspect.
+     * @return true if the value looks like a remote or file-system resource reference.
+     */
+    // Extend when new URL stream-handler schemes are introduced.
+    private static final String[] REMOTE_RESOURCE_PREFIXES = {
+            "//",
+            "http://", "https://",
+            "ftp://",  "ftps://",  "sftp://",
+            "file:",   "jar:",     "data:"
+    };
+
+    // Extensions the layout engine routes to its file-loading / deserialization path.
+    private static final String[] REMOTE_RESOURCE_EXTENSIONS = {".ser", ".html"};
+
+    private static boolean isRemoteResource(String input) {
+
+        if (StringUtils.isBlank(input)) {
+            return false;
+        }
+
+        // Normalise backslashes: "\\host" and "http:\\host" are treated as remote by some resolvers.
+        String normalised = input.trim().replace('\\', '/');
+        String lower = normalised.toLowerCase(java.util.Locale.ROOT);
+
+        for (String prefix : REMOTE_RESOURCE_PREFIXES) {
+            if (lower.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        for (String ext : REMOTE_RESOURCE_EXTENSIONS) {
+            if (lower.endsWith(ext)) {
+                return true;
+            }
+        }
+
+        // Catch-all for any other scheme, including handlers registered at runtime (e.g. OSGi).
+        try {
+            return new java.net.URI(normalised).getScheme() != null;
+        } catch (java.net.URISyntaxException e) {
+            return false;
         }
     }
 
