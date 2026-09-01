@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2023-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -896,9 +896,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Branding preference for tenant: " + tenantDomain + " is retrieved successfully.");
                 }
-                String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
+                String resolvedApplication = APPLICATION_TYPE.equals(type) ? name : null;
 
-                return Optional.of(buildBrandingPreference(inputStream, type, name, locale, resolvedSourceName));
+                return Optional.of(buildBrandingPreference(inputStream, type, name, locale, tenantDomain,
+                        resolvedApplication));
             });
         } catch (TransactionException e) {
             BrandingPreferenceMgtUtils.handleBrandingMgtException(e.getCause());
@@ -930,11 +931,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
      * @param type Branding resource type.
      * @param name Tenant/Application name.
      * @param locale Language preference.
-     * @param resolvedSourceName Source Tenant/Application Name.
+     * @param resolvedOrganization Organization the preference was resolved from.
+     * @param resolvedApplication Application the preference was resolved from. Null for the ORG type.
      * @return Branding Preference.
      */
     private BrandingPreference buildBrandingPreference(InputStream inputStream, String type, String name,
-                                                       String locale, String resolvedSourceName)
+                                                       String locale, String resolvedOrganization,
+                                                       String resolvedApplication)
             throws IOException, BrandingPreferenceMgtException {
 
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
@@ -945,14 +948,14 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
 
         ObjectMapper mapper = new ObjectMapper();
         Object preference = mapper.readValue(preferencesJSON, Object.class);
-        BrandingPreferenceMgtUtils.addCustomLayoutContentToPreferences(preference,
-                APPLICATION_TYPE.equals(type) ? resolvedSourceName : null, getTenantDomain());
+        BrandingPreferenceMgtUtils.addCustomLayoutContentToPreferences(preference, resolvedApplication,
+                getTenantDomain());
         BrandingPreference brandingPreference = new BrandingPreference();
         brandingPreference.setPreference(preference);
         brandingPreference.setType(type);
         brandingPreference.setName(name);
         brandingPreference.setLocale(locale);
-        brandingPreference.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
+        brandingPreference.setResolvedFrom(type, resolvedOrganization, resolvedApplication);
         return brandingPreference;
     }
 
@@ -1084,9 +1087,10 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Custom text preference for tenant: " + tenantDomain + " is retrieved successfully.");
             }
-            String resolvedSourceName = ORGANIZATION_TYPE.equals(type) ? tenantDomain : name;
+            String resolvedApplication = APPLICATION_TYPE.equals(type) ? name : null;
 
-            return Optional.of(buildCustomText(inputStream, type, name, screen, locale, resolvedSourceName));
+            return Optional.of(buildCustomText(inputStream, type, name, screen, locale, tenantDomain,
+                    resolvedApplication));
         } catch (ConfigurationManagementException e) {
             if (!RESOURCE_NOT_EXISTS_ERROR_CODE.equals(e.getErrorCode())) {
                 throw handleServerException(ERROR_CODE_ERROR_GETTING_CUSTOM_TEXT_PREFERENCE, tenantDomain, e);
@@ -1107,11 +1111,13 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
      * @param name        Tenant/Application name.
      * @param screen      Screen Name.
      * @param locale      Language preference.
-     * @param resolvedSourceName Source Name.
+     * @param resolvedOrganization Organization the preference was resolved from.
+     * @param resolvedApplication Application the preference was resolved from. Null for the ORG type.
      * @return Custom Text Preference.
      */
     private CustomText buildCustomText(InputStream inputStream, String type, String name,
-                                       String screen, String locale, String resolvedSourceName)
+                                       String screen, String locale, String resolvedOrganization,
+                                       String resolvedApplication)
             throws IOException, BrandingPreferenceMgtException {
 
         String preferencesJSON = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
@@ -1127,7 +1133,7 @@ public class UIBrandingPreferenceResolverImpl implements UIBrandingPreferenceRes
         customText.setName(name);
         customText.setLocale(locale);
         customText.setScreen(screen);
-        customText.setResolvedFrom(type, (resolvedSourceName != null) ? resolvedSourceName : name);
+        customText.setResolvedFrom(type, resolvedOrganization, resolvedApplication);
         return customText;
     }
 

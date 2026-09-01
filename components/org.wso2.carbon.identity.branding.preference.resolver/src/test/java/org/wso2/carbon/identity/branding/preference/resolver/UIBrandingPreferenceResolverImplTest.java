@@ -190,6 +190,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -216,6 +218,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -247,6 +251,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-app-branding-preference-without-display-name.json"));
         }
@@ -278,6 +284,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), PARENT_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
         }
@@ -312,6 +320,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), ROOT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), ROOT_TENANT_DOMAIN);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), ROOT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-root-app-branding-preference-without-display-name.json"));
         }
@@ -346,6 +356,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), ROOT_TENANT_DOMAIN);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), ROOT_TENANT_DOMAIN);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-root-org-branding-preference-without-display-name.json"));
         }
@@ -373,6 +385,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -424,6 +438,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), CHILD_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -461,6 +477,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(orgResourceFileName));
         }
     }
@@ -543,6 +561,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), APPLICATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), APPLICATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), PARENT_APP_ID);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-app-branding-preference-without-display-name.json"));
         }
@@ -574,6 +594,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), PARENT_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
         }
@@ -601,6 +623,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -651,6 +675,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), CHILD_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -694,6 +720,8 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getName(), PARENT_ORG_ID);
             Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), PARENT_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(),
                     getPreferenceFromFile("sample-parent-org-branding-preference-without-display-name.json"));
         }
@@ -813,6 +841,9 @@ public class UIBrandingPreferenceResolverImplTest {
 
             Assert.assertEquals(resolvedBrandingPreference.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedBrandingPreference.getLocale(), DEFAULT_LOCALE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedBrandingPreference.getResolvedFrom().getApplication(), null);
             Assert.assertEquals(resolvedBrandingPreference.getPreference(), getPreferenceFromFile(resourceFileName));
         }
     }
@@ -874,6 +905,9 @@ public class UIBrandingPreferenceResolverImplTest {
             Assert.assertEquals(resolvedCustomText.getType(), ORGANIZATION_TYPE);
             Assert.assertEquals(resolvedCustomText.getLocale(), DEFAULT_LOCALE);
             Assert.assertEquals(resolvedCustomText.getScreen(), screen);
+            Assert.assertEquals(resolvedCustomText.getResolvedFrom().getType(), ORGANIZATION_TYPE);
+            Assert.assertEquals(resolvedCustomText.getResolvedFrom().getOrganization(), CHILD_ORG_ID);
+            Assert.assertEquals(resolvedCustomText.getResolvedFrom().getApplication(), null);
         }
     }
 
