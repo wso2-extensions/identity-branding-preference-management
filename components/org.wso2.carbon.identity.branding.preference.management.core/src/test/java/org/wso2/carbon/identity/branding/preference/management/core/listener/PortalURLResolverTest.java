@@ -187,6 +187,24 @@ public class PortalURLResolverTest {
     }
 
     @Test
+    public void profileUpdateUsesDefaultProfileUrl() throws Exception {
+
+        when(flowContext.getPortalUrl()).thenReturn(null);
+        when(flowContext.getApplicationId()).thenReturn(null);
+        when(flowContext.getTenantDomain()).thenReturn("wso2.com");
+        when(flowContext.getFlowType()).thenReturn("PROFILE_UPDATE");
+
+        try (MockedStatic<ServiceURLBuilder> serviceURLBuilder = mockStatic(ServiceURLBuilder.class)) {
+            ServiceURLBuilder serviceURLBuilderMock = mockServiceURLBuilder();
+            boolean result = resolver.doPreExecute(flowContext);
+            assertTrue(result);
+            verify(serviceURLBuilderMock).addPath("/accounts/manage-profile");
+            verify(flowContext).setPortalUrl("https://default.url");
+            verify(brandingPreferenceManager, never()).getBrandingPreference(any(), any(), any());
+        }
+    }
+
+    @Test
     public void prefWithoutSelfSignupUrl() throws Exception {
 
         when(flowContext.getPortalUrl()).thenReturn(null);
@@ -208,7 +226,7 @@ public class PortalURLResolverTest {
         }
     }
 
-    private static void mockServiceURLBuilder() throws URLBuilderException {
+    private static ServiceURLBuilder mockServiceURLBuilder() throws URLBuilderException {
 
         ServiceURLBuilder serviceURLBuilderMock = mock(ServiceURLBuilder.class);
         when(ServiceURLBuilder.create()).thenReturn(serviceURLBuilderMock);
@@ -217,6 +235,7 @@ public class PortalURLResolverTest {
         when(serviceURLBuilderMock.build()).thenReturn(serviceURL);
         String url = "https://default.url";
         when(serviceURL.getAbsolutePublicURL()).thenReturn(url);
+        return serviceURLBuilderMock;
     }
 
     @Test
