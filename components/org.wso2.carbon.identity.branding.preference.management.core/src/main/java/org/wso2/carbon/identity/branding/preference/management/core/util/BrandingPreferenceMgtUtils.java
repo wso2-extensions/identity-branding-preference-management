@@ -66,6 +66,7 @@ import static org.wso2.carbon.identity.branding.preference.management.core.const
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.RESOURCE_NAME_SEPARATOR;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.SELF_SIGN_UP_URL;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.INVITED_USER_REGISTRATION;
+import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.PROFILE_UPDATE;
 import static org.wso2.carbon.identity.flow.mgt.Constants.FlowTypes.REGISTRATION;
 
 /**
@@ -75,6 +76,7 @@ public class BrandingPreferenceMgtUtils {
 
     public static final String DEFAULT_REGISTRATION_PORTAL_URL = "/accounts/register";
     public static final String DEFAULT_RECOVERY_PORTAL_URL = "/accounts/recovery";
+    public static final String DEFAULT_PROFILE_UPDATE_PORTAL_URL = "/accounts/manage-profile";
     private static final Log log = LogFactory.getLog(BrandingPreferenceMgtUtils.class);
 
     /**
@@ -474,10 +476,15 @@ public class BrandingPreferenceMgtUtils {
     private static String buildDefaultPortalUrl(String flowType) throws URLBuilderException {
 
         ServiceURLBuilder builder = ServiceURLBuilder.create();
-        String path = (REGISTRATION.getType().equalsIgnoreCase(flowType)
-                || INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(flowType))
-                ? DEFAULT_REGISTRATION_PORTAL_URL
-                : DEFAULT_RECOVERY_PORTAL_URL;
+        String path;
+        if (REGISTRATION.getType().equalsIgnoreCase(flowType)
+                || INVITED_USER_REGISTRATION.getType().equalsIgnoreCase(flowType)) {
+            path = DEFAULT_REGISTRATION_PORTAL_URL;
+        } else if (PROFILE_UPDATE.getType().equalsIgnoreCase(flowType)) {
+            path = DEFAULT_PROFILE_UPDATE_PORTAL_URL;
+        } else {
+            path = DEFAULT_RECOVERY_PORTAL_URL;
+        }
 
         builder.setOrganization(PrivilegedCarbonContext.getThreadLocalCarbonContext().getOrganizationId());
 
@@ -499,6 +506,11 @@ public class BrandingPreferenceMgtUtils {
                                                   BrandingPreferenceManager brandingPreferenceManager,
                                                   String flowType)
             throws URLBuilderException, BrandingPreferenceMgtException {
+
+        // Branding has no portal URL for the profile update flow, so the default URL is used.
+        if (PROFILE_UPDATE.getType().equalsIgnoreCase(flowType)) {
+            return buildDefaultPortalUrl(flowType);
+        }
 
         BrandingPreference preference;
         String configuredURL = StringUtils.EMPTY;
