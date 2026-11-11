@@ -205,6 +205,24 @@ public class PortalURLResolverTest {
     }
 
     @Test
+    public void deviceRegistrationUsesDefaultRegisterDeviceUrl() throws Exception {
+
+        when(flowContext.getPortalUrl()).thenReturn(null);
+        when(flowContext.getApplicationId()).thenReturn(null);
+        when(flowContext.getTenantDomain()).thenReturn("wso2.com");
+        when(flowContext.getFlowType()).thenReturn("DEVICE_REGISTRATION");
+
+        try (MockedStatic<ServiceURLBuilder> serviceURLBuilder = mockStatic(ServiceURLBuilder.class)) {
+            ServiceURLBuilder serviceURLBuilderMock = mockServiceURLBuilder();
+            boolean result = resolver.doPreExecute(flowContext);
+            assertTrue(result);
+            verify(serviceURLBuilderMock).addPath("/accounts/register-device");
+            verify(flowContext).setPortalUrl("https://default.url");
+            verify(brandingPreferenceManager, never()).getBrandingPreference(any(), any(), any());
+        }
+    }
+
+    @Test
     public void prefWithoutSelfSignupUrl() throws Exception {
 
         when(flowContext.getPortalUrl()).thenReturn(null);
