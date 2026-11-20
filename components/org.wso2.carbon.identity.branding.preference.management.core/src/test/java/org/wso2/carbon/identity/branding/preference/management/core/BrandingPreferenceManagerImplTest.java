@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceFile;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.event.event.Event;
 import org.wso2.carbon.identity.event.services.IdentityEventService;
+import org.wso2.carbon.identity.organization.management.service.util.OrganizationManagementUtil;
 import org.wso2.carbon.user.core.UserStoreException;
 
 import java.io.ByteArrayInputStream;
@@ -1040,6 +1041,115 @@ public class BrandingPreferenceManagerImplTest {
                 .getCustomText(inputCT1.getType(), inputCT1.getName(), inputCT1.getScreen(), inputCT1.getLocale()));
         assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
                 .getCustomText(inputCT2.getType(), inputCT2.getName(), inputCT2.getScreen(), inputCT2.getLocale()));
+    }
+
+    @Test
+    public void testAppCustomTextIsIsolatedFromOrgCustomText() throws Exception {
+
+        setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
+        CustomText orgCT = buildCustomText(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN,
+                DEFAULT_LOCALE, "sample-text-customization-1.json");
+        CustomText appCT = buildCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN,
+                DEFAULT_LOCALE, "sample-text-customization-2.json");
+
+        brandingPreferenceManagerImpl.addCustomText(orgCT);
+        // The same screen and locale can be customized for an application without conflicting with the org.
+        brandingPreferenceManagerImpl.addCustomText(appCT);
+        verify(resolver, times(2)).clearCustomTextResolverCacheHierarchy(any(), any(), any());
+
+        CustomText retrievedAppCT = brandingPreferenceManagerImpl.getCustomText(APPLICATION_TYPE,
+                SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN, DEFAULT_LOCALE);
+        Assert.assertEquals(retrievedAppCT.getPreference(), appCT.getPreference());
+        Assert.assertEquals(retrievedAppCT.getType(), APPLICATION_TYPE);
+        Assert.assertEquals(retrievedAppCT.getName(), SAMPLE_APPLICATION_ID_1);
+
+        CustomText retrievedOrgCT = brandingPreferenceManagerImpl.getCustomText(ORGANIZATION_TYPE,
+                SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN, DEFAULT_LOCALE);
+        Assert.assertEquals(retrievedOrgCT.getPreference(), orgCT.getPreference());
+
+        // Another application does not see the custom text of the first application.
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_2, LOGIN_SCREEN, DEFAULT_LOCALE));
+
+        // Replacing the app custom text does not change the org custom text.
+        CustomText newAppCT = buildCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN,
+                DEFAULT_LOCALE, "sample-text-customization-1.json");
+        brandingPreferenceManagerImpl.replaceCustomText(newAppCT);
+        Assert.assertEquals(brandingPreferenceManagerImpl.getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1,
+                LOGIN_SCREEN, DEFAULT_LOCALE).getPreference(), newAppCT.getPreference());
+
+        // Bulk deleting the org custom text keeps the app custom text.
+        brandingPreferenceManagerImpl.deleteAllCustomText();
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(ORGANIZATION_TYPE, SUPER_TENANT_DOMAIN_NAME, LOGIN_SCREEN, DEFAULT_LOCALE));
+        Assert.assertNotNull(brandingPreferenceManagerImpl.getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1,
+                LOGIN_SCREEN, DEFAULT_LOCALE));
+
+        brandingPreferenceManagerImpl.deleteCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN,
+                DEFAULT_LOCALE);
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN, DEFAULT_LOCALE));
+    }
+
+    @Test
+    public void testDeleteAllAppCustomText() throws Exception {
+
+        try (MockedStatic<OrganizationManagementUtil> organizationManagementUtil =
+                     mockStatic(OrganizationManagementUtil.class)) {
+            organizationManagementUtil.when(() -> OrganizationManagementUtil.isOrganization(anyString()))
+                    .thenReturn(false);
+            setCarbonContextForTenant(SAMPLE_TENANT_DOMAIN_NAME_ABC, SAMPLE_TENANT_ID_ABC);
+            brandingPreferenceManagerImpl.addCustomText(buildCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1,
+                    LOGIN_SCREEN, DEFAULT_LOCALE, "sample-text-customization-1.json"));
+            brandingPreferenceManagerImpl.addCustomText(buildCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1,
+                    LOGIN_SCREEN, FRENCH_LOCALE, "sample-text-customization-2.json"));
+            brandingPreferenceManagerImpl.addCustomText(buildCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_2,
+                    LOGIN_SCREEN, DEFAULT_LOCALE, "sample-text-customization-1.json"));
+
+            brandingPreferenceManagerImpl.deleteAllCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1);
+            verify(resolver, times(4)).clearCustomTextResolverCacheHierarchy(any(), any(), any());
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                    .getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN, DEFAULT_LOCALE));
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                    .getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1, LOGIN_SCREEN, FRENCH_LOCALE));
+            // Custom text of the other application is not deleted.
+            Assert.assertNotNull(brandingPreferenceManagerImpl.getCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_2,
+                    LOGIN_SCREEN, DEFAULT_LOCALE));
+
+            // Deleting again fails since there are no custom texts left for the application.
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                    .deleteAllCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_1));
+
+            brandingPreferenceManagerImpl.deleteAllCustomText(APPLICATION_TYPE, SAMPLE_APPLICATION_ID_2);
+        }
+    }
+
+    @Test
+    public void testAppCustomTextWithoutApplicationId() throws Exception {
+
+        setCarbonContextForTenant(SUPER_TENANT_DOMAIN_NAME, SUPER_TENANT_ID);
+        CustomText appCT = buildCustomText(APPLICATION_TYPE, null, LOGIN_SCREEN, DEFAULT_LOCALE,
+                "sample-text-customization-1.json");
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .addCustomText(appCT));
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .getCustomText(APPLICATION_TYPE, " ", LOGIN_SCREEN, DEFAULT_LOCALE));
+        assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceManagerImpl
+                .deleteAllCustomText(APPLICATION_TYPE, null));
+        verify(resolver, never()).clearCustomTextResolverCacheHierarchy(any(), any(), any());
+    }
+
+    private CustomText buildCustomText(String type, String name, String screen, String locale, String file)
+            throws Exception {
+
+        CustomText customText = new CustomText();
+        customText.setType(type);
+        customText.setName(name);
+        customText.setScreen(screen);
+        customText.setLocale(locale);
+        customText.setPreference(getPreferenceFromFile(file));
+        return customText;
     }
 
     private void setCarbonContextForTenant(String tenantDomain, int tenantId) throws UserStoreException {

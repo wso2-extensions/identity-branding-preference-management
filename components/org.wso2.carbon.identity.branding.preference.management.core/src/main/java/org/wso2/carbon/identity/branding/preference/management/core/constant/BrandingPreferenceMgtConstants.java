@@ -26,6 +26,7 @@ public class BrandingPreferenceMgtConstants {
     public static final String BRANDING_RESOURCE_TYPE = "BRANDING_PREFERENCES";
     public static final String APPLICATION_BRANDING_RESOURCE_TYPE = "APPLICATION_BRANDING_PREFERENCES";
     public static final String CUSTOM_TEXT_RESOURCE_TYPE = "CUSTOM_TEXT";
+    public static final String APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE = "APPLICATION_CUSTOM_TEXT";
     public static final String ORGANIZATION_TYPE = "ORG";
     public static final String APPLICATION_TYPE = "APP";
     public static final String CUSTOM_TYPE = "CUSTOM";
@@ -164,7 +165,12 @@ public class BrandingPreferenceMgtConstants {
                         "preference resolution."),
         ERROR_CODE_ERROR_RESOLVING_TENANT_FOR_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00050",
                 "Error while resolving tenant domain for accessing organization: %s during custom text " +
-                        "preference resolution.");
+                        "preference resolution."),
+        ERROR_CODE_ERROR_GETTING_APP_CUSTOM_TEXT_PREFERENCE("BRANDINGM_00051",
+                "Error while getting app-level custom text preference configurations for application id: %s " +
+                        "in tenant: %s."),
+        ERROR_CODE_INVALID_CUSTOM_TEXT_APPLICATION("BRANDINGM_00052",
+                "A valid application identifier is required for app-level custom text preferences in tenant: %s.");
 
         private final String code;
         private final String message;

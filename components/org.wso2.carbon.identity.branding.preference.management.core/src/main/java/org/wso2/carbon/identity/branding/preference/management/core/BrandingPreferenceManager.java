@@ -199,4 +199,18 @@ public interface BrandingPreferenceManager {
 
         throw new NotImplementedException("This functionality is not implemented.");
     }
+
+    /**
+     * This API is used to delete all the custom text preferences configured for the given type and name.
+     * For the ORG type, all the organization level custom text preferences of the organization are deleted.
+     * For the APP type, all the custom text preferences of the given application are deleted.
+     *
+     * @param type Type of the custom text preferences.
+     * @param name Name of the tenant/application where custom text belongs.
+     * @throws BrandingPreferenceMgtException if any error occurred.
+     */
+    default void deleteAllCustomText(String type, String name) throws BrandingPreferenceMgtException {
+
+        throw new NotImplementedException("This functionality is not implemented.");
+    }
 }
