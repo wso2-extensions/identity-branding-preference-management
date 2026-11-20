@@ -44,6 +44,9 @@ import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCac
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheEntry;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedAppCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.BrandedOrgCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedAppCache;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedAppCacheEntry;
+import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedAppCacheKey;
 import org.wso2.carbon.identity.branding.preference.resolver.cache.TextCustomizedOrgCache;
 import org.wso2.carbon.identity.branding.preference.resolver.internal.BrandingResolverComponentDataHolder;
 import org.wso2.carbon.identity.common.testng.realm.InMemoryRealmService;
@@ -83,10 +86,13 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 import static org.testng.Assert.assertThrows;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_BRANDING_RESOURCE_TYPE;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
@@ -115,6 +121,8 @@ public class UIBrandingPreferenceResolverImplTest {
     @Mock
     private TextCustomizedOrgCache textCustomizedOrgCache;
     @Mock
+    private TextCustomizedAppCache textCustomizedAppCache;
+    @Mock
     private CustomContentPersistentDAO customContentPersistentDAO;
     @Mock
     private Connection connection;
@@ -134,6 +142,7 @@ public class UIBrandingPreferenceResolverImplTest {
     private static final String CHILD_APP_ID = "42ef1d92-add6-449b-8a3c-fc308d2a4eac";
     private static final String CHILD_ORG_ID = "30b701c6-e309-4241-b047-0c299c45d1a0";
     private static final int CHILD_TENANT_ID = 3;
+    private static final String LOGIN_SCREEN = "login";
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -158,7 +167,8 @@ public class UIBrandingPreferenceResolverImplTest {
         doNothing().when(identityEventService).handleEvent(any(Event.class));
 
         brandingPreferenceResolver =
-                new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache);
+                new UIBrandingPreferenceResolverImpl(brandedOrgCache, brandedAppCache, textCustomizedOrgCache,
+                        textCustomizedAppCache);
     }
 
     @AfterMethod
@@ -934,6 +944,190 @@ public class UIBrandingPreferenceResolverImplTest {
                 resolver.resolveCustomText(ORGANIZATION_TYPE, name, screen, DEFAULT_LOCALE);
             });
         }
+    }
+
+    @Test
+    public void testResolveAppCustomTextFromCurrentAppCustomText() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceFileName = "sample-child-app-custom-text.json";
+            mockBrandingPreferenceRetrieval(getAppCustomTextResourceName(CHILD_APP_ID),
+                    "a1356f5e-e10b-49f2-87a6-f7f48e164374", APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+            // Org custom text is also available, but the app custom text should take precedence.
+            mockBrandingPreferenceRetrieval(getOrgCustomTextResourceName(), "a2356f5e-e10b-49f2-87a6-f7f48e164374",
+                    CUSTOM_TEXT_RESOURCE_TYPE, "sample-child-org-custom-text.json");
+
+            CustomText resolvedCustomText = brandingPreferenceResolver.resolveCustomText(APPLICATION_TYPE,
+                    CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE);
+
+            assertResolvedCustomText(resolvedCustomText, APPLICATION_TYPE, CHILD_ORG_ID, CHILD_APP_ID,
+                    resourceFileName);
+            verify(textCustomizedAppCache).addToCacheOnRead(any(TextCustomizedAppCacheKey.class),
+                    any(TextCustomizedAppCacheEntry.class), eq(CHILD_ORG_ID));
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextFromCurrentOrgCustomText() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            String resourceFileName = "sample-child-org-custom-text.json";
+            mockBrandingPreferenceRetrieval(getOrgCustomTextResourceName(), "b1356f5e-e10b-49f2-87a6-f7f48e164374",
+                    CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+
+            CustomText resolvedCustomText = brandingPreferenceResolver.resolveCustomText(APPLICATION_TYPE,
+                    CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE);
+
+            assertResolvedCustomText(resolvedCustomText, ORGANIZATION_TYPE, CHILD_ORG_ID, null, resourceFileName);
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextFromParentAppCustomText() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+            mockAncestorOrgIdAndAppIdRetrieval();
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+
+            String resourceFileName = "sample-parent-app-custom-text.json";
+            mockBrandingPreferenceRetrieval(getAppCustomTextResourceName(PARENT_APP_ID),
+                    "c1356f5e-e10b-49f2-87a6-f7f48e164374", APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+
+            CustomText resolvedCustomText = brandingPreferenceResolver.resolveCustomText(APPLICATION_TYPE,
+                    CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE);
+
+            assertResolvedCustomText(resolvedCustomText, APPLICATION_TYPE, PARENT_ORG_ID, PARENT_APP_ID,
+                    resourceFileName);
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextFromParentOrgCustomText() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+            mockAncestorOrgIdAndAppIdRetrieval();
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+
+            String resourceFileName = "sample-parent-org-custom-text.json";
+            mockBrandingPreferenceRetrieval(getOrgCustomTextResourceName(), "d1356f5e-e10b-49f2-87a6-f7f48e164374",
+                    CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+            // The org custom text is only available in the parent org.
+            when(configurationManager.getFiles(CUSTOM_TEXT_RESOURCE_TYPE, getOrgCustomTextResourceName()))
+                    .thenAnswer(invocation -> PARENT_ORG_ID.equals(PrivilegedCarbonContext
+                            .getThreadLocalCarbonContext().getTenantDomain()) ?
+                            getResourceFiles(getOrgCustomTextResourceName(), "d1356f5e-e10b-49f2-87a6-f7f48e164374",
+                                    CUSTOM_TEXT_RESOURCE_TYPE) : new ArrayList<>());
+
+            CustomText resolvedCustomText = brandingPreferenceResolver.resolveCustomText(APPLICATION_TYPE,
+                    CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE);
+
+            assertResolvedCustomText(resolvedCustomText, ORGANIZATION_TYPE, PARENT_ORG_ID, null, resourceFileName);
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextWhenNoCustomTextAvailable() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+            mockAncestorOrgIdAndAppIdRetrieval();
+            when(organizationManager.resolveTenantDomain(PARENT_ORG_ID)).thenReturn(PARENT_ORG_ID);
+            when(organizationManager.getOrganizationDepthInHierarchy(PARENT_ORG_ID)).thenReturn(1);
+            when(organizationManager.resolveTenantDomain(ROOT_ORG_ID)).thenReturn(ROOT_TENANT_DOMAIN);
+            when(organizationManager.getOrganizationDepthInHierarchy(ROOT_ORG_ID)).thenReturn(0);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceResolver
+                    .resolveCustomText(APPLICATION_TYPE, CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE));
+            // The miss is cached to avoid resolving the hierarchy again.
+            verify(textCustomizedAppCache).addToCacheOnRead(any(TextCustomizedAppCacheKey.class),
+                    any(TextCustomizedAppCacheEntry.class), eq(CHILD_ORG_ID));
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextFromCache() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            when(textCustomizedAppCache.getValueFromCache(any(TextCustomizedAppCacheKey.class), eq(CHILD_ORG_ID)))
+                    .thenReturn(new TextCustomizedAppCacheEntry(PARENT_ORG_ID, PARENT_APP_ID, APPLICATION_TYPE));
+            String resourceFileName = "sample-parent-app-custom-text.json";
+            mockBrandingPreferenceRetrieval(getAppCustomTextResourceName(PARENT_APP_ID),
+                    "e1356f5e-e10b-49f2-87a6-f7f48e164374", APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE, resourceFileName);
+
+            CustomText resolvedCustomText = brandingPreferenceResolver.resolveCustomText(APPLICATION_TYPE,
+                    CHILD_APP_ID, LOGIN_SCREEN, DEFAULT_LOCALE);
+
+            assertResolvedCustomText(resolvedCustomText, APPLICATION_TYPE, PARENT_ORG_ID, PARENT_APP_ID,
+                    resourceFileName);
+            // The hierarchy is not traversed when the resolved source is available in the cache.
+            verify(organizationManager, never()).getAncestorOrganizationIds(anyString());
+        }
+    }
+
+    @Test
+    public void testResolveAppCustomTextWithoutApplicationId() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            assertThrows(BrandingPreferenceMgtClientException.class, () -> brandingPreferenceResolver
+                    .resolveCustomText(APPLICATION_TYPE, " ", LOGIN_SCREEN, DEFAULT_LOCALE));
+        }
+    }
+
+    @Test
+    public void testClearCustomTextResolverCacheHierarchyClearsAppCustomTextCache() throws Exception {
+
+        try (MockedStatic<OSGiDataHolder> mockedOSGiDataHolder = mockStatic(OSGiDataHolder.class)) {
+            mockOSGiDataHolder(mockedOSGiDataHolder);
+            setCarbonContextForTenant(CHILD_ORG_ID, CHILD_TENANT_ID, CHILD_ORG_ID);
+
+            brandingPreferenceResolver.clearCustomTextResolverCacheHierarchy(CHILD_ORG_ID, LOGIN_SCREEN,
+                    DEFAULT_LOCALE);
+
+            verify(textCustomizedAppCache).clear(CHILD_ORG_ID);
+        }
+    }
+
+    private void assertResolvedCustomText(CustomText resolvedCustomText, String resolvedType,
+                                          String resolvedOrganization, String resolvedApplication,
+                                          String resourceFileName) throws IOException {
+
+        Assert.assertEquals(resolvedCustomText.getType(), APPLICATION_TYPE);
+        Assert.assertEquals(resolvedCustomText.getName(), CHILD_APP_ID);
+        Assert.assertEquals(resolvedCustomText.getScreen(), LOGIN_SCREEN);
+        Assert.assertEquals(resolvedCustomText.getLocale(), DEFAULT_LOCALE);
+        Assert.assertEquals(resolvedCustomText.getResolvedFrom().getType(), resolvedType);
+        Assert.assertEquals(resolvedCustomText.getResolvedFrom().getOrganization(), resolvedOrganization);
+        Assert.assertEquals(resolvedCustomText.getResolvedFrom().getApplication(), resolvedApplication);
+        Assert.assertEquals(resolvedCustomText.getPreference(), getPreferenceFromFile(resourceFileName));
+    }
+
+    private String getAppCustomTextResourceName(String appId) {
+
+        return appId.toLowerCase() + RESOURCE_NAME_SEPARATOR + getOrgCustomTextResourceName();
+    }
+
+    private String getOrgCustomTextResourceName() {
+
+        return LOGIN_SCREEN.toUpperCase() + RESOURCE_NAME_SEPARATOR + DEFAULT_LOCALE.toLowerCase();
     }
 
     private void mockOSGiDataHolder(MockedStatic<OSGiDataHolder> mockedOSGiDataHolder)

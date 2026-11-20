@@ -44,12 +44,14 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.ACTIVE_LAYOUT_KEY;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.APPLICATION_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.BRANDING_URLS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CONFIGS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CSS_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_CONTENT_KEY;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_LAYOUT;
+import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CUSTOM_TEXT_RESOURCE_TYPE;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_CSS;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_HTML;
 import static org.wso2.carbon.identity.branding.preference.management.core.constant.BrandingPreferenceMgtConstants.CustomContentTypes.CONTENT_TYPE_JS;
@@ -315,6 +317,52 @@ public class BrandingPreferenceMgtUtils {
 
         String message = populateMessageWithData(error);
         return new BrandingPreferenceMgtServerException(message, error.getCode(), e);
+    }
+
+    /**
+     * Get the configuration resource type used to store custom text preferences of the given type.
+     *
+     * @param type Custom text preference type (ORG/APP).
+     * @return Configuration resource type.
+     */
+    public static String getCustomTextResourceType(String type) {
+
+        if (APPLICATION_TYPE.equals(type)) {
+            return APPLICATION_CUSTOM_TEXT_RESOURCE_TYPE;
+        }
+        return CUSTOM_TEXT_RESOURCE_TYPE;
+    }
+
+    /**
+     * Get the configuration resource name used to store a custom text preference.
+     * Organization level resources are named as SCREEN_locale (e.g. LOGIN_en-us) and application level resources
+     * are named as appId_SCREEN_locale (e.g. 3f2c..._LOGIN_en-us).
+     *
+     * @param type   Custom text preference type (ORG/APP).
+     * @param name   Application ID for the APP type. Ignored for the ORG type.
+     * @param screen Screen name.
+     * @param locale Locale code.
+     * @return Configuration resource name.
+     */
+    public static String getCustomTextResourceName(String type, String name, String screen, String locale) {
+
+        String resourceName = StringUtils.upperCase(screen) + RESOURCE_NAME_SEPARATOR +
+                StringUtils.lowerCase(getFormattedLocale(locale));
+        if (APPLICATION_TYPE.equals(type)) {
+            return getAppCustomTextResourceNamePrefix(name) + resourceName;
+        }
+        return resourceName;
+    }
+
+    /**
+     * Get the prefix shared by all the custom text resource names of an application.
+     *
+     * @param appId Application ID.
+     * @return Resource name prefix.
+     */
+    public static String getAppCustomTextResourceNamePrefix(String appId) {
+
+        return StringUtils.lowerCase(appId) + RESOURCE_NAME_SEPARATOR;
     }
 
     /**
